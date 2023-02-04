@@ -87,9 +87,8 @@ func (s *Server) valueForTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		s.l.Warn("Team asked for field and they don't have one!", "team", team)
+		return
 	}
-
-	s.jsc.UpdateState(fid)
 
 	vals, err := s.jsc.GetState(fid)
 	if err != nil {

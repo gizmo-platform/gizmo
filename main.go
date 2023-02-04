@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -16,7 +17,14 @@ import (
 
 type tlm struct{}
 
-func (tlm *tlm) GetFieldForTeam(team int) (string, error) { return "field1::red", nil }
+func (tlm *tlm) GetFieldForTeam(team int) (string, error) {
+	switch team {
+	case 1234:
+		return "field1::red", nil
+	default:
+		return "none::none", errors.New("get off the field net")
+	}
+}
 
 func (tlm *tlm) SetScheduleStep(_ int) error { return nil }
 
@@ -33,6 +41,7 @@ func main() {
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
 	jsc.BindController("field1::red", 0)
 
+	jsc.BeginAutoRefresh(50)
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
@@ -62,4 +71,5 @@ func main() {
 		appLogger.Error("Error during shutdown", "error", err)
 		os.Exit(2)
 	}
+	jsc.StopAutoRefresh()
 }

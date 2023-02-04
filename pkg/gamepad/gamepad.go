@@ -3,6 +3,7 @@ package gamepad
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/0xcafed00d/joystick"
 	"github.com/hashicorp/go-hclog"
@@ -45,17 +46,24 @@ type JSController struct {
 
 	controllers map[string]joystick.Joystick
 	state       map[string]*Values
+	fields      map[string]int
 
+	fMutex sync.RWMutex
 	cMutex sync.RWMutex
 	sMutex sync.RWMutex
+
+	stopRefresh    chan struct{}
+	refreshRunning bool
 }
 
 // NewJSController sets up the joystick controller.
 func NewJSController(opts ...Option) JSController {
 	jsc := JSController{
 		l:           hclog.NewNullLogger(),
+		fields:      make(map[string]int),
 		controllers: make(map[string]joystick.Joystick),
 		state:       make(map[string]*Values),
+		stopRefresh: make(chan (struct{})),
 	}
 
 	for _, o := range opts {
@@ -66,11 +74,18 @@ func NewJSController(opts ...Option) JSController {
 
 // BindController attaches a controller to a particular name.
 func (j *JSController) BindController(name string, id int) error {
+	j.cMutex.Lock()
+	defer j.cMutex.Unlock()
 	js, jserr := joystick.Open(id)
 	if jserr != nil {
 		return jserr
 	}
 	j.controllers[name] = js
+
+	j.fMutex.Lock()
+	j.fields[name] = id
+	j.fMutex.Unlock()
+
 	j.l.Info("Successfully bound controller", "fid", name, "jsid", id)
 	return nil
 }
@@ -134,4 +149,44 @@ func (j *JSController) UpdateState(fieldID string) error {
 	j.sMutex.Unlock()
 	j.l.Trace("Refreshed state", "fid", fieldID)
 	return nil
+}
+
+func (j *JSController) doRefreshAll() {
+	j.fMutex.RLock()
+	defer j.fMutex.RUnlock()
+
+	for f, id := range j.fields {
+		go func() {
+			if err := j.UpdateState(f); err != nil {
+				j.l.Warn("Error polling joystick, attempting rebind", "error", err, "field", f)
+				j.BindController(f, id)
+			}
+		}()
+	}
+}
+
+// BeginAutoRefresh enables automatic polling of controller inputs.
+func (j *JSController) BeginAutoRefresh(interval int) {
+	if j.refreshRunning {
+		j.stopRefresh <- struct{}{}
+	}
+
+	ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
+
+	go func() {
+		for {
+			select {
+			case <-j.stopRefresh:
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				j.doRefreshAll()
+			}
+		}
+	}()
+}
+
+// StopAutoRefresh discontinues polling of controller inputs.
+func (j *JSController) StopAutoRefresh() {
+	j.stopRefresh <- struct{}{}
 }
