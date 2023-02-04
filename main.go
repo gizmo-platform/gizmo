@@ -44,12 +44,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	go func() {
-		w.Serve(":8080")
-	}()
-
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := w.Serve(":8080"); err != nil {
+			appLogger.Error("Error initializing", "error", err)
+			quit <- syscall.SIGINT
+		}
+	}()
+
 	<-quit
 	appLogger.Info("Shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
