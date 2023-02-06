@@ -15,18 +15,21 @@ import (
 	"github.com/the-maldridge/bestfield/pkg/http"
 )
 
-type tlm struct{}
+type tlm struct {
+	mapping map[int]string
+}
 
 func (tlm *tlm) GetFieldForTeam(team int) (string, error) {
-	switch team {
-	case 1234:
-		return "field1::red", nil
-	default:
-		return "none::none", errors.New("get off the field net")
+	mapping, ok := tlm.mapping[team]
+	if !ok {
+		return "none:none", errors.New("no mapping for team")
 	}
+	return mapping, nil
 }
 
 func (tlm *tlm) SetScheduleStep(_ int) error { return nil }
+
+func (tlm *tlm) InsertOnDemandMap(m map[int]string) { tlm.mapping = m }
 
 func main() {
 	ll := os.Getenv("LOG_LEVEL")
@@ -39,13 +42,13 @@ func main() {
 	})
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
-	jsc.BindController("field1::red", 0)
+	jsc.BindController("field1:red", 0)
 
 	jsc.BeginAutoRefresh(50)
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
-		http.WithTeamLocationMapper(&tlm{}),
+		http.WithTeamLocationMapper(&tlm{mapping: map[int]string{1234: "field1:red"}}),
 	)
 
 	if err != nil {
