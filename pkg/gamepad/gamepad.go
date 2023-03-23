@@ -119,17 +119,17 @@ func (j *JSController) UpdateState(fieldID string) error {
 		return err
 	}
 	jvals := Values{
-		AxisLX: jinfo.AxisData[0],
-		AxisLY: jinfo.AxisData[1],
+		AxisLX: mapRange(jinfo.AxisData[0], -32768, 32768, 0, 255),
+		AxisLY: mapRange(jinfo.AxisData[1], -32768, 32768, 0, 255),
 
-		AxisRX: jinfo.AxisData[3],
-		AxisRY: jinfo.AxisData[4],
+		AxisRX: mapRange(jinfo.AxisData[3], -32768, 32768, 0, 255),
+		AxisRY: mapRange(jinfo.AxisData[4], -32768, 32768, 0, 255),
 
-		AxisLT: jinfo.AxisData[2],
-		AxisRT: jinfo.AxisData[5],
+		AxisLT: mapRange(jinfo.AxisData[2], -32768, 32768, 0, 255),
+		AxisRT: mapRange(jinfo.AxisData[5], -32768, 32768, 0, 255),
 
-		AxisDX: jinfo.AxisData[6],
-		AxisDY: jinfo.AxisData[7],
+		AxisDX: mapRange(jinfo.AxisData[6], -32768, 32768, 0, 255),
+		AxisDY: mapRange(jinfo.AxisData[7], -32768, 32768, 0, 255),
 
 		ButtonBack:       (jinfo.Buttons & (1 << uint32(6))) != 0,
 		ButtonStart:      (jinfo.Buttons & (1 << uint32(7))) != 0,
@@ -189,4 +189,8 @@ func (j *JSController) BeginAutoRefresh(interval int) {
 // StopAutoRefresh discontinues polling of controller inputs.
 func (j *JSController) StopAutoRefresh() {
 	j.stopRefresh <- struct{}{}
+}
+
+func mapRange(x, xMin, xMax, oMin, oMax int) int {
+	return (x-xMin)*(oMax-oMin)/(xMax-xMin) + oMin
 }
