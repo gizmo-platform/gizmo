@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -58,8 +59,8 @@ func NewServer(opts ...Option) (*Server, error) {
 		fmt.Fprint(w, "\r\n")
 	})
 
-	x.r.Get("/robot/data/{team}", x.valueForTeam)
-
+	x.r.Get("/robot/data/gamepad/{team}", x.gamepadValueForTeam)
+	x.r.Get("/robot/data/location/{team}", x.locationValueForTeam)
 	x.r.Post("/admin/map/immediate", x.remapTeams)
 
 	return x, nil
@@ -79,17 +80,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.n.Shutdown(ctx)
 }
 
-func (s *Server) valueForTeam(w http.ResponseWriter, r *http.Request) {
-	team, err := strconv.Atoi(chi.URLParam(r, "team"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	fid, err := s.tlm.GetFieldForTeam(team)
+func (s *Server) gamepadValueForTeam(w http.ResponseWriter, r *http.Request) {
+	team, fid, err := s.teamAndFIDFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		s.l.Warn("Team asked for field and they don't have one!", "team", team)
 		return
 	}
 
@@ -102,6 +96,25 @@ func (s *Server) valueForTeam(w http.ResponseWriter, r *http.Request) {
 
 	enc := json.NewEncoder(w)
 	enc.Encode(vals)
+}
+
+func (s *Server) locationValueForTeam(w http.ResponseWriter, r *http.Request) {
+	_, fid, err := s.teamAndFIDFromRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	parts := strings.SplitN(fid, ":", 2)
+	fnum, _ := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
+	enc := json.NewEncoder(w)
+	enc.Encode(struct {
+		Field    int
+		Quadrant string
+	}{
+		Field:    fnum,
+		Quadrant: strings.ToUpper(parts[1]),
+	})
 }
 
 func (s *Server) remapTeams(w http.ResponseWriter, r *http.Request) {
@@ -118,4 +131,18 @@ func (s *Server) remapTeams(w http.ResponseWriter, r *http.Request) {
 	s.tlm.InsertOnDemandMap(mapping)
 	w.WriteHeader(http.StatusOK)
 	s.l.Info("Immediately remapped teams!", "map", mapping)
+}
+
+func (s *Server) teamAndFIDFromRequest(r *http.Request) (int, string, error) {
+	team, err := strconv.Atoi(chi.URLParam(r, "team"))
+	if err != nil {
+		return -1, "", err
+	}
+
+	fid, err := s.tlm.GetFieldForTeam(team)
+	if err != nil {
+		s.l.Warn("Team asked for field and they don't have one!", "team", team)
+		return -1, "", err
+	}
+	return team, fid, nil
 }
