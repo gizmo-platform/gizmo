@@ -9,6 +9,10 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
+const (
+	bindTmpField = "BINDTMP"
+)
+
 var (
 	// ErrNoSuchField is returned in the event that no field is
 	// available for the given fieldID.
@@ -72,6 +76,50 @@ func NewJSController(opts ...Option) JSController {
 	return jsc
 }
 
+// FindController finds the controller that currently has ButtonLogo
+// held down.
+func (j *JSController) FindController() (int, error) {
+	defer func() {
+		j.sMutex.Lock()
+		j.cMutex.Lock()
+		j.fMutex.Lock()
+		delete(j.fields, bindTmpField)
+		delete(j.controllers, bindTmpField)
+		delete(j.state, bindTmpField)
+		j.fMutex.Unlock()
+		j.cMutex.Unlock()
+		j.sMutex.Unlock()
+	}()
+
+	for jsid := 0; jsid < 16; jsid++ {
+		if err := j.BindController(bindTmpField, jsid); err != nil {
+			j.l.Debug("Error binding controller during discovery", "error", err)
+			continue
+		}
+
+		for i := 0; i < 1000; i++ {
+			if err := j.UpdateState(bindTmpField); err != nil {
+				j.l.Warn("Error updating state during discovery", "error", err)
+			}
+
+			vals, err := j.GetState(bindTmpField)
+			if err != nil {
+				j.l.Warn("Error polling controller during discovery", "error", err)
+			}
+
+			j.l.Debug("Logobutton", "v", vals.ButtonLogo)
+
+			if vals.ButtonLogo {
+				j.l.Debug("Joystick has logobutton set", "id", jsid)
+				return jsid, nil
+			}
+		}
+
+	}
+
+	return -1, errors.New("No joystick found")
+}
+
 // BindController attaches a controller to a particular name.
 func (j *JSController) BindController(name string, id int) error {
 	j.cMutex.Lock()
@@ -118,6 +166,7 @@ func (j *JSController) UpdateState(fieldID string) error {
 	if err != nil {
 		return err
 	}
+
 	jvals := Values{
 		AxisLX: mapRange(jinfo.AxisData[0], -32768, 32768, 0, 255),
 		AxisLY: mapRange(jinfo.AxisData[1], -32768, 32768, 0, 255),
@@ -147,7 +196,7 @@ func (j *JSController) UpdateState(fieldID string) error {
 	j.sMutex.Lock()
 	j.state[fieldID] = &jvals
 	j.sMutex.Unlock()
-	j.l.Trace("Refreshed state", "fid", fieldID)
+	j.l.Trace("Refreshed state", "fid", fieldID, "state", jvals)
 	return nil
 }
 

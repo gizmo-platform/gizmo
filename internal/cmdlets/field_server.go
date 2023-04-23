@@ -2,7 +2,6 @@ package cmdlets
 
 import (
 	"context"
-	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 	"github.com/the-maldridge/bestfield/pkg/http"
+	"github.com/the-maldridge/bestfield/pkg/tlm/shim"
 )
 
 var (
@@ -32,22 +32,6 @@ func init() {
 	fieldCmd.AddCommand(fieldServeCmd)
 }
 
-type tlm struct {
-	mapping map[int]string
-}
-
-func (tlm *tlm) GetFieldForTeam(team int) (string, error) {
-	mapping, ok := tlm.mapping[team]
-	if !ok {
-		return "none:none", errors.New("no mapping for team")
-	}
-	return mapping, nil
-}
-
-func (tlm *tlm) SetScheduleStep(_ int) error { return nil }
-
-func (tlm *tlm) InsertOnDemandMap(m map[int]string) { tlm.mapping = m }
-
 func fieldServeCmdRun(c *cobra.Command, args []string) {
 	ll := os.Getenv("LOG_LEVEL")
 	if ll == "" {
@@ -59,13 +43,12 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	})
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
-	jsc.BindController("field1:red", 0)
 
 	jsc.BeginAutoRefresh(50)
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
-		http.WithTeamLocationMapper(&tlm{mapping: map[int]string{1234: "field1:red"}}),
+		http.WithTeamLocationMapper(&shim.TLM{Mapping: map[int]string{1234: "field1:red"}}),
 	)
 
 	if err != nil {

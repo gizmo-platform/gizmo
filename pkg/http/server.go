@@ -2,11 +2,9 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -20,6 +18,8 @@ import (
 type JSController interface {
 	GetState(string) (*gamepad.Values, error)
 	UpdateState(string) error
+	FindController() (int, error)
+	BindController(string, int) error
 }
 
 // TeamLocationMapper looks at all teams trying to fetch a value and
@@ -62,6 +62,7 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.r.Get("/robot/data/gamepad/{team}", x.gamepadValueForTeam)
 	x.r.Get("/robot/data/location/{team}", x.locationValueForTeam)
 	x.r.Post("/admin/map/immediate", x.remapTeams)
+	x.r.Post("/admin/js/bind", x.bindJoystick)
 
 	return x, nil
 }
@@ -78,59 +79,6 @@ func (s *Server) Serve(bind string) error {
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.n.Shutdown(ctx)
-}
-
-func (s *Server) gamepadValueForTeam(w http.ResponseWriter, r *http.Request) {
-	team, fid, err := s.teamAndFIDFromRequest(r)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	vals, err := s.jsc.GetState(fid)
-	if err != nil {
-		s.l.Warn("Error retrieving controller state", "team", team, "fid", fid, "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	enc := json.NewEncoder(w)
-	enc.Encode(vals)
-}
-
-func (s *Server) locationValueForTeam(w http.ResponseWriter, r *http.Request) {
-	_, fid, err := s.teamAndFIDFromRequest(r)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	parts := strings.SplitN(fid, ":", 2)
-	fnum, _ := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
-	enc := json.NewEncoder(w)
-	enc.Encode(struct {
-		Field    int
-		Quadrant string
-	}{
-		Field:    fnum,
-		Quadrant: strings.ToUpper(parts[1]),
-	})
-}
-
-func (s *Server) remapTeams(w http.ResponseWriter, r *http.Request) {
-	mapping := make(map[int]string)
-
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&mapping); err != nil {
-		s.l.Warn("Error decoding on-demand mapping", "error", err)
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "Requests must be a map of team numbers for field locations")
-		return
-	}
-
-	s.tlm.InsertOnDemandMap(mapping)
-	w.WriteHeader(http.StatusOK)
-	s.l.Info("Immediately remapped teams!", "map", mapping)
 }
 
 func (s *Server) teamAndFIDFromRequest(r *http.Request) (int, string, error) {
