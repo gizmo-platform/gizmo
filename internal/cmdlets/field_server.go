@@ -76,7 +76,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
-		http.WithTeamLocationMapper(&shim.TLM{Mapping: map[int]string{1234: "field1:red"}}),
+		http.WithTeamLocationMapper(&shim.TLM{Mapping: make(map[int]string)}),
 	)
 
 	if err != nil {

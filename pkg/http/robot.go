@@ -43,3 +43,34 @@ func (s *Server) locationValueForTeam(w http.ResponseWriter, r *http.Request) {
 		Quadrant: strings.ToUpper(parts[1]),
 	})
 }
+
+func (s *Server) acceptDataForTeam(w http.ResponseWriter, r *http.Request) {
+	dec := json.NewDecoder(r.Body)
+	team, fid, err := s.teamAndFIDFromRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	vals := struct {
+		VBat              int
+		RSSI              int
+		WatchdogRemaining int
+		WatchdogOK        bool
+		PwrBoard          bool
+		PwrPico           bool
+		PwrGPIO           bool
+		PwrMainA          bool
+		PwrMainB          bool
+	}{}
+
+	if err := dec.Decode(&vals); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		s.l.Warn("Garbage stats from a robot", "error", err, "team", team, "field", fid)
+		return
+	}
+
+	s.l.Debug("vals", "vals", vals)
+
+	w.WriteHeader(http.StatusOK)
+}

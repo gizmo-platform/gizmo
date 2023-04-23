@@ -61,6 +61,7 @@ func NewServer(opts ...Option) (*Server, error) {
 
 	x.r.Get("/robot/data/gamepad/{team}", x.gamepadValueForTeam)
 	x.r.Get("/robot/data/location/{team}", x.locationValueForTeam)
+	x.r.Post("/robot/data/report/{team}", x.acceptDataForTeam)
 	x.r.Post("/admin/map/immediate", x.remapTeams)
 	x.r.Post("/admin/js/bind", x.bindJoystick)
 
