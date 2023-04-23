@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 	"github.com/the-maldridge/bestfield/pkg/http"
@@ -28,11 +29,20 @@ var (
 configuration file!`
 )
 
+type quad struct {
+	Name    string
+	Gamepad int
+}
+
 func init() {
 	fieldCmd.AddCommand(fieldServeCmd)
 }
 
 func fieldServeCmdRun(c *cobra.Command, args []string) {
+	viper.SetConfigName("config.yml")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+
 	ll := os.Getenv("LOG_LEVEL")
 	if ll == "" {
 		ll = "INFO"
@@ -42,7 +52,25 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		Level: hclog.LevelFromString(ll),
 	})
 
+	err := viper.ReadInConfig()
+	if err != nil {
+		appLogger.Error("Could not read config.yml", "error", err)
+		os.Exit(1)
+	}
+
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
+
+	quads := []quad{}
+	if err := viper.UnmarshalKey("quadrants", &quads); err != nil {
+		appLogger.Error("Could not unmarshal fields", "error", err)
+		os.Exit(2)
+	}
+
+	for _, q := range quads {
+		jsc.BindController(q.Name, q.Gamepad)
+	}
+
+	appLogger.Info("fields", "fields", quads)
 
 	jsc.BeginAutoRefresh(50)
 	w, err := http.NewServer(
