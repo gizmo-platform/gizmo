@@ -2,7 +2,7 @@ package cmdlets
 
 import (
 	"context"
-	"log"
+	nhttp "net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 	"github.com/the-maldridge/bestfield/pkg/http"
+	"github.com/the-maldridge/bestfield/pkg/mqtt"
 	"github.com/the-maldridge/bestfield/pkg/tlm/shim"
 )
 
@@ -59,8 +60,8 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	}
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
-
 	quads := []quad{}
+
 	if err := viper.UnmarshalKey("quadrants", &quads); err != nil {
 		appLogger.Error("Could not unmarshal fields", "error", err)
 		os.Exit(2)
@@ -69,18 +70,29 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	for _, q := range quads {
 		jsc.BindController(q.Name, q.Gamepad)
 	}
-
-	appLogger.Info("fields", "fields", quads)
-
 	jsc.BeginAutoRefresh(50)
-	w, err := http.NewServer(
-		http.WithLogger(appLogger),
-		http.WithJSController(&jsc),
-		http.WithTeamLocationMapper(&shim.TLM{Mapping: make(map[int]string)}),
+
+	tlm := shim.TLM{Mapping: make(map[int]string)}
+
+	m, err := mqtt.NewServer(
+		mqtt.WithLogger(appLogger),
+		mqtt.WithJSController(&jsc),
+		mqtt.WithTeamLocationMapper(&tlm),
 	)
 
 	if err != nil {
-		log.Println("Error during webserver initialization", err.Error())
+		appLogger.Error("Error during mqtt initialization", "error", err)
+		os.Exit(1)
+	}
+
+	w, err := http.NewServer(
+		http.WithLogger(appLogger),
+		http.WithJSController(&jsc),
+		http.WithTeamLocationMapper(&tlm),
+	)
+
+	if err != nil {
+		appLogger.Error("Error during webserver initialization", "error", err)
 		os.Exit(1)
 	}
 
@@ -88,12 +100,20 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := w.Serve(":8080"); err != nil {
+		if err := m.Serve(":1883"); err != nil {
 			appLogger.Error("Error initializing", "error", err)
 			quit <- syscall.SIGINT
 		}
 	}()
 
+	go func() {
+		if err := w.Serve(":8080"); err != nil && err != nhttp.ErrServerClosed {
+			appLogger.Error("Error initializing", "error", err)
+			quit <- syscall.SIGINT
+		}
+	}()
+
+	m.StartControlPusher()
 	<-quit
 	appLogger.Info("Shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -102,5 +122,10 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Error during shutdown", "error", err)
 		os.Exit(2)
 	}
+	if err := m.Shutdown(); err != nil {
+		appLogger.Error("Error during shutdown", "error", err)
+		os.Exit(2)
+	}
+	m.StopControlPusher()
 	jsc.StopAutoRefresh()
 }
