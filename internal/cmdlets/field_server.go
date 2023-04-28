@@ -53,6 +53,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		Name:  "field",
 		Level: hclog.LevelFromString(ll),
 	})
+	appLogger.Info("Log level", "level", appLogger.GetLevel())
 
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -60,7 +61,8 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	prometheusRegistry, prometheusMetrics := stats.NewStatsListener()
+	prometheusRegistry, prometheusMetrics := stats.NewStatsListener(appLogger)
+	appLogger.Debug("Stats listeners created")
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
 	quads := []quad{}

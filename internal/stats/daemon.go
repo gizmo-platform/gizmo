@@ -29,11 +29,14 @@ func MqttListen(connect string, metrics *metrics) error {
 		SetConnectRetry(true)
 	client := mqtt.NewClient(opts)
 	if tok := client.Connect(); tok.Wait() && tok.Error() != nil {
+		metrics.l.Error("Error connecting to broker", "error", tok.Error())
 		return tok.Error()
 	}
+	metrics.l.Info("Connected to broker")
 	callback := func(client mqtt.Client, message mqtt.Message) {
 		fmt.Println("Yo")
 		teamNum := strings.Split(message.Topic(), "/")[1]
+		metrics.l.Trace("Called back", "team", teamNum)
 		var stats StatsReport
 		json.Unmarshal(message.Payload(), &stats)
 		metrics.rssi.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
@@ -72,8 +75,10 @@ func MqttListen(connect string, metrics *metrics) error {
 	}
 
 	// Why 1? IDK. Just doing it.
-	if tok := client.Subscribe("robot/+/stats", 1, callback); tok.Wait() && tok.Error() != nil {
+	if tok := client.Subscribe("robot/1237/stats", 1, callback); tok.Wait() && tok.Error() != nil {
+		metrics.l.Warn("Error subscribing to topic", "error", tok.Error())
 		return tok.Error()
 	}
+	metrics.l.Info("Subscribed to topics")
 	return nil
 }

@@ -1,8 +1,13 @@
 package stats
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/hashicorp/go-hclog"
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 type metrics struct {
+	l hclog.Logger
+
 	rssi              *prometheus.GaugeVec
 	vbat              *prometheus.GaugeVec
 	powerBoard        *prometheus.GaugeVec
@@ -14,9 +19,10 @@ type metrics struct {
 	watchdogRemaining *prometheus.GaugeVec
 }
 
-func NewStatsListener() (*prometheus.Registry, *metrics) {
+func NewStatsListener(p hclog.Logger) (*prometheus.Registry, *metrics) {
 	reg := prometheus.NewRegistry()
 	m := new(metrics)
+	m.l = p.Named("stats")
 	m.rssi = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "BEST",
 		Subsystem: "robot",
