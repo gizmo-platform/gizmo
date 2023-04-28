@@ -2,6 +2,7 @@ package stats
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -31,11 +32,13 @@ func MqttListen(connect string, metrics *metrics) error {
 		return tok.Error()
 	}
 	callback := func(client mqtt.Client, message mqtt.Message) {
+		fmt.Println("Yo")
 		teamNum := strings.Split(message.Topic(), "/")[1]
 		var stats StatsReport
 		json.Unmarshal(message.Payload(), &stats)
 		metrics.rssi.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
 		metrics.vbat.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.VBat))
+		metrics.watchdogRemaining.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining))
 		if stats.PwrBoard {
 			metrics.powerBoard.With(prometheus.Labels{"team": teamNum}).Set(1)
 		} else {
@@ -66,8 +69,6 @@ func MqttListen(connect string, metrics *metrics) error {
 		} else {
 			metrics.watchdogOK.With(prometheus.Labels{"team": teamNum}).Set(0)
 		}
-		metrics.watchdogRemaining.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining))
-
 	}
 
 	// Why 1? IDK. Just doing it.

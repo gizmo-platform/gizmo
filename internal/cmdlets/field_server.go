@@ -103,8 +103,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	go stats.MqttListen("tcp://127.0.0.1:1883", prometheusMetrics)
-
 	go func() {
 		if err := m.Serve(":1883"); err != nil {
 			appLogger.Error("Error initializing", "error", err)
@@ -118,6 +116,11 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 			quit <- syscall.SIGINT
 		}
 	}()
+
+	if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics); err != nil {
+		appLogger.Error("Error initializing", "error", err)
+		quit <- syscall.SIGINT
+	}
 
 	m.StartControlPusher()
 	<-quit
