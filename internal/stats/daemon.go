@@ -2,7 +2,6 @@ package stats
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -34,7 +33,6 @@ func MqttListen(connect string, metrics *metrics) error {
 	}
 	metrics.l.Info("Connected to broker")
 	callback := func(client mqtt.Client, message mqtt.Message) {
-		fmt.Println("Yo")
 		teamNum := strings.Split(message.Topic(), "/")[1]
 		metrics.l.Trace("Called back", "team", teamNum)
 		var stats StatsReport
