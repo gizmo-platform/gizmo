@@ -13,7 +13,7 @@ type StatsReport struct {
 	VBat              int32
 	WatchdogRemaining int32
 	WatchdogOK        bool
-	RSSI              int8
+	RSSI              uint8
 	PwrBoard          bool
 	PwrPico           bool
 	PwrGPIO           bool
