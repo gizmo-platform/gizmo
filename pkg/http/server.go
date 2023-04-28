@@ -57,9 +57,7 @@ func NewServer(opts ...Option) (*Server, error) {
 		}
 	}
 
-	x.r.Get("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		promhttp.HandlerFor(x.reg, promhttp.HandlerOpts{Registry: x.reg})
-	})
+	x.r.Handle("/metrics", promhttp.HandlerFor(x.reg, promhttp.HandlerOpts{Registry: x.reg}))
 
 	x.r.Get("/robot/time", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, time.Now().Format(time.RFC3339))
