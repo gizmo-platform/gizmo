@@ -73,7 +73,7 @@ func MqttListen(connect string, metrics *metrics) error {
 	}
 
 	// Why 1? IDK. Just doing it.
-	if tok := client.Subscribe("robot/1237/stats", 1, callback); tok.Wait() && tok.Error() != nil {
+	if tok := client.Subscribe("robot/+/stats", 1, callback); tok.Wait() && tok.Error() != nil {
 		metrics.l.Warn("Error subscribing to topic", "error", tok.Error())
 		return tok.Error()
 	}
