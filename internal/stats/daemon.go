@@ -3,6 +3,7 @@ package stats
 import (
 	"encoding/json"
 	"strings"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,7 +26,9 @@ func MqttListen(connect string, metrics *metrics) error {
 		AddBroker(connect).
 		SetAutoReconnect(true).
 		SetClientID("self").
-		SetConnectRetry(true)
+		SetConnectRetry(true).
+		SetConnectTimeout(time.Second).
+		SetConnectRetryInterval(time.Second)
 	client := mqtt.NewClient(opts)
 	if tok := client.Connect(); tok.Wait() && tok.Error() != nil {
 		metrics.l.Error("Error connecting to broker", "error", tok.Error())
