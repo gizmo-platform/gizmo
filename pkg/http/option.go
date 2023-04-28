@@ -2,10 +2,19 @@ package http
 
 import (
 	"github.com/hashicorp/go-hclog"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Option enables variadic option passing to the server on startup.
 type Option func(*Server) error
+
+// WithPrometheusRegistry sets the Prometheus registry for the server
+func WithPrometheusRegistry(reg *prometheus.Registry) Option {
+	return func(s *Server) error {
+		s.reg = reg
+		return nil
+	}
+}
 
 // WithJSController sets the joystick controller for the
 func WithJSController(jsc JSController) Option {

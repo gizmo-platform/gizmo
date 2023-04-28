@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 )
@@ -37,6 +39,7 @@ type Server struct {
 	n   *http.Server
 	l   hclog.Logger
 	tlm TeamLocationMapper
+	reg *prometheus.Registry
 
 	jsc JSController
 }
@@ -53,6 +56,10 @@ func NewServer(opts ...Option) (*Server, error) {
 			return nil, err
 		}
 	}
+
+	x.r.Get("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		promhttp.HandlerFor(x.reg, promhttp.HandlerOpts{Registry: x.reg})
+	})
 
 	x.r.Get("/robot/time", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, time.Now().Format(time.RFC3339))

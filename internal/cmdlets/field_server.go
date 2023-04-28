@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/the-maldridge/bestfield/internal/stats"
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 	"github.com/the-maldridge/bestfield/pkg/http"
 	"github.com/the-maldridge/bestfield/pkg/mqtt"
@@ -59,6 +60,8 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	prometheusRegistry, prometheusMetrics := stats.NewStatsListener()
+
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
 	quads := []quad{}
 
@@ -89,6 +92,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
 		http.WithTeamLocationMapper(&tlm),
+		http.WithPrometheusRegistry(prometheusRegistry),
 	)
 
 	if err != nil {
@@ -98,6 +102,8 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	go stats.MqttListen("tcp://127.0.0.1:1883", prometheusMetrics)
 
 	go func() {
 		if err := m.Serve(":1883"); err != nil {
