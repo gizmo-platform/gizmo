@@ -26,6 +26,10 @@ func (tlm *TLM) SetScheduleStep(_ int) error { return nil }
 // current schedule.  WARNING: This is immediate.
 func (tlm *TLM) InsertOnDemandMap(m map[int]string) { tlm.Mapping = m }
 
+// GetCurrentMapping is a convenience function to retrieve the current
+// mapping for the current match.
+func (tlm *TLM) GetCurrentMapping() (map[int]string, error) { return tlm.Mapping, nil }
+
 // GetCurrentTeams returns the teams that are expected to be on the
 // field at this time.
 func (tlm *TLM) GetCurrentTeams() []int {

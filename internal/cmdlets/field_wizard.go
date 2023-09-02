@@ -25,7 +25,7 @@ func init() {
 func fieldWizardCmdRun(c *cobra.Command, args []string) {
 	qInitial := []*survey.Question{
 		{
-			Name: "ServerIP",
+			Name:     "ServerIP",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
 				Message: "Address of the field server",
@@ -82,7 +82,6 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 			return
 		}
 	}
-
 
 	fmt.Println("Your event is configured as follows")
 	fmt.Println("")

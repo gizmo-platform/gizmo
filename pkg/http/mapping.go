@@ -21,3 +21,9 @@ func (s *Server) remapTeams(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	s.l.Info("Immediately remapped teams!", "map", mapping)
 }
+
+func (s *Server) currentTeamMap(w http.ResponseWriter, r *http.Request) {
+	enc := json.NewEncoder(w)
+	m, _ := s.tlm.GetCurrentMapping()
+	enc.Encode(m)
+}

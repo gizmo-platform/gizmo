@@ -72,8 +72,10 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(2)
 	}
 
-	for _, q := range quads {
+	quadStr := make([]string, len(quads))
+	for i, q := range quads {
 		jsc.BindController(q.Name, q.Gamepad)
+		quadStr[i] = q.Name
 	}
 	jsc.BeginAutoRefresh(50)
 
@@ -95,6 +97,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		http.WithJSController(&jsc),
 		http.WithTeamLocationMapper(&tlm),
 		http.WithPrometheusRegistry(prometheusRegistry),
+		http.WithQuads(quadStr),
 	)
 
 	if err != nil {

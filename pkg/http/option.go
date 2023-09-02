@@ -41,3 +41,12 @@ func WithTeamLocationMapper(t TeamLocationMapper) Option {
 		return nil
 	}
 }
+
+// WithQuads tells the server what quadrants are available to
+// configure.
+func WithQuads(q []string) Option {
+	return func(s *Server) error {
+		s.quads = q
+		return nil
+	}
+}
