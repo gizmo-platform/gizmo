@@ -67,10 +67,10 @@ func NewServer(opts ...Option) (*Server, error) {
 		fmt.Fprint(w, "\r\n")
 	})
 
-	x.r.Get("/cfg/quads", x.configuredQuads)
 	x.r.Get("/robot/data/gamepad/{team}", x.gamepadValueForTeam)
 	x.r.Get("/robot/data/location/{team}", x.locationValueForTeam)
 	x.r.Post("/robot/data/report/{team}", x.acceptDataForTeam)
+	x.r.Get("/admin/cfg/quads", x.configuredQuads)
 	x.r.Post("/admin/map/immediate", x.remapTeams)
 	x.r.Get("/admin/map/current", x.currentTeamMap)
 	x.r.Post("/admin/js/bind", x.bindJoystick)
