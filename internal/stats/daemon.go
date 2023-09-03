@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -80,10 +81,16 @@ func MqttListen(connect string, metrics *Metrics) error {
 		}
 	}
 
-	// Why 1? IDK. Just doing it.
-	if tok := client.Subscribe("robot/+/stats", 1, callback); tok.Wait() && tok.Error() != nil {
-		metrics.l.Warn("Error subscribing to topic", "error", tok.Error())
-		return tok.Error()
+	subFunc := func() error {
+		if tok := client.Subscribe("robot/+/stats", 1, callback); tok.Wait() && tok.Error() != nil {
+			metrics.l.Warn("Error subscribing to topic", "error", tok.Error())
+			return tok.Error()
+		}
+		return nil
+	}
+	if err := backoff.Retry(subFunc, backoff.NewExponentialBackOff()); err != nil {
+		metrics.l.Error("Permanent error encountered while subscribing", "error", err)
+		return err
 	}
 	metrics.l.Info("Subscribed to topics")
 	return nil
