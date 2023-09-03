@@ -8,6 +8,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/hashicorp/go-hclog v1.4.0
+	github.com/hashicorp/go-sockaddr v1.0.4
 	github.com/mochi-co/mqtt/v2 v2.2.7
 	github.com/prometheus/client_golang v1.15.0
 	github.com/rs/zerolog v1.28.0

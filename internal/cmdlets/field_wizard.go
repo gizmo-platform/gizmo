@@ -2,8 +2,12 @@ package cmdlets
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/hashicorp/go-sockaddr"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -23,12 +27,17 @@ func init() {
 }
 
 func fieldWizardCmdRun(c *cobra.Command, args []string) {
+	// We throw away this error because the worst case is the
+	// default isn't set.
+	lAddr, _ := sockaddr.GetPrivateIP()
+
 	qInitial := []*survey.Question{
 		{
 			Name:     "ServerIP",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
 				Message: "Address of the field server",
+				Default: lAddr,
 			},
 		},
 		{
@@ -43,6 +52,7 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 			Name: "AllGamepadsLocal",
 			Prompt: &survey.Confirm{
 				Message: "All gamepads are connected directly via USB",
+				Default: true,
 			},
 		},
 	}
@@ -51,7 +61,7 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 		ServerIP         string
 		FieldCount       int
 		AllGamepadsLocal bool
-		RemoteGamepads   []string
+		LocalGamepads    []string
 	}{}
 
 	if err := survey.Ask(qInitial, &cfg); err != nil {
@@ -59,28 +69,22 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 	cfg.FieldCount++
+	for i := 0; i < cfg.FieldCount; i++ {
+		for _, c := range []string{"red", "blue", "green", "yellow"} {
+			cfg.LocalGamepads = append(cfg.LocalGamepads, fmt.Sprintf("field%d:%s", i+1, c))
+		}
+	}
 	if !cfg.AllGamepadsLocal {
-
-		quadList := []string{}
-		for i := 0; i < cfg.FieldCount; i++ {
-			for _, c := range []string{"red", "blue", "green", "yellow"} {
-				quadList = append(quadList, fmt.Sprintf("field%d:%s", i+1, c))
-			}
+		qLocalGamepads := &survey.MultiSelect{
+			Message: "Select all local gamepads",
+			Options: cfg.LocalGamepads,
 		}
-
-		qRemoteGamepads := []*survey.Question{
-			{
-				Name: "RemoteGamepads",
-				Prompt: &survey.MultiSelect{
-					Message: "Select all remote gamepads",
-					Options: quadList,
-				},
-			},
-		}
-		if err := survey.Ask(qRemoteGamepads, &cfg); err != nil {
+		gsScratch := []string{}
+		if err := survey.AskOne(qLocalGamepads, &gsScratch); err != nil {
 			fmt.Println(err.Error())
 			return
 		}
+		cfg.LocalGamepads = gsScratch
 	}
 
 	fmt.Println("Your event is configured as follows")
@@ -88,8 +92,8 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 	fmt.Printf("You have %d field(s)\n", cfg.FieldCount)
 	if !cfg.AllGamepadsLocal {
 		fmt.Println("You are making use of remote gamepads")
-		fmt.Println("The following gamepads are remote from this system")
-		for _, g := range cfg.RemoteGamepads {
+		fmt.Println("The following gamepads are directly attached system")
+		for _, g := range cfg.LocalGamepads {
 			fmt.Printf("\t%s\n", g)
 		}
 	} else {
@@ -99,4 +103,18 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 
 	confirm := false
 	survey.AskOne(&survey.Confirm{Message: "Does everything above look right?"}, &confirm)
+
+	if !confirm {
+		fmt.Println("Bailing out!  Re-run the wizard and correct any errors!")
+		os.Exit(1)
+	}
+
+	viper.Set("server.address", cfg.ServerIP)
+	quads := make([]quad, len(cfg.LocalGamepads))
+	for id, quadName := range cfg.LocalGamepads {
+		quads[id] = quad{Name: quadName, Gamepad: id}
+	}
+	viper.Set("quadrants", quads)
+	viper.SetConfigType("yaml")
+	viper.WriteConfigAs("config.yml")
 }
