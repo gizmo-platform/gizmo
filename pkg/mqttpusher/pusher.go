@@ -48,6 +48,12 @@ func New(opts ...Option) (*Pusher, error) {
 	p.stopControlFeed = make(chan (struct{}))
 	p.stopLocationFeed = make(chan (struct{}))
 
+	for _, o := range opts {
+		if err := o(p); err != nil {
+			return nil, err
+		}
+	}
+
 	copts := mqtt.NewClientOptions().
 		AddBroker(p.addr).
 		SetAutoReconnect(true).
@@ -56,13 +62,19 @@ func New(opts ...Option) (*Pusher, error) {
 		SetConnectTimeout(time.Second).
 		SetConnectRetryInterval(time.Second)
 	client := mqtt.NewClient(copts)
-	if tok := client.Connect(); tok.Wait() && tok.Error() != nil {
-		p.l.Error("Error connecting to broker", "error", tok.Error())
-		return nil, tok.Error()
-	}
 	p.m = client
-	p.l.Info("Connected to broker")
 	return p, nil
+}
+
+// Connect allows for setting up the connection later, after the
+// pusher is initialized.
+func (p *Pusher) Connect() error {
+	if tok := p.m.Connect(); tok.Wait() && tok.Error() != nil {
+		p.l.Error("Error connecting to broker", "error", tok.Error())
+		return tok.Error()
+	}
+	p.l.Info("Connected to broker")
+	return nil
 }
 
 func (p *Pusher) publishGamepadForTeam(team int) {

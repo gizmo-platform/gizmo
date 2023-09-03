@@ -10,7 +10,7 @@ type Option func(*Pusher) error
 // WithLogger sets the logger for the server.
 func WithLogger(l hclog.Logger) Option {
 	return func(p *Pusher) error {
-		p.l = l.Named("mqtt")
+		p.l = l.Named("pusher")
 		return nil
 	}
 }

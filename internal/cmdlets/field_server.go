@@ -42,6 +42,9 @@ func init() {
 }
 
 func fieldServeCmdRun(c *cobra.Command, args []string) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
 	viper.SetConfigName("config.yml")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
@@ -87,6 +90,17 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	p, err := mqttpusher.New(
+		mqttpusher.WithLogger(appLogger),
+		mqttpusher.WithJSController(&jsc),
+		mqttpusher.WithTeamLocationMapper(&tlm),
+		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
+	)
+	if err != nil {
+		appLogger.Error("Error during mqtt pusher initialization", "error", err)
+		quit <- syscall.SIGINT
+	}
+
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
@@ -99,9 +113,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Error during webserver initialization", "error", err)
 		os.Exit(1)
 	}
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		if err := m.Serve(":1883"); err != nil {
@@ -117,25 +128,24 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		}
 	}()
 
-	p, err := mqttpusher.New(
-		mqttpusher.WithLogger(appLogger),
-		mqttpusher.WithJSController(&jsc),
-		mqttpusher.WithTeamLocationMapper(&tlm),
-		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
-	)
-	if err != nil {
-		appLogger.Error("Error during mqtt pusher initialization", "error", err)
-		quit <- syscall.SIGINT
-	}
+	go func() {
+		if err := p.Connect(); err != nil {
+			appLogger.Error("Error initializing", "error", err)
+			quit <- syscall.SIGINT
+			return
+		}
+		p.StartLocationPusher()
+		p.StartControlPusher()
+	}()
 
-	if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics); err != nil {
-		appLogger.Error("Error initializing", "error", err)
-		quit <- syscall.SIGINT
-	}
+	go func() {
+		if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics); err != nil {
+			appLogger.Error("Error initializing", "error", err)
+			quit <- syscall.SIGINT
+		}
+	}()
 
 	jsc.BeginAutoRefresh(50)
-	p.StartLocationPusher()
-	p.StartControlPusher()
 
 	<-quit
 	appLogger.Info("Shutting down...")
