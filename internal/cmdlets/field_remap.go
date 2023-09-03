@@ -75,6 +75,9 @@ func fieldRemapCmdRun(c *cobra.Command, args []string) {
 	fmt.Println("Enter new mapping")
 
 	tNumValidator := func(a interface{}) error {
+		if a.(string) == "-" {
+			return nil
+		}
 		if _, err := strconv.Atoi(a.(string)); err != nil {
 
 			return errors.New("team number must be a number")
@@ -101,6 +104,9 @@ func fieldRemapCmdRun(c *cobra.Command, args []string) {
 
 	nnMap := make(map[string]string, len(nMap))
 	for f, t := range nMap {
+		if t == "-" {
+			continue
+		}
 		nnMap[t.(string)] = f
 	}
 
