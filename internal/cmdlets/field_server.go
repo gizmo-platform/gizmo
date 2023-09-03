@@ -130,6 +130,8 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	m.StartControlPusher()
 	<-quit
 	appLogger.Info("Shutting down...")
+	m.StopControlPusher()
+	jsc.StopAutoRefresh()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := w.Shutdown(ctx); err != nil {
@@ -140,6 +142,4 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Error during shutdown", "error", err)
 		os.Exit(2)
 	}
-	m.StopControlPusher()
-	jsc.StopAutoRefresh()
 }
