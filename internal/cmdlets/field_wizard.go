@@ -61,8 +61,10 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 		ServerIP         string
 		FieldCount       int
 		AllGamepadsLocal bool
-		LocalGamepads    []string
+		Quads            []string
+		LocalGamepads    map[string]struct{}
 	}{}
+	cfg.LocalGamepads = make(map[string]struct{})
 
 	if err := survey.Ask(qInitial, &cfg); err != nil {
 		fmt.Println(err.Error())
@@ -71,20 +73,22 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 	cfg.FieldCount++
 	for i := 0; i < cfg.FieldCount; i++ {
 		for _, c := range []string{"red", "blue", "green", "yellow"} {
-			cfg.LocalGamepads = append(cfg.LocalGamepads, fmt.Sprintf("field%d:%s", i+1, c))
+			cfg.Quads = append(cfg.Quads, fmt.Sprintf("field%d:%s", i+1, c))
 		}
 	}
 	if !cfg.AllGamepadsLocal {
 		qLocalGamepads := &survey.MultiSelect{
 			Message: "Select all local gamepads",
-			Options: cfg.LocalGamepads,
+			Options: cfg.Quads,
 		}
 		gsScratch := []string{}
 		if err := survey.AskOne(qLocalGamepads, &gsScratch); err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		cfg.LocalGamepads = gsScratch
+		for _, q := range gsScratch {
+			cfg.LocalGamepads[q] = struct{}{}
+		}
 	}
 
 	fmt.Println("Your event is configured as follows")
@@ -93,7 +97,7 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 	if !cfg.AllGamepadsLocal {
 		fmt.Println("You are making use of remote gamepads")
 		fmt.Println("The following gamepads are directly attached system")
-		for _, g := range cfg.LocalGamepads {
+		for g := range cfg.LocalGamepads {
 			fmt.Printf("\t%s\n", g)
 		}
 	} else {
@@ -110,9 +114,10 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 	}
 
 	viper.Set("server.address", cfg.ServerIP)
-	quads := make([]quad, len(cfg.LocalGamepads))
-	for id, quadName := range cfg.LocalGamepads {
-		quads[id] = quad{Name: quadName, Gamepad: id}
+	quads := make([]quad, len(cfg.Quads))
+	for id, quadName := range cfg.Quads {
+		_, local := cfg.LocalGamepads[quadName]
+		quads[id] = quad{Name: quadName, Gamepad: id, Local: local}
 	}
 	viper.Set("quadrants", quads)
 	viper.SetConfigType("yaml")
