@@ -15,6 +15,7 @@ import (
 	"github.com/the-maldridge/bestfield/internal/stats"
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 	"github.com/the-maldridge/bestfield/pkg/http"
+	"github.com/the-maldridge/bestfield/pkg/mqttpusher"
 	"github.com/the-maldridge/bestfield/pkg/mqttserver"
 	"github.com/the-maldridge/bestfield/pkg/tlm/shim"
 )
@@ -77,16 +78,10 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		jsc.BindController(q.Name, q.Gamepad)
 		quadStr[i] = q.Name
 	}
-	jsc.BeginAutoRefresh(50)
 
 	tlm := shim.TLM{Mapping: make(map[int]string)}
 
-	m, err := mqttserver.NewServer(
-		mqttserver.WithLogger(appLogger),
-		mqttserver.WithJSController(&jsc),
-		mqttserver.WithTeamLocationMapper(&tlm),
-	)
-
+	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger))
 	if err != nil {
 		appLogger.Error("Error during mqtt initialization", "error", err)
 		os.Exit(1)
@@ -122,15 +117,29 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		}
 	}()
 
+	p, err := mqttpusher.New(
+		mqttpusher.WithLogger(appLogger),
+		mqttpusher.WithJSController(&jsc),
+		mqttpusher.WithTeamLocationMapper(&tlm),
+		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
+	)
+	if err != nil {
+		appLogger.Error("Error during mqtt pusher initialization", "error", err)
+		quit <- syscall.SIGINT
+	}
+
 	if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics); err != nil {
 		appLogger.Error("Error initializing", "error", err)
 		quit <- syscall.SIGINT
 	}
 
-	m.StartControlPusher()
+	jsc.BeginAutoRefresh(50)
+	p.StartLocationPusher()
+	p.StartControlPusher()
+
 	<-quit
 	appLogger.Info("Shutting down...")
-	m.StopControlPusher()
+	p.Stop()
 	jsc.StopAutoRefresh()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
