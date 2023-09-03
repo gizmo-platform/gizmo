@@ -9,7 +9,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type StatsReport struct {
+// Report contains the information that becomes part of the statistics
+// data used by the prometheus exporter.
+type Report struct {
 	VBat              int32
 	WatchdogRemaining int32
 	WatchdogOK        bool
@@ -21,7 +23,10 @@ type StatsReport struct {
 	PwrMainB          bool
 }
 
-func MqttListen(connect string, metrics *metrics) error {
+// MqttListen forms a local client on the broker which then handles
+// the conversion from MQTT stats messages to updating the metric
+// registries for prometheus data.
+func MqttListen(connect string, metrics *Metrics) error {
 	opts := mqtt.NewClientOptions().
 		AddBroker(connect).
 		SetAutoReconnect(true).
@@ -38,7 +43,7 @@ func MqttListen(connect string, metrics *metrics) error {
 	callback := func(client mqtt.Client, message mqtt.Message) {
 		teamNum := strings.Split(message.Topic(), "/")[1]
 		metrics.l.Trace("Called back", "team", teamNum)
-		var stats StatsReport
+		var stats Report
 		json.Unmarshal(message.Payload(), &stats)
 		metrics.rssi.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
 		metrics.vbat.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.VBat))

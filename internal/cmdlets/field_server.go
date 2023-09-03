@@ -61,7 +61,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	prometheusRegistry, prometheusMetrics := stats.NewStatsListener(appLogger)
+	prometheusRegistry, prometheusMetrics := stats.NewListener(appLogger)
 	appLogger.Debug("Stats listeners created")
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))

@@ -5,7 +5,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type metrics struct {
+// Metrics is a container for all prometheus metrics that are
+// happening on this instance.
+type Metrics struct {
 	l hclog.Logger
 
 	rssi              *prometheus.GaugeVec
@@ -19,9 +21,11 @@ type metrics struct {
 	watchdogRemaining *prometheus.GaugeVec
 }
 
-func NewStatsListener(p hclog.Logger) (*prometheus.Registry, *metrics) {
+// NewListener hands back a complete stats listener for external
+// consumption.
+func NewListener(p hclog.Logger) (*prometheus.Registry, *Metrics) {
 	reg := prometheus.NewRegistry()
-	m := new(metrics)
+	m := new(Metrics)
 	m.l = p.Named("stats")
 	m.rssi = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "BEST",
