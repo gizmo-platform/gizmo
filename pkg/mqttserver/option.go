@@ -1,4 +1,4 @@
-package mqtt
+package mqttserver
 
 import (
 	"github.com/hashicorp/go-hclog"

@@ -15,7 +15,7 @@ import (
 	"github.com/the-maldridge/bestfield/internal/stats"
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 	"github.com/the-maldridge/bestfield/pkg/http"
-	"github.com/the-maldridge/bestfield/pkg/mqtt"
+	"github.com/the-maldridge/bestfield/pkg/mqttserver"
 	"github.com/the-maldridge/bestfield/pkg/tlm/shim"
 )
 
@@ -81,10 +81,10 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 
 	tlm := shim.TLM{Mapping: make(map[int]string)}
 
-	m, err := mqtt.NewServer(
-		mqtt.WithLogger(appLogger),
-		mqtt.WithJSController(&jsc),
-		mqtt.WithTeamLocationMapper(&tlm),
+	m, err := mqttserver.NewServer(
+		mqttserver.WithLogger(appLogger),
+		mqttserver.WithJSController(&jsc),
+		mqttserver.WithTeamLocationMapper(&tlm),
 	)
 
 	if err != nil {
