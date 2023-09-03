@@ -3,6 +3,7 @@ package cmdlets
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/hashicorp/go-sockaddr"
@@ -62,9 +63,9 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 		FieldCount       int
 		AllGamepadsLocal bool
 		Quads            []string
-		LocalGamepads    map[string]struct{}
+		GamepadPushers   map[string]string
 	}{}
-	cfg.LocalGamepads = make(map[string]struct{})
+	cfg.GamepadPushers = make(map[string]string)
 
 	if err := survey.Ask(qInitial, &cfg); err != nil {
 		fmt.Println(err.Error())
@@ -77,6 +78,14 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 		}
 	}
 	if !cfg.AllGamepadsLocal {
+		// Setup a set of quads that need to be assigned,
+		// using a map so we can delete() out of it as they
+		// are assigned.
+		quadScratch := make(map[string]struct{})
+		for _, q := range cfg.Quads {
+			quadScratch[q] = struct{}{}
+		}
+
 		qLocalGamepads := &survey.MultiSelect{
 			Message: "Select all local gamepads",
 			Options: cfg.Quads,
@@ -87,7 +96,41 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 			return
 		}
 		for _, q := range gsScratch {
-			cfg.LocalGamepads[q] = struct{}{}
+			cfg.GamepadPushers[q] = "self"
+			delete(quadScratch, q)
+		}
+
+		for len(quadScratch) > 0 {
+			qPusherName := &survey.Input{
+				Message: "Name of remote pusher",
+			}
+			pusherName := ""
+			if err := survey.AskOne(qPusherName, &pusherName); err != nil {
+				fmt.Println(err.Error)
+				return
+			}
+
+			pusherScratch := []string{}
+			qPusherGamepads := &survey.MultiSelect{
+				Message: "Assign gamepads to " + pusherName,
+				Options: func() []string {
+					qs := []string{}
+					for q := range quadScratch {
+						qs = append(qs, q)
+					}
+					sort.Strings(qs)
+					return qs
+				}(),
+			}
+			if err := survey.AskOne(qPusherGamepads, &pusherScratch); err != nil {
+				fmt.Println(err.Error)
+				return
+			}
+
+			for _, q := range pusherScratch {
+				cfg.GamepadPushers[q] = pusherName
+				delete(quadScratch, q)
+			}
 		}
 	}
 
@@ -97,8 +140,32 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 	if !cfg.AllGamepadsLocal {
 		fmt.Println("You are making use of remote gamepads")
 		fmt.Println("The following gamepads are directly attached system")
-		for g := range cfg.LocalGamepads {
+		lScratch := []string{}
+		for g, p := range cfg.GamepadPushers {
+			if p == "self" {
+				lScratch = append(lScratch, g)
+			}
+		}
+
+		sort.Strings(lScratch)
+		for _, g := range lScratch {
 			fmt.Printf("\t%s\n", g)
+		}
+
+		rpusherTmp := make(map[string][]string)
+		for q, p := range cfg.GamepadPushers {
+			rpusherTmp[p] = append(rpusherTmp[p], q)
+		}
+		for pusher, quads := range rpusherTmp {
+			if pusher == "self" {
+				continue
+			}
+			fmt.Println()
+			fmt.Printf("The following gamepads are attached to remote pusher '%s'\n", pusher)
+			sort.Strings(quads)
+			for _, quad := range quads {
+				fmt.Printf("\t%s\n", quad)
+			}
 		}
 	} else {
 		fmt.Println("All gamepads are connected directly")
@@ -115,9 +182,11 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 
 	viper.Set("server.address", cfg.ServerIP)
 	quads := make([]quad, len(cfg.Quads))
+	gIndex := make(map[string]int)
 	for id, quadName := range cfg.Quads {
-		_, local := cfg.LocalGamepads[quadName]
-		quads[id] = quad{Name: quadName, Gamepad: id, Local: local}
+		pusher := cfg.GamepadPushers[quadName]
+		quads[id] = quad{Name: quadName, Gamepad: gIndex[pusher], Pusher: pusher}
+		gIndex[pusher]++
 	}
 	viper.Set("quadrants", quads)
 	viper.SetConfigType("yaml")

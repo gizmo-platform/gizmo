@@ -35,7 +35,7 @@ configuration file!`
 type quad struct {
 	Name    string
 	Gamepad int
-	Local   bool
+	Pusher  string
 }
 
 func init() {
@@ -79,7 +79,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 
 	quadStr := make([]string, len(quads))
 	for i, q := range quads {
-		if !q.Local {
+		if q.Pusher != "self" {
 			continue
 		}
 		jsc.BindController(q.Name, q.Gamepad)

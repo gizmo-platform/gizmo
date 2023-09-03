@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/spf13/viper"
 
 	"github.com/the-maldridge/bestfield/pkg/gamepad"
 )
@@ -74,6 +76,7 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.r.Post("/admin/map/immediate", x.remapTeams)
 	x.r.Get("/admin/map/current", x.currentTeamMap)
 	x.r.Post("/admin/js/bind", x.bindJoystick)
+	x.r.Get("/admin/cfg/viper", x.dumpViper)
 
 	return x, nil
 }
@@ -104,4 +107,8 @@ func (s *Server) teamAndFIDFromRequest(r *http.Request) (int, string, error) {
 		return -1, "", err
 	}
 	return team, fid, nil
+}
+
+func (s *Server) dumpViper(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(viper.AllSettings())
 }
