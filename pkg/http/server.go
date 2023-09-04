@@ -92,6 +92,7 @@ func (s *Server) Serve(bind string) error {
 
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
+	s.l.Info("Stopping...")
 	return s.n.Shutdown(ctx)
 }
 

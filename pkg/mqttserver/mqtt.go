@@ -52,5 +52,6 @@ func (s *Server) Serve(bind string) error {
 
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown() error {
+	s.l.Info("Stopping...")
 	return s.s.Close()
 }

@@ -31,7 +31,7 @@ func MqttListen(connect string, metrics *Metrics) error {
 	opts := mqtt.NewClientOptions().
 		AddBroker(connect).
 		SetAutoReconnect(true).
-		SetClientID("self").
+		SetClientID("self-metrics").
 		SetConnectRetry(true).
 		SetConnectTimeout(time.Second).
 		SetConnectRetryInterval(time.Second)

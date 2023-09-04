@@ -5,8 +5,10 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
@@ -19,24 +21,17 @@ type JSController interface {
 	GetState(string) (*gamepad.Values, error)
 }
 
-// TeamLocationMapper looks at all teams trying to fetch a value and
-// tries to get them controller based on their current match and their
-// number.
-type TeamLocationMapper interface {
-	GetCurrentTeams() []int
-	GetFieldForTeam(int) (string, error)
-}
-
 // Pusher connects to the broker and pushes joystick data out to the
 // robots per the internal mapping.
 type Pusher struct {
 	l hclog.Logger
 	m mqtt.Client
 
-	addr string
-
-	tlm TeamLocationMapper
 	jsc JSController
+
+	addr   string
+	teams  map[int]string
+	tMutex sync.RWMutex
 
 	stopControlFeed  chan struct{}
 	stopLocationFeed chan struct{}
@@ -47,6 +42,7 @@ func New(opts ...Option) (*Pusher, error) {
 	p := new(Pusher)
 	p.stopControlFeed = make(chan (struct{}))
 	p.stopLocationFeed = make(chan (struct{}))
+	p.teams = make(map[int]string)
 
 	for _, o := range opts {
 		if err := o(p); err != nil {
@@ -57,7 +53,7 @@ func New(opts ...Option) (*Pusher, error) {
 	copts := mqtt.NewClientOptions().
 		AddBroker(p.addr).
 		SetAutoReconnect(true).
-		SetClientID("self").
+		SetClientID("self-pusher").
 		SetConnectRetry(true).
 		SetConnectTimeout(time.Second).
 		SetConnectRetryInterval(time.Second)
@@ -74,12 +70,28 @@ func (p *Pusher) Connect() error {
 		return tok.Error()
 	}
 	p.l.Info("Connected to broker")
+
+	subFunc := func() error {
+		if tok := p.m.Subscribe("sys/tlm/locations", 1, p.updateLoc) ; tok.Wait() && tok.Error() != nil {
+			p.l.Warn("Error subscribing to topic", "error", tok.Error())
+			return tok.Error()
+		}
+		p.l.Info("Subscribed to topics")
+		return nil
+	}
+	if err := backoff.Retry(subFunc, backoff.NewExponentialBackOff()); err != nil {
+		p.l.Error("Permanent error encountered while subscribing", "error", err)
+		return err
+	}
+
 	return nil
 }
 
 func (p *Pusher) publishGamepadForTeam(team int) {
-	fid, err := p.tlm.GetFieldForTeam(team)
-	if err != nil {
+	p.tMutex.RLock()
+	fid, ok := p.teams[team]
+	p.tMutex.RUnlock()
+	if !ok {
 		p.l.Warn("Trying to send gamepad state for an unmapped team!", "team", team)
 		return
 	}
@@ -103,9 +115,11 @@ func (p *Pusher) publishGamepadForTeam(team int) {
 }
 
 func (p *Pusher) publishLocationForTeam(team int) {
-	fid, err := p.tlm.GetFieldForTeam(team)
-	if err != nil {
-		p.l.Warn("Trying to send gamepad state for an unmapped team!", "team", team)
+	p.tMutex.RLock()
+	fid, ok := p.teams[team]
+	p.tMutex.RUnlock()
+	if !ok {
+		p.l.Warn("Trying to send location for an unmapped team!", "team", team)
 		return
 	}
 
@@ -131,6 +145,13 @@ func (p *Pusher) publishLocationForTeam(team int) {
 	}
 }
 
+func (p *Pusher) updateLoc(c mqtt.Client, message mqtt.Message) {
+	if err := json.Unmarshal(message.Payload(), &p.teams); err != nil {
+		p.l.Error("Error unmarshalling location data", "error", err)
+	}
+	p.l.Debug("Updated pusher location information", "location", p.teams)
+}
+
 // StartLocationPusher starts up a pusher that publishes location
 // information into the broker.
 func (p *Pusher) StartLocationPusher() {
@@ -143,9 +164,17 @@ func (p *Pusher) StartLocationPusher() {
 				locTicker.Stop()
 				return
 			case <-locTicker.C:
-				for _, t := range p.tlm.GetCurrentTeams() {
+				p.tMutex.RLock()
+				teams := []int{}
+				for t := range p.teams {
+					teams = append(teams, t)
+				}
+				p.tMutex.RUnlock()
+				for _, t := range teams {
+					p.l.Debug("Updating location for team", "team", t)
 					p.publishLocationForTeam(t)
 				}
+
 			}
 		}
 	}()
@@ -163,7 +192,13 @@ func (p *Pusher) StartControlPusher() {
 				ctrlTicker.Stop()
 				return
 			case <-ctrlTicker.C:
-				for _, t := range p.tlm.GetCurrentTeams() {
+				p.tMutex.RLock()
+				teams := []int{}
+				for t := range p.teams {
+					teams = append(teams, t)
+				}
+				p.tMutex.RUnlock()
+				for _, t := range teams {
 					p.publishGamepadForTeam(t)
 				}
 			}
@@ -174,6 +209,7 @@ func (p *Pusher) StartControlPusher() {
 // Stop closes down the workers that publish information into the mqtt
 // streams.
 func (p *Pusher) Stop() {
+	p.l.Info("Stopping...")
 	p.stopControlFeed <- struct{}{}
 	p.stopLocationFeed <- struct{}{}
 }

@@ -86,7 +86,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		quadStr[i] = q.Name
 	}
 
-	tlm := shim.TLM{Mapping: make(map[int]string)}
+	tlm := shim.New(shim.WithLogger(appLogger))
 
 	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger))
 	if err != nil {
@@ -97,7 +97,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	p, err := mqttpusher.New(
 		mqttpusher.WithLogger(appLogger),
 		mqttpusher.WithJSController(&jsc),
-		mqttpusher.WithTeamLocationMapper(&tlm),
 		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
 	)
 	if err != nil {
@@ -108,7 +107,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
-		http.WithTeamLocationMapper(&tlm),
+		http.WithTeamLocationMapper(tlm),
 		http.WithPrometheusRegistry(prometheusRegistry),
 		http.WithQuads(quadStr),
 	)
@@ -150,9 +149,11 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	}()
 
 	jsc.BeginAutoRefresh(50)
+	tlm.Start()
 
 	<-quit
 	appLogger.Info("Shutting down...")
+	tlm.Stop()
 	p.Stop()
 	jsc.StopAutoRefresh()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
