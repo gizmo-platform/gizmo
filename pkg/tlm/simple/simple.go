@@ -1,4 +1,4 @@
-package shim
+package simple
 
 import (
 	"encoding/json"

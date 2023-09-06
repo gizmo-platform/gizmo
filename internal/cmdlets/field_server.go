@@ -17,7 +17,7 @@ import (
 	"github.com/the-maldridge/bestfield/pkg/http"
 	"github.com/the-maldridge/bestfield/pkg/mqttpusher"
 	"github.com/the-maldridge/bestfield/pkg/mqttserver"
-	"github.com/the-maldridge/bestfield/pkg/tlm/shim"
+	"github.com/the-maldridge/bestfield/pkg/tlm/simple"
 )
 
 var (
@@ -86,7 +86,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		quadStr[i] = q.Name
 	}
 
-	tlm := shim.New(shim.WithLogger(appLogger))
+	tlm := simple.New(simple.WithLogger(appLogger))
 
 	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger))
 	if err != nil {

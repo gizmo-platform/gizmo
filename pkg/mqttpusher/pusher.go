@@ -146,6 +146,8 @@ func (p *Pusher) publishLocationForTeam(team int) {
 }
 
 func (p *Pusher) updateLoc(c mqtt.Client, message mqtt.Message) {
+	p.tMutex.Lock()
+	defer p.tMutex.Unlock()
 	if err := json.Unmarshal(message.Payload(), &p.teams); err != nil {
 		p.l.Error("Error unmarshalling location data", "error", err)
 	}

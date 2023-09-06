@@ -1,4 +1,4 @@
-package shim
+package simple
 
 import (
 	"github.com/hashicorp/go-hclog"
