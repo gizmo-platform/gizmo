@@ -12,12 +12,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/the-maldridge/bestfield/internal/stats"
-	"github.com/the-maldridge/bestfield/pkg/gamepad"
-	"github.com/the-maldridge/bestfield/pkg/http"
-	"github.com/the-maldridge/bestfield/pkg/mqttpusher"
-	"github.com/the-maldridge/bestfield/pkg/mqttserver"
-	"github.com/the-maldridge/bestfield/pkg/tlm/simple"
+	"github.com/bestrobotics/gizmo/internal/stats"
+	"github.com/bestrobotics/gizmo/pkg/gamepad"
+	"github.com/bestrobotics/gizmo/pkg/http"
+	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
+	"github.com/bestrobotics/gizmo/pkg/mqttserver"
+	"github.com/bestrobotics/gizmo/pkg/tlm/simple"
 )
 
 var (

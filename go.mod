@@ -1,4 +1,4 @@
-module github.com/the-maldridge/bestfield
+module github.com/bestrobotics/gizmo
 
 go 1.19
 

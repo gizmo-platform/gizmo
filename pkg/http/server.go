@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 
-	"github.com/the-maldridge/bestfield/pkg/gamepad"
+	"github.com/bestrobotics/gizmo/pkg/gamepad"
 )
 
 // JSController defines the interface that the control server expects

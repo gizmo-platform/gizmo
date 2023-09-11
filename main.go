@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/the-maldridge/bestfield/internal/cmdlets"
+	"github.com/bestrobotics/gizmo/internal/cmdlets"
 )
 
 func main() {
