@@ -132,6 +132,10 @@ func fieldWizardCmdRun(c *cobra.Command, args []string) {
 				delete(quadScratch, q)
 			}
 		}
+	} else {
+		for _, q := range cfg.Quads {
+			cfg.GamepadPushers[q] = "self"
+		}
 	}
 
 	fmt.Println("Your event is configured as follows")
