@@ -9,7 +9,7 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "best",
+		Use:   "gizmo",
 		Short: "Entrypoint for all BEST Robot commands",
 		Long:  rootCmdLongDocs,
 	}
