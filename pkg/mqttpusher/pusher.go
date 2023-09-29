@@ -72,7 +72,7 @@ func (p *Pusher) Connect() error {
 	p.l.Info("Connected to broker")
 
 	subFunc := func() error {
-		if tok := p.m.Subscribe("sys/tlm/locations", 1, p.updateLoc) ; tok.Wait() && tok.Error() != nil {
+		if tok := p.m.Subscribe("sys/tlm/locations", 1, p.updateLoc); tok.Wait() && tok.Error() != nil {
 			p.l.Warn("Error subscribing to topic", "error", tok.Error())
 			return tok.Error()
 		}
