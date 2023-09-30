@@ -2,3 +2,6 @@ config.yml
 
 dist/
 gsscfg.json
+pkg/firmware/src
+gizmo
+*.uf2

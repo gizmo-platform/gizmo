@@ -8,6 +8,8 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/hashicorp/go-sockaddr"
 	"github.com/spf13/cobra"
+
+	"github.com/bestrobotics/gizmo/pkg/firmware"
 )
 
 var (
@@ -53,14 +55,16 @@ func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 				Message: "Network PSK (Input will be obscured)",
 			},
 		},
+		{
+			Name:     "Team",
+			Validate: survey.Required,
+			Prompt: &survey.Input{
+				Message: "Team Number",
+			},
+		},
 	}
 
-	cfg := struct {
-		ServerIP string
-		NetSSID  string
-		NetPSK   string
-	}{}
-
+	cfg := firmware.Config{}
 	if err := survey.Ask(qInitial, &cfg); err != nil {
 		fmt.Println(err.Error())
 		return
