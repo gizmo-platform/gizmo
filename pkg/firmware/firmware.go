@@ -72,6 +72,7 @@ func Build(p string) error {
 	args := []string{
 		"compile",
 		"--fqbn", "rp2040:rp2040:rpipicow",
+		"--profile", "gizmo",
 		"--output-dir", ".",
 		".",
 	}
