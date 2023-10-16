@@ -167,6 +167,11 @@ func (j *JSController) UpdateState(fieldID string) error {
 		return err
 	}
 
+	if js.AxisCount() != 8 || js.ButtonCount() != 11 {
+		j.l.Error("Wrong joystick counts!", "axis", js.AxisCount(), " buttons", js.ButtonCount())
+		return errors.New("bad joystick read")
+	}
+
 	jvals := Values{
 		AxisLX: mapRange(jinfo.AxisData[0], -32768, 32768, 0, 255),
 		AxisLY: mapRange(jinfo.AxisData[1], -32768, 32768, 0, 255),
