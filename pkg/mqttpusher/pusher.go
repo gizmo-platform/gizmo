@@ -35,6 +35,7 @@ type Pusher struct {
 
 	stopControlFeed  chan struct{}
 	stopLocationFeed chan struct{}
+	swg              *sync.WaitGroup
 }
 
 // New configures and returns a connected pusher.
@@ -83,6 +84,7 @@ func (p *Pusher) Connect() error {
 		p.l.Error("Permanent error encountered while subscribing", "error", err)
 		return err
 	}
+	p.swg.Done()
 
 	return nil
 }

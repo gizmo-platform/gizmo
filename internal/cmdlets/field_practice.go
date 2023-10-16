@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -49,6 +50,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 		Level: hclog.LevelFromString(ll),
 	})
 	appLogger.Info("Log level", "level", appLogger.GetLevel())
+	wg := new(sync.WaitGroup)
 
 	prometheusRegistry, prometheusMetrics := stats.NewListener(appLogger)
 	appLogger.Debug("Stats listeners created")
@@ -60,9 +62,12 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	tlm := simple.New(simple.WithLogger(appLogger))
+	tlm := simple.New(simple.WithLogger(appLogger), simple.WithStartupWG(wg))
 
-	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger))
+	m, err := mqttserver.NewServer(
+		mqttserver.WithLogger(appLogger),
+		mqttserver.WithStartupWG(wg),
+	)
 	if err != nil {
 		appLogger.Error("Error during mqtt initialization", "error", err)
 		os.Exit(1)
@@ -72,6 +77,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 		mqttpusher.WithLogger(appLogger),
 		mqttpusher.WithJSController(&jsc),
 		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
+		mqttpusher.WithStartupWG(wg),
 	)
 	if err != nil {
 		appLogger.Error("Error during mqtt pusher initialization", "error", err)
@@ -84,6 +90,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 		http.WithTeamLocationMapper(tlm),
 		http.WithPrometheusRegistry(prometheusRegistry),
 		http.WithQuads([]string{"field1:practice"}),
+		http.WithStartupWG(wg),
 	)
 
 	go func() {
@@ -111,7 +118,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	}()
 
 	go func() {
-		if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics); err != nil {
+		if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics, wg); err != nil {
 			appLogger.Error("Error initializing", "error", err)
 			quit <- syscall.SIGINT
 		}
@@ -126,6 +133,9 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	tlm.InsertOnDemandMap(map[int]string{tNum: "field1:practice"})
 	jsc.BeginAutoRefresh(50)
 	tlm.Start()
+
+	wg.Wait()
+	appLogger.Info("Startup Complete!")
 
 	<-quit
 	appLogger.Info("Shutting down...")

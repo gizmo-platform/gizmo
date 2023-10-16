@@ -5,6 +5,7 @@ import (
 	nhttp "net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -59,6 +60,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		Level: hclog.LevelFromString(ll),
 	})
 	appLogger.Info("Log level", "level", appLogger.GetLevel())
+	wg := new(sync.WaitGroup)
 
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -86,9 +88,9 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		quadStr[i] = q.Name
 	}
 
-	tlm := simple.New(simple.WithLogger(appLogger))
+	tlm := simple.New(simple.WithLogger(appLogger), simple.WithStartupWG(wg))
 
-	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger))
+	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger), mqttserver.WithStartupWG(wg))
 	if err != nil {
 		appLogger.Error("Error during mqtt initialization", "error", err)
 		os.Exit(1)
@@ -98,6 +100,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		mqttpusher.WithLogger(appLogger),
 		mqttpusher.WithJSController(&jsc),
 		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
+		mqttpusher.WithStartupWG(wg),
 	)
 	if err != nil {
 		appLogger.Error("Error during mqtt pusher initialization", "error", err)
@@ -110,6 +113,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		http.WithTeamLocationMapper(tlm),
 		http.WithPrometheusRegistry(prometheusRegistry),
 		http.WithQuads(quadStr),
+		http.WithStartupWG(wg),
 	)
 
 	if err != nil {
@@ -142,7 +146,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	}()
 
 	go func() {
-		if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics); err != nil {
+		if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics, wg); err != nil {
 			appLogger.Error("Error initializing", "error", err)
 			quit <- syscall.SIGINT
 		}
@@ -150,6 +154,9 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 
 	jsc.BeginAutoRefresh(50)
 	tlm.Start()
+
+	wg.Wait()
+	appLogger.Info("Startup Complete!")
 
 	<-quit
 	appLogger.Info("Shutting down...")

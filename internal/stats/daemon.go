@@ -3,6 +3,7 @@ package stats
 import (
 	"encoding/json"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -27,7 +28,8 @@ type Report struct {
 // MqttListen forms a local client on the broker which then handles
 // the conversion from MQTT stats messages to updating the metric
 // registries for prometheus data.
-func MqttListen(connect string, metrics *Metrics) error {
+func MqttListen(connect string, metrics *Metrics, wg *sync.WaitGroup) error {
+	wg.Add(1)
 	opts := mqtt.NewClientOptions().
 		AddBroker(connect).
 		SetAutoReconnect(true).
@@ -93,5 +95,6 @@ func MqttListen(connect string, metrics *Metrics) error {
 		return err
 	}
 	metrics.l.Info("Subscribed to topics")
+	wg.Done()
 	return nil
 }

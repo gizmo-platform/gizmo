@@ -1,6 +1,8 @@
 package mqttpusher
 
 import (
+	"sync"
+
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -27,6 +29,17 @@ func WithJSController(jsc JSController) Option {
 func WithMQTTServer(addr string) Option {
 	return func(p *Pusher) error {
 		p.addr = addr
+		return nil
+	}
+}
+
+// WithStartupWG allows a waitgroup to be passed in so the server can
+// notify when its finished startup tasks with a nice message on the
+// console.
+func WithStartupWG(w *sync.WaitGroup) Option {
+	return func(p *Pusher) error {
+		w.Add(1)
+		p.swg = w
 		return nil
 	}
 }

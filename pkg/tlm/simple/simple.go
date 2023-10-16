@@ -19,6 +19,8 @@ type TLM struct {
 	mutex    sync.RWMutex
 	mqttAddr string
 
+	swg *sync.WaitGroup
+
 	stop chan struct{}
 }
 
@@ -120,6 +122,7 @@ func (tlm *TLM) Start() error {
 			}
 		}
 	}()
+	tlm.swg.Done()
 	return nil
 }
 

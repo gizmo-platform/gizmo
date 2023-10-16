@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -43,6 +44,7 @@ type Server struct {
 	l   hclog.Logger
 	tlm TeamLocationMapper
 	reg *prometheus.Registry
+	swg *sync.WaitGroup
 
 	jsc JSController
 
@@ -87,6 +89,7 @@ func (s *Server) Serve(bind string) error {
 	s.l.Info("HTTP is starting")
 	s.n.Addr = bind
 	s.n.Handler = s.r
+	s.swg.Done()
 	return s.n.ListenAndServe()
 }
 

@@ -1,6 +1,8 @@
 package mqttserver
 
 import (
+	"sync"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/mochi-co/mqtt/v2"
 	"github.com/mochi-co/mqtt/v2/hooks/auth"
@@ -16,6 +18,8 @@ func init() {
 type Server struct {
 	l hclog.Logger
 	s *mqtt.Server
+
+	swg *sync.WaitGroup
 
 	stopFeeds chan struct{}
 }
@@ -47,6 +51,7 @@ func (s *Server) Serve(bind string) error {
 		return err
 	}
 
+	s.swg.Done()
 	return s.s.Serve()
 }
 

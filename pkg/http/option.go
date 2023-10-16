@@ -1,6 +1,8 @@
 package http
 
 import (
+	"sync"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -47,6 +49,17 @@ func WithTeamLocationMapper(t TeamLocationMapper) Option {
 func WithQuads(q []string) Option {
 	return func(s *Server) error {
 		s.quads = q
+		return nil
+	}
+}
+
+// WithStartupWG allows a waitgroup to be passed in so the server can
+// notify when its finished with startup tasks to allow a nice message
+// to be printed to the console.
+func WithStartupWG(wg *sync.WaitGroup) Option {
+	return func(s *Server) error {
+		wg.Add(1)
+		s.swg = wg
 		return nil
 	}
 }
