@@ -23,7 +23,6 @@ import (
 type JSController interface {
 	GetState(string) (*gamepad.Values, error)
 	UpdateState(string) error
-	FindController() (int, error)
 	BindController(string, int) error
 }
 
@@ -77,7 +76,6 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.r.Get("/admin/cfg/quads", x.configuredQuads)
 	x.r.Post("/admin/map/immediate", x.remapTeams)
 	x.r.Get("/admin/map/current", x.currentTeamMap)
-	x.r.Post("/admin/js/bind", x.bindJoystick)
 	x.r.Get("/admin/cfg/viper", x.dumpViper)
 
 	return x, nil

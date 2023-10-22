@@ -26,13 +26,10 @@ type Values struct {
 	AxisLY           int
 	AxisRX           int
 	AxisRY           int
-	AxisLT           int
-	AxisRT           int
 	AxisDX           int
 	AxisDY           int
 	ButtonBack       bool
 	ButtonStart      bool
-	ButtonLogo       bool
 	ButtonLeftStick  bool
 	ButtonRightStick bool
 	ButtonX          bool
@@ -41,6 +38,8 @@ type Values struct {
 	ButtonB          bool
 	ButtonLShoulder  bool
 	ButtonRShoulder  bool
+	ButtonLT         bool
+	ButtonRT         bool
 }
 
 // JSController handles the action of actually fetching data from the
@@ -76,50 +75,6 @@ func NewJSController(opts ...Option) JSController {
 	return jsc
 }
 
-// FindController finds the controller that currently has ButtonLogo
-// held down.
-func (j *JSController) FindController() (int, error) {
-	defer func() {
-		j.sMutex.Lock()
-		j.cMutex.Lock()
-		j.fMutex.Lock()
-		delete(j.fields, bindTmpField)
-		delete(j.controllers, bindTmpField)
-		delete(j.state, bindTmpField)
-		j.fMutex.Unlock()
-		j.cMutex.Unlock()
-		j.sMutex.Unlock()
-	}()
-
-	for jsid := 0; jsid < 16; jsid++ {
-		if err := j.BindController(bindTmpField, jsid); err != nil {
-			j.l.Debug("Error binding controller during discovery", "error", err)
-			continue
-		}
-
-		for i := 0; i < 1000; i++ {
-			if err := j.UpdateState(bindTmpField); err != nil {
-				j.l.Warn("Error updating state during discovery", "error", err)
-			}
-
-			vals, err := j.GetState(bindTmpField)
-			if err != nil {
-				j.l.Warn("Error polling controller during discovery", "error", err)
-			}
-
-			j.l.Debug("Logobutton", "v", vals.ButtonLogo)
-
-			if vals.ButtonLogo {
-				j.l.Debug("Joystick has logobutton set", "id", jsid)
-				return jsid, nil
-			}
-		}
-
-	}
-
-	return -1, errors.New("No joystick found")
-}
-
 // BindController attaches a controller to a particular name.
 func (j *JSController) BindController(name string, id int) error {
 	j.cMutex.Lock()
@@ -129,6 +84,11 @@ func (j *JSController) BindController(name string, id int) error {
 		return jserr
 	}
 	j.controllers[name] = js
+
+	if js.AxisCount() != 6 || js.ButtonCount() != 12 {
+		j.l.Error("Wrong joystick counts!", "axis", js.AxisCount(), " buttons", js.ButtonCount())
+		return errors.New("bad joystick config")
+	}
 
 	j.fMutex.Lock()
 	j.fields[name] = id
@@ -167,35 +127,28 @@ func (j *JSController) UpdateState(fieldID string) error {
 		return err
 	}
 
-	if js.AxisCount() != 8 || js.ButtonCount() != 11 {
-		j.l.Error("Wrong joystick counts!", "axis", js.AxisCount(), " buttons", js.ButtonCount())
-		return errors.New("bad joystick read")
-	}
-
 	jvals := Values{
 		AxisLX: mapRange(jinfo.AxisData[0], -32768, 32768, 0, 255),
 		AxisLY: mapRange(jinfo.AxisData[1], -32768, 32768, 0, 255),
 
-		AxisRX: mapRange(jinfo.AxisData[3], -32768, 32768, 0, 255),
-		AxisRY: mapRange(jinfo.AxisData[4], -32768, 32768, 0, 255),
+		AxisRX: mapRange(jinfo.AxisData[2], -32768, 32768, 0, 255),
+		AxisRY: mapRange(jinfo.AxisData[3], -32768, 32768, 0, 255),
 
-		AxisLT: mapRange(jinfo.AxisData[2], -32768, 32768, 0, 255),
-		AxisRT: mapRange(jinfo.AxisData[5], -32768, 32768, 0, 255),
+		AxisDX: mapRange(jinfo.AxisData[4], -32768, 32768, 0, 255),
+		AxisDY: mapRange(jinfo.AxisData[5], -32768, 32768, 0, 255),
 
-		AxisDX: mapRange(jinfo.AxisData[6], -32768, 32768, 0, 255),
-		AxisDY: mapRange(jinfo.AxisData[7], -32768, 32768, 0, 255),
-
-		ButtonBack:       (jinfo.Buttons & (1 << uint32(6))) != 0,
-		ButtonStart:      (jinfo.Buttons & (1 << uint32(7))) != 0,
-		ButtonLogo:       (jinfo.Buttons & (1 << uint32(8))) != 0,
-		ButtonLeftStick:  (jinfo.Buttons & (1 << uint32(9))) != 0,
-		ButtonRightStick: (jinfo.Buttons & (1 << uint32(10))) != 0,
-		ButtonX:          (jinfo.Buttons & (1 << uint32(2))) != 0,
+		ButtonBack:       (jinfo.Buttons & (1 << uint32(8))) != 0,
+		ButtonStart:      (jinfo.Buttons & (1 << uint32(9))) != 0,
+		ButtonLeftStick:  (jinfo.Buttons & (1 << uint32(10))) != 0,
+		ButtonRightStick: (jinfo.Buttons & (1 << uint32(11))) != 0,
+		ButtonX:          (jinfo.Buttons & (1 << uint32(0))) != 0,
 		ButtonY:          (jinfo.Buttons & (1 << uint32(3))) != 0,
-		ButtonA:          (jinfo.Buttons & (1 << uint32(0))) != 0,
-		ButtonB:          (jinfo.Buttons & (1 << uint32(1))) != 0,
+		ButtonA:          (jinfo.Buttons & (1 << uint32(1))) != 0,
+		ButtonB:          (jinfo.Buttons & (1 << uint32(2))) != 0,
 		ButtonLShoulder:  (jinfo.Buttons & (1 << uint32(4))) != 0,
 		ButtonRShoulder:  (jinfo.Buttons & (1 << uint32(5))) != 0,
+		ButtonLT:         (jinfo.Buttons & (1 << uint32(6))) != 0,
+		ButtonRT:         (jinfo.Buttons & (1 << uint32(7))) != 0,
 	}
 
 	j.sMutex.Lock()
