@@ -51,36 +51,13 @@ func MqttListen(connect string, metrics *Metrics, wg *sync.WaitGroup) error {
 		metrics.rssi.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
 		metrics.vbat.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.VBat))
 		metrics.watchdogRemaining.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining))
-		if stats.PwrBoard {
-			metrics.powerBoard.With(prometheus.Labels{"team": teamNum}).Set(1)
-		} else {
-			metrics.powerBoard.With(prometheus.Labels{"team": teamNum}).Set(0)
-		}
-		if stats.PwrPico {
-			metrics.powerPico.With(prometheus.Labels{"team": teamNum}).Set(1)
-		} else {
-			metrics.powerPico.With(prometheus.Labels{"team": teamNum}).Set(0)
-		}
-		if stats.PwrGPIO {
-			metrics.powerGPIO.With(prometheus.Labels{"team": teamNum}).Set(1)
-		} else {
-			metrics.powerGPIO.With(prometheus.Labels{"team": teamNum}).Set(0)
-		}
-		if stats.PwrMainA {
-			metrics.powerMainA.With(prometheus.Labels{"team": teamNum}).Set(1)
-		} else {
-			metrics.powerMainA.With(prometheus.Labels{"team": teamNum}).Set(0)
-		}
-		if stats.PwrMainB {
-			metrics.powerMainB.With(prometheus.Labels{"team": teamNum}).Set(1)
-		} else {
-			metrics.powerMainB.With(prometheus.Labels{"team": teamNum}).Set(0)
-		}
-		if stats.WatchdogOK {
-			metrics.watchdogOK.With(prometheus.Labels{"team": teamNum}).Set(1)
-		} else {
-			metrics.watchdogOK.With(prometheus.Labels{"team": teamNum}).Set(0)
-		}
+
+		metrics.powerBoard.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrBoard))
+		metrics.powerPico.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPico))
+		metrics.powerGPIO.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrGPIO))
+		metrics.powerMainA.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainA))
+		metrics.powerMainB.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainB))
+		metrics.watchdogOK.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.WatchdogOK))
 	}
 
 	subFunc := func() error {
@@ -97,4 +74,11 @@ func MqttListen(connect string, metrics *Metrics, wg *sync.WaitGroup) error {
 	metrics.l.Info("Subscribed to topics")
 	wg.Done()
 	return nil
+}
+
+func fCast(b bool) float64 {
+	if b {
+		return 1
+	}
+	return 0
 }
