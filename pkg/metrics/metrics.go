@@ -15,9 +15,10 @@ import (
 // New returns an initialized instance of the metrics system.
 func New(opts ...Option) *Metrics {
 	x := &Metrics{
-		l:      hclog.NewNullLogger(),
-		r:      prometheus.NewRegistry(),
-		broker: "mqtt://127.0.0.1:1883",
+		l:               hclog.NewNullLogger(),
+		r:               prometheus.NewRegistry(),
+		broker:          "mqtt://127.0.0.1:1883",
+		stopStatFlusher: make(chan (struct{})),
 
 		robotRSSI: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "best",
@@ -172,6 +173,30 @@ func (m *Metrics) MQTTInit(wg *sync.WaitGroup) error {
 	wg.Done()
 	return nil
 
+}
+
+// StartFlusher clears the stats for robots every 10 seconds
+// ensuring that robots don't stick around as zombies in the system if
+// they've disconnected.
+func (m *Metrics) StartFlusher() {
+	flushTicker := time.NewTicker(time.Second * 10)
+
+	go func() {
+		for {
+			select {
+			case <-m.stopStatFlusher:
+				flushTicker.Stop()
+				return
+			case <-flushTicker.C:
+				m.ResetRobotMetrics()
+			}
+		}
+	}()
+}
+
+// Shutdown signals the flusher that we wish to cease operations.
+func (m *Metrics) Shutdown() {
+	m.stopStatFlusher <- struct{}{}
 }
 
 func fCast(b bool) float64 {

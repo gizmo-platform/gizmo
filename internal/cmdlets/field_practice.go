@@ -13,9 +13,9 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
-	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/gamepad"
 	"github.com/bestrobotics/gizmo/pkg/http"
+	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
 	"github.com/bestrobotics/gizmo/pkg/mqttserver"
 	"github.com/bestrobotics/gizmo/pkg/tlm/simple"
@@ -133,6 +133,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	tlm.InsertOnDemandMap(map[int]string{tNum: "field1:practice"})
 	jsc.BeginAutoRefresh(50)
 	tlm.Start()
+	stats.StartFlusher()
 
 	wg.Wait()
 	appLogger.Info("Startup Complete!")
@@ -142,6 +143,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	tlm.Stop()
 	p.Stop()
 	jsc.StopAutoRefresh()
+	stats.Shutdown()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := w.Shutdown(ctx); err != nil {

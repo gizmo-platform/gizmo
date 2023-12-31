@@ -13,9 +13,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/gamepad"
 	"github.com/bestrobotics/gizmo/pkg/http"
+	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
 	"github.com/bestrobotics/gizmo/pkg/mqttserver"
 	"github.com/bestrobotics/gizmo/pkg/tlm/simple"
@@ -67,7 +67,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Could not read config.yml", "error", err)
 		os.Exit(1)
 	}
-
 
 	stats := metrics.New(metrics.WithLogger(appLogger))
 	appLogger.Debug("Stats listeners created")
@@ -155,6 +154,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 
 	jsc.BeginAutoRefresh(50)
 	tlm.Start()
+	stats.StartFlusher()
 
 	wg.Wait()
 	appLogger.Info("Startup Complete!")
@@ -164,6 +164,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	tlm.Stop()
 	p.Stop()
 	jsc.StopAutoRefresh()
+	stats.Shutdown()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := w.Shutdown(ctx); err != nil {

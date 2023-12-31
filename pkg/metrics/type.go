@@ -21,6 +21,8 @@ type Metrics struct {
 	robotPowerBusB        *prometheus.GaugeVec
 	robotWatchdogOK       *prometheus.GaugeVec
 	robotWatchdogLifetime *prometheus.GaugeVec
+
+	stopStatFlusher chan struct{}
 }
 
 type report struct {
