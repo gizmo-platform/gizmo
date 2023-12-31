@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/bestrobotics/gizmo/internal/stats"
+	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/gamepad"
 	"github.com/bestrobotics/gizmo/pkg/http"
 	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
@@ -68,7 +68,8 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	prometheusRegistry, prometheusMetrics := stats.NewListener(appLogger)
+
+	stats := metrics.New(metrics.WithLogger(appLogger))
 	appLogger.Debug("Stats listeners created")
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
@@ -111,7 +112,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
 		http.WithTeamLocationMapper(tlm),
-		http.WithPrometheusRegistry(prometheusRegistry),
+		http.WithPrometheusRegistry(stats.Registry()),
 		http.WithQuads(quadStr),
 		http.WithStartupWG(wg),
 	)
@@ -146,7 +147,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	}()
 
 	go func() {
-		if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics, wg); err != nil {
+		if err := stats.MQTTInit(wg); err != nil {
 			appLogger.Error("Error initializing", "error", err)
 			quit <- syscall.SIGINT
 		}

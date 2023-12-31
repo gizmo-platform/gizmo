@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
-	"github.com/bestrobotics/gizmo/internal/stats"
+	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/gamepad"
 	"github.com/bestrobotics/gizmo/pkg/http"
 	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
@@ -52,7 +52,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	appLogger.Info("Log level", "level", appLogger.GetLevel())
 	wg := new(sync.WaitGroup)
 
-	prometheusRegistry, prometheusMetrics := stats.NewListener(appLogger)
+	stats := metrics.New(metrics.WithLogger(appLogger))
 	appLogger.Debug("Stats listeners created")
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
@@ -88,7 +88,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 		http.WithLogger(appLogger),
 		http.WithJSController(&jsc),
 		http.WithTeamLocationMapper(tlm),
-		http.WithPrometheusRegistry(prometheusRegistry),
+		http.WithPrometheusRegistry(stats.Registry()),
 		http.WithQuads([]string{"field1:practice"}),
 		http.WithStartupWG(wg),
 	)
@@ -118,7 +118,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	}()
 
 	go func() {
-		if err := stats.MqttListen("mqtt://127.0.0.1:1883", prometheusMetrics, wg); err != nil {
+		if err := stats.MQTTInit(wg); err != nil {
 			appLogger.Error("Error initializing", "error", err)
 			quit <- syscall.SIGINT
 		}
