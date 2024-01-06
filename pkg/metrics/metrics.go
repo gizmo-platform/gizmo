@@ -158,8 +158,12 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 		m.l.Warn("Bad stats report", "team", teamNum, "error", err)
 	}
 
+	// Determined by experimental sampling with regression.
+	// R^2=0.9995
+	voltage := 0.008848 * float64(stats.VBat) - 0.30915
+
 	m.robotRSSI.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
-	m.robotVBat.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.VBat))
+	m.robotVBat.With(prometheus.Labels{"team": teamNum}).Set(voltage)
 	m.robotWatchdogLifetime.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining))
 
 	m.robotPowerBoard.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrBoard))
