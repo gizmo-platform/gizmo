@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"sync"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -23,10 +25,12 @@ type Metrics struct {
 	robotWatchdogOK       *prometheus.GaugeVec
 	robotWatchdogLifetime *prometheus.GaugeVec
 	robotControlFrameAge  *prometheus.GaugeVec
+	robotLastInteraction  *prometheus.GaugeVec
 
 	robotOnField *prometheus.GaugeVec
 
 	stopStatFlusher chan struct{}
+	lastSeen        *sync.Map
 }
 
 type report struct {
@@ -34,7 +38,7 @@ type report struct {
 	VBat              int32
 	WatchdogRemaining int32
 	WatchdogOK        bool
-	RSSI              uint8
+	RSSI              int32
 	WifiReconnects    int32
 	PwrBoard          bool
 	PwrPico           bool

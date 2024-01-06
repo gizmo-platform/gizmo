@@ -19,6 +19,7 @@ func New(opts ...Option) *Metrics {
 		r:               prometheus.NewRegistry(),
 		broker:          "mqtt://127.0.0.1:1883",
 		stopStatFlusher: make(chan (struct{})),
+		lastSeen:        &sync.Map{},
 
 		robotRSSI: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "best",
@@ -97,6 +98,13 @@ func New(opts ...Option) *Metrics {
 			Help:      "Time since last control frame was received",
 		}, []string{"team"}),
 
+		robotLastInteraction: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "best",
+			Subsystem: "robot",
+			Name:      "last_interaction",
+			Help:      "Timestamp of the last mqtt metrics push",
+		}, []string{"team"}),
+
 		robotOnField: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "best",
 			Subsystem: "field",
@@ -115,6 +123,7 @@ func New(opts ...Option) *Metrics {
 	x.r.MustRegister(x.robotWatchdogOK)
 	x.r.MustRegister(x.robotWatchdogLifetime)
 	x.r.MustRegister(x.robotControlFrameAge)
+	x.r.MustRegister(x.robotLastInteraction)
 	x.r.MustRegister(x.robotOnField)
 
 	for _, o := range opts {
@@ -130,20 +139,22 @@ func (m *Metrics) Registry() *prometheus.Registry {
 	return m.r
 }
 
-// ResetRobotMetrics clears all metrics associated with robots and
-// resets the built-in exporter to a clean state.
-func (m *Metrics) ResetRobotMetrics() {
-	m.robotRSSI.Reset()
-	m.robotWifiReconnects.Reset()
-	m.robotVBat.Reset()
-	m.robotPowerBoard.Reset()
-	m.robotPowerPico.Reset()
-	m.robotPowerGPIO.Reset()
-	m.robotPowerBusA.Reset()
-	m.robotPowerBusB.Reset()
-	m.robotWatchdogOK.Reset()
-	m.robotWatchdogLifetime.Reset()
-	m.robotControlFrameAge.Reset()
+// DeleteZombieRobot removes metrics associated with a zombie robot
+// that is no longer connected.
+func (m *Metrics) DeleteZombieRobot(team string) {
+	l := prometheus.Labels{"team": team}
+
+	m.robotRSSI.Delete(l)
+	m.robotWifiReconnects.Delete(l)
+	m.robotVBat.Delete(l)
+	m.robotPowerBoard.Delete(l)
+	m.robotPowerPico.Delete(l)
+	m.robotPowerGPIO.Delete(l)
+	m.robotPowerBusA.Delete(l)
+	m.robotPowerBusB.Delete(l)
+	m.robotWatchdogOK.Delete(l)
+	m.robotWatchdogLifetime.Delete(l)
+	m.robotControlFrameAge.Delete(l)
 }
 
 // ClearSchedule resets the status of what teams are on what fields.
@@ -192,6 +203,9 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 	m.robotPowerBusA.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainA))
 	m.robotPowerBusB.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainB))
 	m.robotWatchdogOK.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.WatchdogOK))
+
+	m.robotLastInteraction.With(prometheus.Labels{"team": teamNum}).SetToCurrentTime()
+	m.lastSeen.Store(teamNum, time.Now())
 }
 
 // MQTTInit connects to the mqtt server and listens for metrics.
@@ -241,7 +255,13 @@ func (m *Metrics) StartFlusher() {
 				flushTicker.Stop()
 				return
 			case <-flushTicker.C:
-				m.ResetRobotMetrics()
+				now := time.Now()
+				m.lastSeen.Range(func(team, seen any) bool {
+					if now.Sub(seen.(time.Time)) > time.Second*10 {
+						m.DeleteZombieRobot(team.(string))
+					}
+					return false
+				})
 			}
 		}
 	}()
