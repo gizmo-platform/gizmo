@@ -27,6 +27,13 @@ func New(opts ...Option) *Metrics {
 			Help:      "WiFi signal strength as measured by the system processor.",
 		}, []string{"team"}),
 
+		robotWifiReconnects: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "best",
+			Subsystem: "robot",
+			Name:      "wifi_reconnects",
+			Help:      "Number of reconnects since last boot",
+		}, []string{"team"}),
+
 		robotVBat: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "best",
 			Subsystem: "robot",
@@ -79,8 +86,15 @@ func New(opts ...Option) *Metrics {
 		robotWatchdogLifetime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "best",
 			Subsystem: "robot",
-			Name:      "watchdog_remaining_milliseconds",
+			Name:      "watchdog_remaining_seconds",
 			Help:      "Watchdog lifetime remaining since last feed.",
+		}, []string{"team"}),
+
+		robotControlFrameAge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "best",
+			Subsystem: "robot",
+			Name:      "control_frame_age_seconds",
+			Help:      "Time since last control frame was received",
 		}, []string{"team"}),
 
 		robotOnField: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -91,6 +105,7 @@ func New(opts ...Option) *Metrics {
 	}
 
 	x.r.MustRegister(x.robotRSSI)
+	x.r.MustRegister(x.robotWifiReconnects)
 	x.r.MustRegister(x.robotVBat)
 	x.r.MustRegister(x.robotPowerBoard)
 	x.r.MustRegister(x.robotPowerPico)
@@ -99,6 +114,7 @@ func New(opts ...Option) *Metrics {
 	x.r.MustRegister(x.robotPowerBusB)
 	x.r.MustRegister(x.robotWatchdogOK)
 	x.r.MustRegister(x.robotWatchdogLifetime)
+	x.r.MustRegister(x.robotControlFrameAge)
 	x.r.MustRegister(x.robotOnField)
 
 	for _, o := range opts {
@@ -118,6 +134,7 @@ func (m *Metrics) Registry() *prometheus.Registry {
 // resets the built-in exporter to a clean state.
 func (m *Metrics) ResetRobotMetrics() {
 	m.robotRSSI.Reset()
+	m.robotWifiReconnects.Reset()
 	m.robotVBat.Reset()
 	m.robotPowerBoard.Reset()
 	m.robotPowerPico.Reset()
@@ -126,6 +143,7 @@ func (m *Metrics) ResetRobotMetrics() {
 	m.robotPowerBusB.Reset()
 	m.robotWatchdogOK.Reset()
 	m.robotWatchdogLifetime.Reset()
+	m.robotControlFrameAge.Reset()
 }
 
 // ClearSchedule resets the status of what teams are on what fields.
@@ -160,11 +178,13 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 
 	// Determined by experimental sampling with regression.
 	// R^2=0.9995
-	voltage := 0.008848 * float64(stats.VBat) - 0.30915
+	voltage := 0.008848*float64(stats.VBat) - 0.30915
 
 	m.robotRSSI.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
+	m.robotWifiReconnects.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WifiReconnects))
 	m.robotVBat.With(prometheus.Labels{"team": teamNum}).Set(voltage)
-	m.robotWatchdogLifetime.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining))
+	m.robotWatchdogLifetime.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining) / 1000)
+	m.robotControlFrameAge.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.ControlFrameAge) / 1000)
 
 	m.robotPowerBoard.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrBoard))
 	m.robotPowerPico.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPico))

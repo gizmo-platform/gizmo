@@ -13,6 +13,7 @@ type Metrics struct {
 	r *prometheus.Registry
 
 	robotRSSI             *prometheus.GaugeVec
+	robotWifiReconnects   *prometheus.GaugeVec
 	robotVBat             *prometheus.GaugeVec
 	robotPowerBoard       *prometheus.GaugeVec
 	robotPowerPico        *prometheus.GaugeVec
@@ -21,6 +22,7 @@ type Metrics struct {
 	robotPowerBusB        *prometheus.GaugeVec
 	robotWatchdogOK       *prometheus.GaugeVec
 	robotWatchdogLifetime *prometheus.GaugeVec
+	robotControlFrameAge  *prometheus.GaugeVec
 
 	robotOnField *prometheus.GaugeVec
 
@@ -28,10 +30,12 @@ type Metrics struct {
 }
 
 type report struct {
+	ControlFrameAge   int32
 	VBat              int32
 	WatchdogRemaining int32
 	WatchdogOK        bool
 	RSSI              uint8
+	WifiReconnects    int32
 	PwrBoard          bool
 	PwrPico           bool
 	PwrGPIO           bool
