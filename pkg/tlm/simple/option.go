@@ -4,6 +4,8 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/bestrobotics/gizmo/pkg/metrics"
 )
 
 // Option configures the TLM
@@ -23,5 +25,13 @@ func WithStartupWG(w *sync.WaitGroup) Option {
 	return func(t *TLM) {
 		w.Add(1)
 		t.swg = w
+	}
+}
+
+// WithMetrics pushes a metrics instance to the TLM subsystem so that
+// metrics can know what match is up.
+func WithMetrics(m *metrics.Metrics) Option {
+	return func(t *TLM) {
+		t.metrics = m
 	}
 }

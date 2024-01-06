@@ -88,7 +88,11 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		quadStr[i] = q.Name
 	}
 
-	tlm := simple.New(simple.WithLogger(appLogger), simple.WithStartupWG(wg))
+	tlm := simple.New(
+		simple.WithLogger(appLogger),
+		simple.WithStartupWG(wg),
+		simple.WithMetrics(stats),
+	)
 
 	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger), mqttserver.WithStartupWG(wg))
 	if err != nil {

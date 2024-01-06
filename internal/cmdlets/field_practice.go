@@ -62,7 +62,11 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	tlm := simple.New(simple.WithLogger(appLogger), simple.WithStartupWG(wg))
+	tlm := simple.New(
+		simple.WithLogger(appLogger),
+		simple.WithStartupWG(wg),
+		simple.WithMetrics(stats),
+	)
 
 	m, err := mqttserver.NewServer(
 		mqttserver.WithLogger(appLogger),

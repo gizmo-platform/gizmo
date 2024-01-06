@@ -8,6 +8,8 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/bestrobotics/gizmo/pkg/metrics"
 )
 
 // TLM is a Team Location Mapper that contains a static mapping.
@@ -18,6 +20,7 @@ type TLM struct {
 	mapping  map[int]string
 	mutex    sync.RWMutex
 	mqttAddr string
+	metrics  *metrics.Metrics
 
 	swg *sync.WaitGroup
 
@@ -66,6 +69,7 @@ func (tlm *TLM) SetScheduleStep(_ int) error { return nil }
 // InsertOnDemandMap inserts an on-demand mapping that overrides any
 // current schedule.  WARNING: This is immediate.
 func (tlm *TLM) InsertOnDemandMap(m map[int]string) {
+
 	tlm.mutex.Lock()
 	tlm.mapping = m
 	tlm.mutex.Unlock()
@@ -78,6 +82,7 @@ func (tlm *TLM) GetCurrentMapping() (map[int]string, error) { return tlm.mapping
 // GetCurrentTeams returns the teams that are expected to be on the
 // field at this time.
 func (tlm *TLM) GetCurrentTeams() []int {
+	tlm.metrics.ClearSchedule()
 	ret := make([]int, len(tlm.mapping))
 
 	i := 0
@@ -109,6 +114,7 @@ func (tlm *TLM) Start() error {
 				return
 			case <-locTicker.C:
 				tlm.mutex.RLock()
+				tlm.metrics.ExportCurrentMatch(tlm.mapping)
 				bytes, err := json.Marshal(tlm.mapping)
 				if err != nil {
 					tlm.l.Error("Error marshalling mapping", "error", err)

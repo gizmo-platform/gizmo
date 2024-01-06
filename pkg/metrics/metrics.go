@@ -82,6 +82,12 @@ func New(opts ...Option) *Metrics {
 			Name:      "watchdog_remaining_milliseconds",
 			Help:      "Watchdog lifetime remaining since last feed.",
 		}, []string{"team"}),
+
+		robotOnField: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "best",
+			Subsystem: "field",
+			Name:      "robot",
+		}, []string{"field", "quad"}),
 	}
 
 	x.r.MustRegister(x.robotRSSI)
@@ -93,6 +99,7 @@ func New(opts ...Option) *Metrics {
 	x.r.MustRegister(x.robotPowerBusB)
 	x.r.MustRegister(x.robotWatchdogOK)
 	x.r.MustRegister(x.robotWatchdogLifetime)
+	x.r.MustRegister(x.robotOnField)
 
 	for _, o := range opts {
 		o(x)
@@ -119,6 +126,28 @@ func (m *Metrics) ResetRobotMetrics() {
 	m.robotPowerBusB.Reset()
 	m.robotWatchdogOK.Reset()
 	m.robotWatchdogLifetime.Reset()
+}
+
+// ClearSchedule resets the status of what teams are on what fields.
+func (m *Metrics) ClearSchedule() {
+	m.robotOnField.Reset()
+}
+
+// ExportCurrentMatch unpacks a mapping into something exportable by
+// labelling the field and quadrant on an exported metric that has the
+// team number as its value.
+func (m *Metrics) ExportCurrentMatch(match map[int]string) {
+	for team, quad := range match {
+		m.l.Debug("Exporting match", "team", team, "quad", quad)
+		parts := strings.Split(quad, ":")
+		field := strings.Replace(parts[0], "field", "", 1)
+		quad := parts[1]
+
+		m.robotOnField.With(prometheus.Labels{
+			"field": field,
+			"quad":  quad,
+		}).Set(float64(team))
+	}
 }
 
 func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
