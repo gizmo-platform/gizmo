@@ -91,6 +91,13 @@ func New(opts ...Option) *Metrics {
 			Help:      "Watchdog lifetime remaining since last feed.",
 		}, []string{"team"}),
 
+		robotControlFrames: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "best",
+			Subsystem: "robot",
+			Name:      "control_frames",
+			Help:      "Count of control frames received since power on.",
+		}, []string{"team"}),
+
 		robotControlFrameAge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "best",
 			Subsystem: "robot",
@@ -122,6 +129,7 @@ func New(opts ...Option) *Metrics {
 	x.r.MustRegister(x.robotPowerBusB)
 	x.r.MustRegister(x.robotWatchdogOK)
 	x.r.MustRegister(x.robotWatchdogLifetime)
+	x.r.MustRegister(x.robotControlFrames)
 	x.r.MustRegister(x.robotControlFrameAge)
 	x.r.MustRegister(x.robotLastInteraction)
 	x.r.MustRegister(x.robotOnField)
@@ -155,6 +163,7 @@ func (m *Metrics) DeleteZombieRobot(team string) {
 	m.robotWatchdogOK.Delete(l)
 	m.robotWatchdogLifetime.Delete(l)
 	m.robotControlFrameAge.Delete(l)
+	m.robotControlFrames.Delete(l)
 }
 
 // ClearSchedule resets the status of what teams are on what fields.
@@ -196,6 +205,7 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 	m.robotVBat.With(prometheus.Labels{"team": teamNum}).Set(voltage)
 	m.robotWatchdogLifetime.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining) / 1000)
 	m.robotControlFrameAge.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.ControlFrameAge) / 1000)
+	m.robotControlFrames.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.ControlFramesReceived))
 
 	m.robotPowerBoard.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrBoard))
 	m.robotPowerPico.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPico))
