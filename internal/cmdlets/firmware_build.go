@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/bestrobotics/gizmo/pkg/firmware"
@@ -46,52 +46,34 @@ func firmwareBuildCmdRun(c *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	ll := os.Getenv("LOG_LEVEL")
+	if ll == "" {
+		ll = "INFO"
+	}
+	appLogger := hclog.New(&hclog.LoggerOptions{
+		Name:  "field",
+		Level: hclog.LevelFromString(ll),
+	})
+	appLogger.Info("Log level", "level", appLogger.GetLevel())
+
+	opts := []firmware.BuildOption{
+		firmware.WithGSSConfig(cfg),
+		firmware.WithBuildOutputFile(firmwareBuildOutputFile),
+	}
+
 	if firmwareBuildDir == "" {
-		firmwareBuildDir, err = os.MkdirTemp("", "gizmo")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not create build directory: %s\n", err.Error())
-			os.Exit(1)
-		}
-	}
-	if !firmwareBuildDirPreserve {
-		defer func() {
-			if err := os.RemoveAll(firmwareBuildDir); err != nil {
-				fmt.Fprintf(os.Stderr, "Error cleaning up build directory: %s\n", err.Error())
-			}
-		}()
-	}
-
-	fmt.Printf("Extracting firmware to %s\n", firmwareBuildDir)
-	if err := firmware.RestoreToDir(firmwareBuildDir); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not extract firmware source files: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	fmt.Println("Configuring build")
-	if err := firmware.ConfigureBuild(firmwareBuildDir, cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not configure build: %s\n", err.Error())
-		os.Exit(1)
+		opts = append(opts, firmware.WithEphemeralBuildDir())
+	} else {
+		opts = append(opts, firmware.WithBuildDir(firmwareBuildDir))
 	}
 
 	if firmwareBuildExtractOnly {
-		os.Exit(0)
+		opts = append(opts, firmware.WithKeepBuildDir())
 	}
 
-	fmt.Println("Building firmware, this may take a few minutes!")
-	if err := firmware.Build(firmwareBuildDir); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not build: %s\n", err.Error())
+	f := firmware.NewFactory(appLogger)
+	if err := f.Build(opts...); err != nil {
+		appLogger.Error("Build failed", "error", err)
 		os.Exit(1)
 	}
-
-	if firmwareBuildOutputFile == "" {
-		cwd, _ := os.Getwd()
-		firmwareBuildOutputFile = filepath.Join(cwd, fmt.Sprintf("gss_%d.uf2", cfg.Team))
-	}
-
-	fmt.Println("Copying built firmware")
-	if err := firmware.CopyFirmware(firmwareBuildDir, firmwareBuildOutputFile); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not output build artifact: %s\n", err.Error())
-		os.Exit(1)
-	}
-	fmt.Printf("Build complete, GSS image: %s\n", firmwareBuildOutputFile)
 }
