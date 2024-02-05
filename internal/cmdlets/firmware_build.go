@@ -69,6 +69,7 @@ func firmwareBuildCmdRun(c *cobra.Command, args []string) {
 
 	if firmwareBuildExtractOnly {
 		opts = append(opts, firmware.WithKeepBuildDir())
+		opts = append(opts, firmware.WithExtractOnly())
 	}
 
 	f := firmware.NewFactory(appLogger)

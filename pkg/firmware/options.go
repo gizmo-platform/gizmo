@@ -56,3 +56,11 @@ func WithKeepBuildDir() BuildOption {
 		bc.keep = true
 	}
 }
+
+// WithExtractOnly sets the flag to only extract, and not to build the
+// firmware image.
+func WithExtractOnly() BuildOption {
+	return func(bc *BuildConfig) {
+		bc.extractOnly = true
+	}
+}

@@ -166,9 +166,13 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	<-quit
 	appLogger.Info("Shutting down...")
 	tlm.Stop()
+	appLogger.Info("TLM Stopped")
 	p.Stop()
+	appLogger.Info("Pusher Stopped")
 	jsc.StopAutoRefresh()
+	appLogger.Info("Gamepad Stopped")
 	stats.Shutdown()
+	appLogger.Info("Stats Stopped")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := w.Shutdown(ctx); err != nil {
