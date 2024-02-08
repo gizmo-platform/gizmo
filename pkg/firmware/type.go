@@ -15,7 +15,7 @@ type Config struct {
 	Team     int
 }
 
-//go:embed src/* config.h.tpl
+//go:embed src/*.cpp src/*.h src/*.ino src/*.yaml config.h.tpl
 var efs embed.FS
 
 // Factory binds all the build steps to a single struct in order to
