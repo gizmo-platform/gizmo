@@ -114,17 +114,18 @@ func (tlm *TLM) Start() error {
 				return
 			case <-locTicker.C:
 				tlm.mutex.RLock()
-				defer tlm.mutex.RUnlock()
 				tlm.metrics.ExportCurrentMatch(tlm.mapping)
 				bytes, err := json.Marshal(tlm.mapping)
 				if err != nil {
 					tlm.l.Error("Error marshalling mapping", "error", err)
+					tlm.mutex.RUnlock()
 					return
 				}
 				tlm.l.Debug("Pushing locations")
 				if tok := tlm.m.Publish("sys/tlm/locations", 1, false, bytes); tok.Wait() && tok.Error() != nil {
 					tlm.l.Warn("Error publishing new mapping to broker", "error", tok.Error())
 				}
+				tlm.mutex.RUnlock()
 			}
 		}
 	}()
