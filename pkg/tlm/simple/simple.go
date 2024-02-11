@@ -69,7 +69,6 @@ func (tlm *TLM) SetScheduleStep(_ int) error { return nil }
 // InsertOnDemandMap inserts an on-demand mapping that overrides any
 // current schedule.  WARNING: This is immediate.
 func (tlm *TLM) InsertOnDemandMap(m map[int]string) {
-
 	tlm.mutex.Lock()
 	tlm.mapping = m
 	tlm.mutex.Unlock()

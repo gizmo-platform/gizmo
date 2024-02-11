@@ -42,8 +42,7 @@ func fieldRemapCmdRun(c *cobra.Command, args []string) {
 	}
 
 	quads := []string{}
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&quads); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&quads); err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting quads: %s\n", err)
 		os.Exit(2)
 	}
@@ -56,8 +55,7 @@ func fieldRemapCmdRun(c *cobra.Command, args []string) {
 	}
 
 	cMap := make(map[string]string)
-	dec = json.NewDecoder(r.Body)
-	if err := dec.Decode(&cMap); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&cMap); err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting map: %s\n", err)
 		os.Exit(2)
 	}
