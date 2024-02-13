@@ -72,6 +72,10 @@ func firmwareBuildCmdRun(c *cobra.Command, args []string) {
 		opts = append(opts, firmware.WithExtractOnly())
 	}
 
+	if firmwareBuildDirPreserve {
+		opts = append(opts, firmware.WithKeepBuildDir())
+	}
+
 	f := firmware.NewFactory(appLogger)
 	if err := f.Build(opts...); err != nil {
 		appLogger.Error("Build failed", "error", err)
