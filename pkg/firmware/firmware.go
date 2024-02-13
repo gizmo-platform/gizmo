@@ -60,7 +60,6 @@ func (f *Factory) configure(bc BuildConfig) error {
 func (f *Factory) compile(bc BuildConfig) error {
 	args := []string{
 		"compile",
-		"--fqbn", "rp2040:rp2040:rpipicow",
 		"--profile", "gizmo",
 		"--output-dir", ".",
 		".",
