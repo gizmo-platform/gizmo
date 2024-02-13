@@ -51,7 +51,7 @@ func firmwareBuildCmdRun(c *cobra.Command, args []string) {
 		ll = "INFO"
 	}
 	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "field",
+		Name:  "firmware",
 		Level: hclog.LevelFromString(ll),
 	})
 	appLogger.Info("Log level", "level", appLogger.GetLevel())
