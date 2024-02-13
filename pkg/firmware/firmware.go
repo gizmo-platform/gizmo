@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -25,7 +26,11 @@ func (f *Factory) unpack(bc BuildConfig) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	os.Create(filepath.Join(dir, "secrets.h"))
+	sf, err := os.Create(filepath.Join(dir, "secrets.h"))
+	if err != nil {
+		return err
+	}
+	sf.Close()
 	return fs.WalkDir(efs, "src", func(p string, d fs.DirEntry, _ error) error {
 		if d.IsDir() {
 			return nil
@@ -93,7 +98,11 @@ func (f *Factory) exportTo(bc BuildConfig) error {
 }
 
 func (f *Factory) cleanup(bc BuildConfig) error {
-	return os.RemoveAll(bc.dir)
+	cleanFunc := func() error {
+		return os.RemoveAll(bc.dir)
+	}
+
+	return backoff.Retry(cleanFunc, backoff.NewExponentialBackOff())
 }
 
 // Build runs the entire build pipeline with the provided options.
