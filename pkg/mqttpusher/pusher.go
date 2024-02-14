@@ -1,6 +1,7 @@
 package mqttpusher
 
 import (
+	"fmt"
 	"encoding/json"
 	"path"
 	"strconv"
@@ -110,7 +111,7 @@ func (p *Pusher) publishGamepadForTeam(team int) {
 		return
 	}
 
-	topic := path.Join("robot", strconv.Itoa(team), "gamepad")
+	topic := path.Join("robot", fmt.Sprintf("%04d", team), "gamepad")
 	if tok := p.m.Publish(topic, 1, false, bytes); tok.Wait() && tok.Error() != nil {
 		p.l.Warn("Error publishing message for team", "error", err, "team", team, "fid", fid)
 	}
@@ -141,7 +142,7 @@ func (p *Pusher) publishLocationForTeam(team int) {
 		return
 	}
 
-	topic := path.Join("robot", strconv.Itoa(team), "location")
+	topic := path.Join("robot", fmt.Sprintf("%04d", team), "location")
 	if tok := p.m.Publish(topic, 1, false, bytes); tok.Wait() && tok.Error() != nil {
 		p.l.Warn("Error publishing message for team", "error", err, "team", team, "fid", fid)
 	}
