@@ -22,21 +22,15 @@ func init() {
 
 	dir, _ := os.UserCacheDir()
 	arduinoPaths := []string{
-		filepath.Join(
-			dir,
-			"programs", "arduino-ide", "resources", "app", "lib", "backend", "resources",
-		),
-		filepath.Join(
-			dir,
-			"programs", "Arduino IDE", "resources", "app", "lib", "backend", "resources",
-		),
-		filepath.Join("C:\\", "Program Files", "arduino-ide", "resources", "app", "lib", "backend", "resources"),
+		filepath.Join(dir, "programs", "arduino-ide"),
+		filepath.Join(dir, "programs", "Arduino IDE"),
+		filepath.Join("C:\\", "Program Files", "arduino-ide"),
 	}
 
 	// Search the various places the arduino install may have
 	// gone, bailing at the first one that exists.
 	for _, arduinoPath := range arduinoPaths {
-		_, err := os.Stat(arduinoPath)
+		_, err := os.Stat(filepath.Join(arduinoPath, "resources", "app", "lib", "backend", "resources"))
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
 		}
