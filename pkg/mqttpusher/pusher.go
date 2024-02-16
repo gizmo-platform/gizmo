@@ -1,8 +1,8 @@
 package mqttpusher
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"path"
 	"strconv"
 	"strings"
