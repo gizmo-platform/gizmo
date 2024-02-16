@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -20,16 +21,27 @@ func init() {
 	}
 
 	dir, _ := os.UserCacheDir()
-	arduinoPath := filepath.Join(
-		dir,
-		"programs", "Arduino IDE", "resources", "app", "lib", "backend", "resources",
-	)
-
-	_, err := os.Stat(arduinoPath)
-	if errors.Is(err, fs.ErrNotExist) {
-		return
+	arduinoPaths := []string{
+		filepath.Join(
+			dir,
+			"programs", "arduino-ide", "resources", "app", "lib", "backend", "resources",
+		),
+		filepath.Join(
+			dir,
+			"programs", "Arduino IDE", "resources", "app", "lib", "backend", "resources",
+		),
+		filepath.Join("C:\\", "Program Files", "arduino-ide", "resources", "app", "lib", "backend", "resources"),
 	}
 
-	paths := append(filepath.SplitList(os.Getenv("PATH")), arduinoPath)
-	os.Setenv("PATH", strings.Join(paths, string(os.PathListSeparator)))
+	// Search the various places the arduino install may have
+	// gone, bailing at the first one that exists.
+	for _, arduinoPath := range arduinoPaths {
+		_, err := os.Stat(arduinoPath)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		paths := append(filepath.SplitList(os.Getenv("PATH")), arduinoPath)
+		os.Setenv("PATH", strings.Join(paths, string(os.PathListSeparator)))
+		return
+	}
 }
