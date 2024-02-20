@@ -9,10 +9,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
-const (
-	bindTmpField = "BINDTMP"
-)
-
 var (
 	// ErrNoSuchField is returned in the event that no field is
 	// available for the given fieldID.

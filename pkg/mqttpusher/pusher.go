@@ -189,7 +189,7 @@ func (p *Pusher) StartLocationPusher() {
 // StartControlPusher starts up a pusher that publishes control
 // information into the broker.
 func (p *Pusher) StartControlPusher() {
-	ctrlTicker := time.NewTicker(time.Millisecond * 40)
+	ctrlTicker := time.NewTicker(time.Millisecond * 20)
 
 	go func() {
 		for {

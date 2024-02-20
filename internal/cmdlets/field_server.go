@@ -156,7 +156,7 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		}
 	}()
 
-	jsc.BeginAutoRefresh(50)
+	jsc.BeginAutoRefresh(20)
 	tlm.Start()
 	stats.StartFlusher()
 

@@ -135,7 +135,7 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	}
 
 	tlm.InsertOnDemandMap(map[int]string{tNum: "field1:practice"})
-	jsc.BeginAutoRefresh(50)
+	jsc.BeginAutoRefresh(20)
 	tlm.Start()
 	stats.StartFlusher()
 
