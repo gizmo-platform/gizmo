@@ -3,28 +3,16 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
-
-	"github.com/bestrobotics/gizmo/pkg/gamepad"
 )
-
-// JSController defines the interface that the control server expects
-// to be able to serve
-type JSController interface {
-	GetState(string) (*gamepad.Values, error)
-	UpdateState(string) error
-	BindController(string, int) error
-}
 
 // TeamLocationMapper looks at all teams trying to fetch a value and
 // tries to get them controller based on their current match and their
@@ -45,8 +33,6 @@ type Server struct {
 	reg *prometheus.Registry
 	swg *sync.WaitGroup
 
-	jsc JSController
-
 	quads []string
 }
 
@@ -65,14 +51,6 @@ func NewServer(opts ...Option) (*Server, error) {
 
 	x.r.Handle("/metrics", promhttp.HandlerFor(x.reg, promhttp.HandlerOpts{Registry: x.reg}))
 
-	x.r.Get("/robot/time", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, time.Now().Format(time.RFC3339))
-		fmt.Fprint(w, "\r\n")
-	})
-
-	x.r.Get("/robot/data/gamepad/{team}", x.gamepadValueForTeam)
-	x.r.Get("/robot/data/location/{team}", x.locationValueForTeam)
-	x.r.Post("/robot/data/report/{team}", x.acceptDataForTeam)
 	x.r.Get("/admin/cfg/quads", x.configuredQuads)
 	x.r.Post("/admin/map/immediate", x.remapTeams)
 	x.r.Get("/admin/map/current", x.currentTeamMap)

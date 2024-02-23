@@ -18,14 +18,6 @@ func WithPrometheusRegistry(reg *prometheus.Registry) Option {
 	}
 }
 
-// WithJSController sets the joystick controller for the
-func WithJSController(jsc JSController) Option {
-	return func(s *Server) error {
-		s.jsc = jsc
-		return nil
-	}
-}
-
 // WithLogger sets the logger for the server.
 func WithLogger(l hclog.Logger) Option {
 	return func(s *Server) error {

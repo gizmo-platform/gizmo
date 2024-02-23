@@ -113,7 +113,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
-		http.WithJSController(&jsc),
 		http.WithTeamLocationMapper(tlm),
 		http.WithPrometheusRegistry(stats.Registry()),
 		http.WithQuads(quadStr),
