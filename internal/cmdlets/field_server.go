@@ -155,7 +155,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 		}
 	}()
 
-	jsc.BeginAutoRefresh(20)
 	tlm.Start()
 	stats.StartFlusher()
 
@@ -168,8 +167,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	appLogger.Info("TLM Stopped")
 	p.Stop()
 	appLogger.Info("Pusher Stopped")
-	jsc.StopAutoRefresh()
-	appLogger.Info("Gamepad Stopped")
 	stats.Shutdown()
 	appLogger.Info("Stats Stopped")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -134,7 +134,6 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	}
 
 	tlm.InsertOnDemandMap(map[int]string{tNum: "field1:practice"})
-	jsc.BeginAutoRefresh(20)
 	tlm.Start()
 	stats.StartFlusher()
 
@@ -145,7 +144,6 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	appLogger.Info("Shutting down...")
 	tlm.Stop()
 	p.Stop()
-	jsc.StopAutoRefresh()
 	stats.Shutdown()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

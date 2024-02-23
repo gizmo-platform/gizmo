@@ -3,7 +3,6 @@ package gamepad
 import (
 	"errors"
 	"sync"
-	"time"
 
 	"github.com/0xcafed00d/joystick"
 	"github.com/hashicorp/go-hclog"
@@ -44,25 +43,15 @@ type JSController struct {
 	l hclog.Logger
 
 	controllers map[string]joystick.Joystick
-	state       map[string]*Values
-	fields      map[string]int
 
-	fMutex sync.RWMutex
 	cMutex sync.RWMutex
-	sMutex sync.RWMutex
-
-	stopRefresh    chan struct{}
-	refreshRunning bool
 }
 
 // NewJSController sets up the joystick controller.
 func NewJSController(opts ...Option) JSController {
 	jsc := JSController{
 		l:           hclog.NewNullLogger(),
-		fields:      make(map[string]int),
 		controllers: make(map[string]joystick.Joystick),
-		state:       make(map[string]*Values),
-		stopRefresh: make(chan (struct{})),
 	}
 
 	for _, o := range opts {
@@ -86,41 +75,24 @@ func (j *JSController) BindController(name string, id int) error {
 		return errors.New("bad joystick config")
 	}
 
-	j.fMutex.Lock()
-	j.fields[name] = id
-	j.fMutex.Unlock()
-
 	j.l.Info("Successfully bound controller", "fid", name, "jsid", id)
 	return nil
 }
 
-// GetState fetches the state for a single field quadrant.
+// GetState polls the joystick and updates the values available to the
+// controller.
 func (j *JSController) GetState(fieldID string) (*Values, error) {
-	j.sMutex.RLock()
-	defer j.sMutex.RUnlock()
-
-	val, ok := j.state[fieldID]
-	if !ok {
-		return nil, ErrNoSuchField
-	}
-	j.l.Trace("Provided state", "fid", fieldID)
-	return val, nil
-}
-
-// UpdateState polls the joystick and updates the values available to
-// the controller.
-func (j *JSController) UpdateState(fieldID string) error {
 	j.cMutex.RLock()
 	defer j.cMutex.RUnlock()
 
 	js, ok := j.controllers[fieldID]
 	if !ok {
-		return ErrNoSuchField
+		return nil, ErrNoSuchField
 	}
 
 	jinfo, err := js.Read()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	jvals := Values{
@@ -147,52 +119,23 @@ func (j *JSController) UpdateState(fieldID string) error {
 		ButtonRT:         (jinfo.Buttons & (1 << uint32(7))) != 0,
 	}
 
-	j.sMutex.Lock()
-	j.state[fieldID] = &jvals
-	j.sMutex.Unlock()
 	j.l.Trace("Refreshed state", "fid", fieldID, "state", jvals)
-	return nil
+	return &jvals, nil
 }
 
-func (j *JSController) doRefreshAll() {
-	j.fMutex.RLock()
-	defer j.fMutex.RUnlock()
+// func (j *JSController) doRefreshAll() {
+// 	j.fMutex.RLock()
+// 	defer j.fMutex.RUnlock()
 
-	for f, id := range j.fields {
-		go func() {
-			if err := j.UpdateState(f); err != nil {
-				j.l.Warn("Error polling joystick, attempting rebind", "error", err, "field", f)
-				j.BindController(f, id)
-			}
-		}()
-	}
-}
-
-// BeginAutoRefresh enables automatic polling of controller inputs.
-func (j *JSController) BeginAutoRefresh(interval int) {
-	if j.refreshRunning {
-		j.stopRefresh <- struct{}{}
-	}
-
-	ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
-
-	go func() {
-		for {
-			select {
-			case <-j.stopRefresh:
-				ticker.Stop()
-				return
-			case <-ticker.C:
-				j.doRefreshAll()
-			}
-		}
-	}()
-}
-
-// StopAutoRefresh discontinues polling of controller inputs.
-func (j *JSController) StopAutoRefresh() {
-	j.stopRefresh <- struct{}{}
-}
+// 	for f, id := range j.fields {
+// 		go func() {
+// 			if err := j.UpdateState(f); err != nil {
+// 				j.l.Warn("Error polling joystick, attempting rebind", "error", err, "field", f)
+// 				j.BindController(f, id)
+// 			}
+// 		}()
+// 	}
+// }
 
 func mapRange(x, xMin, xMax, oMin, oMax int) int {
 	return (x-xMin)*(oMax-oMin)/(xMax-xMin) + oMin
