@@ -120,6 +120,16 @@ func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{})
 			vals, err := jsc.GetState()
 			if err != nil {
 				p.l.Warn("Error retrieving controller state", "team", team, "fid", fid, "error", err)
+				retryFunc := func() error {
+					if err := jsc.Rebind(); err != nil {
+						p.l.Warn("Rebind failed", "team", team, "fid", fid, "error", err)
+						return err
+					}
+					return nil
+				}
+				if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff()); err != nil {
+					p.l.Error("Permanent error encountered while rebinding", "error", err)
+				}
 				return
 			}
 
