@@ -32,11 +32,13 @@ type Pusher struct {
 	teams       map[int]string
 	tMutex      sync.RWMutex
 	pushWorkers map[int]chan struct{}
+	locWorkers  map[int]chan struct{}
 
 	// Map of quad/fid to gamepad ID
 	quadMap map[string]int
 
 	ctrlTicker *time.Ticker
+	locTicker  *time.Ticker
 
 	stopLocationFeed chan struct{}
 	swg              *sync.WaitGroup
@@ -48,8 +50,10 @@ func New(opts ...Option) (*Pusher, error) {
 	p.stopLocationFeed = make(chan (struct{}))
 	p.teams = make(map[int]string)
 	p.pushWorkers = make(map[int]chan struct{})
+	p.locWorkers = make(map[int]chan struct{})
 	p.quadMap = make(map[string]int)
 	p.ctrlTicker = time.NewTicker(time.Millisecond * 20)
+	p.locTicker = time.NewTicker(time.Second * 3)
 
 	for _, o := range opts {
 		if err := o(p); err != nil {
@@ -133,15 +137,7 @@ func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{})
 	}
 }
 
-func (p *Pusher) publishLocationForTeam(team int) {
-	p.tMutex.RLock()
-	fid, ok := p.teams[team]
-	p.tMutex.RUnlock()
-	if !ok {
-		p.l.Warn("Trying to send location for an unmapped team!", "team", team)
-		return
-	}
-
+func (p *Pusher) publishLocationForTeam(team int, fid string, stop chan struct{}) {
 	parts := strings.SplitN(fid, ":", 2)
 	fnum, _ := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
 	vals := struct {
@@ -152,15 +148,23 @@ func (p *Pusher) publishLocationForTeam(team int) {
 		Quadrant: strings.ToUpper(parts[1]),
 	}
 
-	bytes, err := json.Marshal(vals)
-	if err != nil {
-		p.l.Warn("Error marshalling controller state", "team", team, "fid", fid, "error", err)
-		return
-	}
+	for {
+		select {
+		case <-stop:
+			return
+		case <-p.locTicker.C:
 
-	topic := path.Join("robot", fmt.Sprintf("%04d", team), "location")
-	if tok := p.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
-		p.l.Warn("Error publishing message for team", "error", err, "team", team, "fid", fid)
+			bytes, err := json.Marshal(vals)
+			if err != nil {
+				p.l.Warn("Error marshalling controller state", "team", team, "fid", fid, "error", err)
+				return
+			}
+
+			topic := path.Join("robot", fmt.Sprintf("%04d", team), "location")
+			if tok := p.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
+				p.l.Warn("Error publishing message for team", "error", err, "team", team, "fid", fid)
+			}
+		}
 	}
 }
 
@@ -177,6 +181,7 @@ func (p *Pusher) updateLoc(c mqtt.Client, message mqtt.Message) {
 		// shut down the streams for them.
 		if _, active := update[team]; !active {
 			close(p.pushWorkers[team])
+			close(p.locWorkers[team])
 			delete(p.teams, team)
 		}
 	}
@@ -191,37 +196,13 @@ func (p *Pusher) updateLoc(c mqtt.Client, message mqtt.Message) {
 		p.pushWorkers[team] = pw
 		p.teams[team] = quad
 		go p.publishGamepadForTeam(team, quad, pw)
+
+		lw := make(chan struct{})
+		p.locWorkers[team] = lw
+		go p.publishLocationForTeam(team, quad, lw)
 	}
 
 	p.l.Debug("Updated pusher location information", "location", p.teams)
-}
-
-// StartLocationPusher starts up a pusher that publishes location
-// information into the broker.
-func (p *Pusher) StartLocationPusher() {
-	locTicker := time.NewTicker(time.Second * 5)
-
-	go func() {
-		for {
-			select {
-			case <-p.stopLocationFeed:
-				locTicker.Stop()
-				return
-			case <-locTicker.C:
-				p.tMutex.RLock()
-				teams := []int{}
-				for t := range p.teams {
-					teams = append(teams, t)
-				}
-				p.tMutex.RUnlock()
-				for _, t := range teams {
-					p.l.Debug("Updating location for team", "team", t)
-					p.publishLocationForTeam(t)
-				}
-
-			}
-		}
-	}()
 }
 
 // Stop closes down the workers that publish information into the mqtt
@@ -229,5 +210,5 @@ func (p *Pusher) StartLocationPusher() {
 func (p *Pusher) Stop() {
 	p.l.Info("Stopping...")
 	p.ctrlTicker.Stop()
-	p.stopLocationFeed <- struct{}{}
+	p.locTicker.Stop()
 }

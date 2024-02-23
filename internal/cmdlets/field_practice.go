@@ -108,7 +108,6 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 			quit <- syscall.SIGINT
 			return
 		}
-		p.StartLocationPusher()
 	}()
 
 	go func() {
