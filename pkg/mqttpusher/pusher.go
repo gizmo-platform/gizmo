@@ -28,13 +28,16 @@ type Pusher struct {
 	l hclog.Logger
 	m mqtt.Client
 
-	jsc JSController
+	addr        string
+	teams       map[int]string
+	tMutex      sync.RWMutex
+	pushWorkers map[int]chan struct{}
 
-	addr   string
-	teams  map[int]string
-	tMutex sync.RWMutex
+	// Map of quad/fid to gamepad ID
+	quadMap map[string]int
 
-	stopControlFeed  chan struct{}
+	ctrlTicker *time.Ticker
+
 	stopLocationFeed chan struct{}
 	swg              *sync.WaitGroup
 }
@@ -42,9 +45,11 @@ type Pusher struct {
 // New configures and returns a connected pusher.
 func New(opts ...Option) (*Pusher, error) {
 	p := new(Pusher)
-	p.stopControlFeed = make(chan (struct{}))
 	p.stopLocationFeed = make(chan (struct{}))
 	p.teams = make(map[int]string)
+	p.pushWorkers = make(map[int]chan struct{})
+	p.quadMap = make(map[string]int)
+	p.ctrlTicker = time.NewTicker(time.Millisecond * 20)
 
 	for _, o := range opts {
 		if err := o(p); err != nil {
@@ -90,30 +95,41 @@ func (p *Pusher) Connect() error {
 	return nil
 }
 
-func (p *Pusher) publishGamepadForTeam(team int) {
-	p.tMutex.RLock()
-	fid, ok := p.teams[team]
-	p.tMutex.RUnlock()
+func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{}) {
+	jsc := gamepad.NewJSController(gamepad.WithLogger(p.l))
+	jsID, ok := p.quadMap[fid]
 	if !ok {
-		p.l.Warn("Trying to send gamepad state for an unmapped team!", "team", team)
+		p.l.Error("Trying to bind a quad that doesn't exist!", "fid", fid)
 		return
 	}
-
-	vals, err := p.jsc.GetState(fid)
-	if err != nil {
-		p.l.Warn("Error retrieving controller state", "team", team, "fid", fid, "error", err)
+	if err := jsc.BindController(jsID); err != nil {
+		p.l.Error("Error binding gamepad!", "error", err, "team", team, "fid", fid)
 		return
 	}
+	defer jsc.Close()
 
-	bytes, err := json.Marshal(vals)
-	if err != nil {
-		p.l.Warn("Error marshalling controller state", "team", team, "fid", fid, "error", err)
-		return
-	}
+	for {
+		select {
+		case <-stop:
+			return
+		case <-p.ctrlTicker.C:
+			vals, err := jsc.GetState()
+			if err != nil {
+				p.l.Warn("Error retrieving controller state", "team", team, "fid", fid, "error", err)
+				return
+			}
 
-	topic := path.Join("robot", fmt.Sprintf("%04d", team), "gamepad")
-	if tok := p.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
-		p.l.Warn("Error publishing message for team", "error", err, "team", team, "fid", fid)
+			bytes, err := json.Marshal(vals)
+			if err != nil {
+				p.l.Warn("Error marshalling controller state", "team", team, "fid", fid, "error", err)
+				return
+			}
+
+			topic := path.Join("robot", fmt.Sprintf("%04d", team), "gamepad")
+			if tok := p.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
+				p.l.Warn("Error publishing message for team", "error", err, "team", team, "fid", fid)
+			}
+		}
 	}
 }
 
@@ -151,10 +167,32 @@ func (p *Pusher) publishLocationForTeam(team int) {
 func (p *Pusher) updateLoc(c mqtt.Client, message mqtt.Message) {
 	p.tMutex.Lock()
 	defer p.tMutex.Unlock()
-	p.teams = make(map[int]string)
-	if err := json.Unmarshal(message.Payload(), &p.teams); err != nil {
+	update := make(map[int]string)
+	if err := json.Unmarshal(message.Payload(), &update); err != nil {
 		p.l.Error("Error unmarshalling location data", "error", err)
 	}
+
+	for team := range p.teams {
+		// Check if the team is not in the update, and if not
+		// shut down the streams for them.
+		if _, active := update[team]; !active {
+			close(p.pushWorkers[team])
+			delete(p.teams, team)
+		}
+	}
+
+	for team, quad := range update {
+		// Check if we're already handling this team and if
+		// not handle them.
+		if _, active := p.teams[team]; active {
+			continue
+		}
+		pw := make(chan struct{})
+		p.pushWorkers[team] = pw
+		p.teams[team] = quad
+		go p.publishGamepadForTeam(team, quad, pw)
+	}
+
 	p.l.Debug("Updated pusher location information", "location", p.teams)
 }
 
@@ -186,36 +224,10 @@ func (p *Pusher) StartLocationPusher() {
 	}()
 }
 
-// StartControlPusher starts up a pusher that publishes control
-// information into the broker.
-func (p *Pusher) StartControlPusher() {
-	ctrlTicker := time.NewTicker(time.Millisecond * 20)
-
-	go func() {
-		for {
-			select {
-			case <-p.stopControlFeed:
-				ctrlTicker.Stop()
-				return
-			case <-ctrlTicker.C:
-				p.tMutex.RLock()
-				teams := []int{}
-				for t := range p.teams {
-					teams = append(teams, t)
-				}
-				p.tMutex.RUnlock()
-				for _, t := range teams {
-					p.publishGamepadForTeam(t)
-				}
-			}
-		}
-	}()
-}
-
 // Stop closes down the workers that publish information into the mqtt
 // streams.
 func (p *Pusher) Stop() {
 	p.l.Info("Stopping...")
-	p.stopControlFeed <- struct{}{}
+	p.ctrlTicker.Stop()
 	p.stopLocationFeed <- struct{}{}
 }

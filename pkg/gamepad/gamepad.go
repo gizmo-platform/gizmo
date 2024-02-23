@@ -2,7 +2,6 @@ package gamepad
 
 import (
 	"errors"
-	"sync"
 
 	"github.com/0xcafed00d/joystick"
 	"github.com/hashicorp/go-hclog"
@@ -40,18 +39,16 @@ type Values struct {
 // JSController handles the action of actually fetching data from the
 // joystick and making it available to the rest of the system.
 type JSController struct {
-	l hclog.Logger
+	l  hclog.Logger
+	id int
 
-	controllers map[string]joystick.Joystick
-
-	cMutex sync.RWMutex
+	controller joystick.Joystick
 }
 
 // NewJSController sets up the joystick controller.
 func NewJSController(opts ...Option) JSController {
 	jsc := JSController{
-		l:           hclog.NewNullLogger(),
-		controllers: make(map[string]joystick.Joystick),
+		l: hclog.NewNullLogger(),
 	}
 
 	for _, o := range opts {
@@ -60,37 +57,29 @@ func NewJSController(opts ...Option) JSController {
 	return jsc
 }
 
-// BindController attaches a controller to a particular name.
-func (j *JSController) BindController(name string, id int) error {
-	j.cMutex.Lock()
-	defer j.cMutex.Unlock()
+// BindController attaches to a particular controller ID on the host
+// system.
+func (j *JSController) BindController(id int) error {
 	js, jserr := joystick.Open(id)
 	if jserr != nil {
 		return jserr
 	}
-	j.controllers[name] = js
+	j.controller = js
+	j.id = id
 
 	if js.AxisCount() != 6 || js.ButtonCount() != 12 {
 		j.l.Error("Wrong joystick counts!", "axis", js.AxisCount(), " buttons", js.ButtonCount())
 		return errors.New("bad joystick config")
 	}
 
-	j.l.Info("Successfully bound controller", "fid", name, "jsid", id)
+	j.l.Info("Successfully bound controller", "jsid", id)
 	return nil
 }
 
 // GetState polls the joystick and updates the values available to the
 // controller.
-func (j *JSController) GetState(fieldID string) (*Values, error) {
-	j.cMutex.RLock()
-	defer j.cMutex.RUnlock()
-
-	js, ok := j.controllers[fieldID]
-	if !ok {
-		return nil, ErrNoSuchField
-	}
-
-	jinfo, err := js.Read()
+func (j *JSController) GetState() (*Values, error) {
+	jinfo, err := j.controller.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -118,24 +107,19 @@ func (j *JSController) GetState(fieldID string) (*Values, error) {
 		ButtonLT:         (jinfo.Buttons & (1 << uint32(6))) != 0,
 		ButtonRT:         (jinfo.Buttons & (1 << uint32(7))) != 0,
 	}
-
-	j.l.Trace("Refreshed state", "fid", fieldID, "state", jvals)
 	return &jvals, nil
 }
 
-// func (j *JSController) doRefreshAll() {
-// 	j.fMutex.RLock()
-// 	defer j.fMutex.RUnlock()
+// Rebind attempts to rebind the controller this instance was
+// initialized for.
+func (j *JSController) Rebind() error {
+	return j.BindController(j.id)
+}
 
-// 	for f, id := range j.fields {
-// 		go func() {
-// 			if err := j.UpdateState(f); err != nil {
-// 				j.l.Warn("Error polling joystick, attempting rebind", "error", err, "field", f)
-// 				j.BindController(f, id)
-// 			}
-// 		}()
-// 	}
-// }
+// Close releases the gamepad.
+func (j *JSController) Close() {
+
+}
 
 func mapRange(x, xMin, xMax, oMin, oMax int) int {
 	return (x-xMin)*(oMax-oMin)/(xMax-xMin) + oMin

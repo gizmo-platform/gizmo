@@ -17,14 +17,6 @@ func WithLogger(l hclog.Logger) Option {
 	}
 }
 
-// WithJSController sets the joystick controller for the
-func WithJSController(jsc JSController) Option {
-	return func(p *Pusher) error {
-		p.jsc = jsc
-		return nil
-	}
-}
-
 // WithMQTTServer handles setting up the mqtt server address.
 func WithMQTTServer(addr string) Option {
 	return func(p *Pusher) error {
@@ -40,6 +32,15 @@ func WithStartupWG(w *sync.WaitGroup) Option {
 	return func(p *Pusher) error {
 		w.Add(1)
 		p.swg = w
+		return nil
+	}
+}
+
+// WithQuadMap provides the mapping of each field ID/quad that this
+// pusher is responsible for to the local joystick ID for that quad.
+func WithQuadMap(q map[string]int) Option {
+	return func(p *Pusher) error {
+		p.quadMap = q
 		return nil
 	}
 }

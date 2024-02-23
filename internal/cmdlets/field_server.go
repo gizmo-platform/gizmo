@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/bestrobotics/gizmo/pkg/gamepad"
 	"github.com/bestrobotics/gizmo/pkg/http"
 	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
@@ -71,21 +70,20 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 	stats := metrics.New(metrics.WithLogger(appLogger))
 	appLogger.Debug("Stats listeners created")
 
-	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
 	quads := []quad{}
-
 	if err := viper.UnmarshalKey("quadrants", &quads); err != nil {
 		appLogger.Error("Could not unmarshal fields", "error", err)
 		os.Exit(2)
 	}
 
 	quadStr := make([]string, len(quads))
+	quadMap := make(map[string]int)
 	for i, q := range quads {
 		if q.Pusher != "self" {
 			continue
 		}
-		jsc.BindController(q.Name, q.Gamepad)
 		quadStr[i] = q.Name
+		quadMap[q.Name] = q.Gamepad
 	}
 
 	tlm := simple.New(
@@ -102,9 +100,9 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 
 	p, err := mqttpusher.New(
 		mqttpusher.WithLogger(appLogger),
-		mqttpusher.WithJSController(&jsc),
 		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
 		mqttpusher.WithStartupWG(wg),
+		mqttpusher.WithQuadMap(quadMap),
 	)
 	if err != nil {
 		appLogger.Error("Error during mqtt pusher initialization", "error", err)
@@ -145,7 +143,6 @@ func fieldServeCmdRun(c *cobra.Command, args []string) {
 			return
 		}
 		p.StartLocationPusher()
-		p.StartControlPusher()
 	}()
 
 	go func() {

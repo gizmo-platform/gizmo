@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
-	"github.com/bestrobotics/gizmo/pkg/gamepad"
 	"github.com/bestrobotics/gizmo/pkg/http"
 	"github.com/bestrobotics/gizmo/pkg/metrics"
 	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
@@ -55,13 +54,6 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	stats := metrics.New(metrics.WithLogger(appLogger))
 	appLogger.Debug("Stats listeners created")
 
-	jsc := gamepad.NewJSController(gamepad.WithLogger(appLogger))
-
-	if err := jsc.BindController("field1:practice", 0); err != nil {
-		appLogger.Error("Error initializing gamepad", "error", err)
-		os.Exit(1)
-	}
-
 	tlm := simple.New(
 		simple.WithLogger(appLogger),
 		simple.WithStartupWG(wg),
@@ -79,9 +71,9 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 
 	p, err := mqttpusher.New(
 		mqttpusher.WithLogger(appLogger),
-		mqttpusher.WithJSController(&jsc),
 		mqttpusher.WithMQTTServer("mqtt://127.0.0.1:1883"),
 		mqttpusher.WithStartupWG(wg),
+		mqttpusher.WithQuadMap(map[string]int{"field1:practice": 0}),
 	)
 	if err != nil {
 		appLogger.Error("Error during mqtt pusher initialization", "error", err)
@@ -117,7 +109,6 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 			return
 		}
 		p.StartLocationPusher()
-		p.StartControlPusher()
 	}()
 
 	go func() {
