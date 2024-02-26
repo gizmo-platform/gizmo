@@ -34,26 +34,25 @@ type Pusher struct {
 	pushWorkers map[int]chan struct{}
 	locWorkers  map[int]chan struct{}
 
+	locRate  time.Duration
+	ctrlRate time.Duration
+
 	// Map of quad/fid to gamepad ID
 	quadMap map[string]int
 
-	ctrlTicker *time.Ticker
-	locTicker  *time.Ticker
-
-	stopLocationFeed chan struct{}
-	swg              *sync.WaitGroup
+	swg *sync.WaitGroup
 }
 
 // New configures and returns a connected pusher.
 func New(opts ...Option) (*Pusher, error) {
 	p := new(Pusher)
-	p.stopLocationFeed = make(chan (struct{}))
+	p.swg = new(sync.WaitGroup)
 	p.teams = make(map[int]string)
 	p.pushWorkers = make(map[int]chan struct{})
 	p.locWorkers = make(map[int]chan struct{})
 	p.quadMap = make(map[string]int)
-	p.ctrlTicker = time.NewTicker(time.Millisecond * 20)
-	p.locTicker = time.NewTicker(time.Second * 3)
+	p.ctrlRate = time.Millisecond * 20
+	p.locRate = time.Second * 3
 
 	for _, o := range opts {
 		if err := o(p); err != nil {
@@ -99,7 +98,10 @@ func (p *Pusher) Connect() error {
 	return nil
 }
 
-func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{}) {
+func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{}, wg *sync.WaitGroup) {
+	wg.Add(1)
+	defer wg.Done()
+
 	jsc := gamepad.NewJSController(gamepad.WithLogger(p.l))
 	jsID, ok := p.quadMap[fid]
 	if !ok {
@@ -112,11 +114,15 @@ func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{})
 	}
 	defer jsc.Close()
 
+	ticker := time.NewTicker(p.ctrlRate)
+
 	for {
 		select {
 		case <-stop:
+			ticker.Stop()
+			p.l.Info("Stopped publishing control data", "team", team, "fid", fid)
 			return
-		case <-p.ctrlTicker.C:
+		case <-ticker.C:
 			vals, err := jsc.GetState()
 			if err != nil {
 				p.l.Warn("Error retrieving controller state", "team", team, "fid", fid, "error", err)
@@ -147,7 +153,10 @@ func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{})
 	}
 }
 
-func (p *Pusher) publishLocationForTeam(team int, fid string, stop chan struct{}) {
+func (p *Pusher) publishLocationForTeam(team int, fid string, stop chan struct{}, wg *sync.WaitGroup) {
+	wg.Add(1)
+	defer wg.Done()
+
 	parts := strings.SplitN(fid, ":", 2)
 	fnum, _ := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
 	vals := struct {
@@ -158,12 +167,15 @@ func (p *Pusher) publishLocationForTeam(team int, fid string, stop chan struct{}
 		Quadrant: strings.ToUpper(parts[1]),
 	}
 
+	ticker := time.NewTicker(p.locRate)
+
 	for {
 		select {
 		case <-stop:
+			ticker.Stop()
+			p.l.Info("Stopped announcing location", "team", team, "field", fnum, "quad", vals.Quadrant)
 			return
-		case <-p.locTicker.C:
-
+		case <-ticker.C:
 			bytes, err := json.Marshal(vals)
 			if err != nil {
 				p.l.Warn("Error marshalling controller state", "team", team, "fid", fid, "error", err)
@@ -205,11 +217,11 @@ func (p *Pusher) updateLoc(c mqtt.Client, message mqtt.Message) {
 		pw := make(chan struct{})
 		p.pushWorkers[team] = pw
 		p.teams[team] = quad
-		go p.publishGamepadForTeam(team, quad, pw)
+		go p.publishGamepadForTeam(team, quad, pw, p.swg)
 
 		lw := make(chan struct{})
 		p.locWorkers[team] = lw
-		go p.publishLocationForTeam(team, quad, lw)
+		go p.publishLocationForTeam(team, quad, lw, p.swg)
 	}
 
 	p.l.Debug("Updated pusher location information", "location", p.teams)
@@ -219,6 +231,9 @@ func (p *Pusher) updateLoc(c mqtt.Client, message mqtt.Message) {
 // streams.
 func (p *Pusher) Stop() {
 	p.l.Info("Stopping...")
-	p.ctrlTicker.Stop()
-	p.locTicker.Stop()
+	for team := range p.teams {
+		close(p.pushWorkers[team])
+		close(p.locWorkers[team])
+	}
+	p.swg.Wait()
 }
