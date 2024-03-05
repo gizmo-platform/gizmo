@@ -103,6 +103,14 @@ func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{},
 	defer wg.Done()
 
 	jsc := gamepad.NewJSController(gamepad.WithLogger(p.l))
+	retryFunc := func() error {
+		if err := jsc.Rebind(); err != nil {
+			p.l.Warn("Rebind failed", "team", team, "fid", fid, "error", err)
+			return err
+		}
+		return nil
+	}
+
 	jsID, ok := p.quadMap[fid]
 	if !ok {
 		p.l.Error("Trying to bind a quad that doesn't exist!", "fid", fid)
@@ -110,7 +118,10 @@ func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{},
 	}
 	if err := jsc.BindController(jsID); err != nil {
 		p.l.Error("Error binding gamepad!", "error", err, "team", team, "fid", fid)
-		return
+		if err := backoff.Retry(retryFunc, backoff.NewConstantBackOff(time.Second*3)); err != nil {
+			p.l.Error("Permanent error encountered while rebinding", "error", err)
+			return
+		}
 	}
 	defer jsc.Close()
 
@@ -126,14 +137,7 @@ func (p *Pusher) publishGamepadForTeam(team int, fid string, stop chan struct{},
 			vals, err := jsc.GetState()
 			if err != nil {
 				p.l.Warn("Error retrieving controller state", "team", team, "fid", fid, "error", err)
-				retryFunc := func() error {
-					if err := jsc.Rebind(); err != nil {
-						p.l.Warn("Rebind failed", "team", team, "fid", fid, "error", err)
-						return err
-					}
-					return nil
-				}
-				if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff()); err != nil {
+				if err := backoff.Retry(retryFunc, backoff.NewConstantBackOff(time.Second*3)); err != nil {
 					p.l.Error("Permanent error encountered while rebinding", "error", err)
 				}
 				return
