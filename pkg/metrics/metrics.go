@@ -22,98 +22,98 @@ func New(opts ...Option) *Metrics {
 		lastSeen:        &sync.Map{},
 
 		robotRSSI: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "rssi",
 			Help:      "WiFi signal strength as measured by the system processor.",
 		}, []string{"team"}),
 
 		robotWifiReconnects: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "wifi_reconnects",
 			Help:      "Number of reconnects since last boot",
 		}, []string{"team"}),
 
 		robotVBat: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "battery_voltage",
 			Help:      "Robot Battery volage.",
 		}, []string{"team"}),
 
 		robotPowerBoard: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "power_board",
 			Help:      "General logic power available.",
 		}, []string{"team"}),
 
 		robotPowerPico: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "power_pico",
 			Help:      "Pico power supply available.",
 		}, []string{"team"}),
 
 		robotPowerGPIO: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "power_gpio",
 			Help:      "GPIO power supply available.",
 		}, []string{"team"}),
 
 		robotPowerBusA: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "power_bus_a",
 			Help:      "Motor Bus A power available.",
 		}, []string{"team"}),
 
 		robotPowerBusB: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "power_bus_b",
 			Help:      "Motor Bus B power available.",
 		}, []string{"team"}),
 
 		robotWatchdogOK: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "watchdog_ok",
 			Help:      "Watchdog has been fed and is alive.",
 		}, []string{"team"}),
 
 		robotWatchdogLifetime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "watchdog_remaining_seconds",
 			Help:      "Watchdog lifetime remaining since last feed.",
 		}, []string{"team"}),
 
 		robotControlFrames: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "control_frames",
 			Help:      "Count of control frames received since power on.",
 		}, []string{"team"}),
 
 		robotControlFrameAge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "control_frame_age_seconds",
 			Help:      "Time since last control frame was received",
 		}, []string{"team"}),
 
 		robotLastInteraction: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "robot",
 			Name:      "last_interaction",
 			Help:      "Timestamp of the last mqtt metrics push",
 		}, []string{"team"}),
 
 		robotOnField: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "best",
+			Namespace: "gizmo",
 			Subsystem: "field",
 			Name:      "robot",
 		}, []string{"field", "quad"}),

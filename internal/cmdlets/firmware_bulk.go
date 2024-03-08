@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
-	"github.com/bestrobotics/gizmo/pkg/firmware"
+	"github.com/gizmo-platform/gizmo/pkg/firmware"
 )
 
 var (

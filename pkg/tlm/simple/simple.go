@@ -9,7 +9,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/bestrobotics/gizmo/pkg/metrics"
+	"github.com/gizmo-platform/gizmo/pkg/metrics"
 )
 
 // TLM is a Team Location Mapper that contains a static mapping.

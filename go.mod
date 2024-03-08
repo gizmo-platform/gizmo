@@ -1,4 +1,4 @@
-module github.com/bestrobotics/gizmo
+module github.com/gizmo-platform/gizmo
 
 go 1.19
 

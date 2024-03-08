@@ -13,7 +13,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/bestrobotics/gizmo/pkg/gamepad"
+	"github.com/gizmo-platform/gizmo/pkg/gamepad"
 )
 
 // JSController defines the interface that the control server expects

@@ -94,7 +94,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_power_board{team=\"$team\"}",
+          "expr": "gizmo_robot_power_board{team=\"$team\"}",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -174,7 +174,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_power_gpio{team=\"$team\"}",
+          "expr": "gizmo_robot_power_gpio{team=\"$team\"}",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -254,7 +254,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_power_pico{team=\"$team\"}",
+          "expr": "gizmo_robot_power_pico{team=\"$team\"}",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -334,7 +334,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_power_bus_a{team=\"$team\"}",
+          "expr": "gizmo_robot_power_bus_a{team=\"$team\"}",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -414,7 +414,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_power_bus_b{team=\"$team\"}",
+          "expr": "gizmo_robot_power_bus_b{team=\"$team\"}",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -516,7 +516,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_watchdog_remaining_milliseconds{team=\"$team\"}",
+          "expr": "gizmo_robot_watchdog_remaining_milliseconds{team=\"$team\"}",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -609,7 +609,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_rssi{team=\"$team\"}",
+          "expr": "gizmo_robot_rssi{team=\"$team\"}",
           "instant": false,
           "legendFormat": "RSSI",
           "range": true,
@@ -703,7 +703,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "best_robot_battery_voltage{team=\"$team\"}",
+          "expr": "gizmo_robot_battery_voltage{team=\"$team\"}",
           "instant": false,
           "legendFormat": "RSSI",
           "range": true,

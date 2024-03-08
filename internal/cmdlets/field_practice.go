@@ -13,11 +13,11 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
-	"github.com/bestrobotics/gizmo/pkg/http"
-	"github.com/bestrobotics/gizmo/pkg/metrics"
-	"github.com/bestrobotics/gizmo/pkg/mqttpusher"
-	"github.com/bestrobotics/gizmo/pkg/mqttserver"
-	"github.com/bestrobotics/gizmo/pkg/tlm/simple"
+	"github.com/gizmo-platform/gizmo/pkg/http"
+	"github.com/gizmo-platform/gizmo/pkg/metrics"
+	"github.com/gizmo-platform/gizmo/pkg/mqttpusher"
+	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
+	"github.com/gizmo-platform/gizmo/pkg/tlm/simple"
 )
 
 var (

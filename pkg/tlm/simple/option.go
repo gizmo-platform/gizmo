@@ -5,7 +5,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/bestrobotics/gizmo/pkg/metrics"
+	"github.com/gizmo-platform/gizmo/pkg/metrics"
 )
 
 // Option configures the TLM

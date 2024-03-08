@@ -1,3 +1,3 @@
 [submodule "pkg/firmware/src"]
 	path = pkg/firmware/src
-	url = https://github.com/bestrobotics/gizmo-fw
+	url = https://github.com/gizmo-platform/firmware.git

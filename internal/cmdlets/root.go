@@ -13,7 +13,7 @@ var (
 		Short: "Entrypoint for all BEST Robot commands",
 		Long:  rootCmdLongDocs,
 	}
-	rootCmdLongDocs = `The BEST Robot system provides servers for field control, configuration for your joysticks, and tools to program the system processor on your robot control board.`
+	rootCmdLongDocs = `The Gizmo Platform provides servers for field control, configuration for your joysticks, and tools to program the system processor on your robot control board.`
 )
 
 // Entrypoint is the entrypoint into all cmdlets, it will dispatch to

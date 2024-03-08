@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bestrobotics/gizmo/internal/cmdlets"
+	"github.com/gizmo-platform/gizmo/internal/cmdlets"
 )
 
 func main() {
