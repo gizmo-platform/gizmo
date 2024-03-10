@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-sockaddr"
 	"github.com/spf13/cobra"
 
@@ -34,13 +36,60 @@ func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 
 	qInitial := []*survey.Question{
 		{
-			Name:     "ServerIP",
+			Name:     "Team",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
-				Message: "Address of the field server",
-				Default: lAddr,
+				Message: "Team Number",
 			},
 		},
+		{
+			Name:     "UseConsole",
+			Validate: survey.Required,
+			Prompt: &survey.Confirm{
+				Message: "Use the driver's console",
+				Default: true,
+			},
+		},
+	}
+
+	cfg := firmware.Config{
+		UseAvahi: true,
+		ServerIP: "fms.local",
+		NetSSID:  strings.ReplaceAll(uuid.New().String(), "-", ""),
+		NetPSK:   strings.ReplaceAll(uuid.New().String(), "-", ""),
+	}
+	if err := survey.Ask(qInitial, &cfg); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	qAdvanced := []*survey.Question{
+		{
+			Name:     "UseAvahi",
+			Validate: survey.Required,
+			Prompt: &survey.Confirm{
+				Message: "Use Avahi (mDNS)",
+				Default: true,
+			},
+		},
+		{
+			Name:     "UseExtNet",
+			Validate: survey.Required,
+			Prompt: &survey.Confirm{
+				Message: "Use external network controller",
+				Default: false,
+			},
+		},
+	}
+
+	if !cfg.UseConsole {
+		if err := survey.Ask(qAdvanced, &cfg); err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+	}
+
+	qExtNet := []*survey.Question{
 		{
 			Name:     "NetSSID",
 			Validate: survey.Required,
@@ -55,19 +104,31 @@ func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 				Message: "Network PSK (Input will be obscured)",
 			},
 		},
+	}
+
+	if cfg.UseExtNet {
+		if err := survey.Ask(qExtNet, &cfg); err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+	}
+
+	qAvahi := []*survey.Question{
 		{
-			Name:     "Team",
+			Name:     "ServerIP",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
-				Message: "Team Number",
+				Message: "Address of the field server",
+				Default: lAddr,
 			},
 		},
 	}
 
-	cfg := firmware.Config{}
-	if err := survey.Ask(qInitial, &cfg); err != nil {
-		fmt.Println(err.Error())
-		return
+	if !cfg.UseAvahi {
+		if err := survey.Ask(qAvahi, &cfg); err != nil {
+			fmt.Println(err.Error())
+			return
+		}
 	}
 
 	f, err := os.Create("gsscfg.json")
