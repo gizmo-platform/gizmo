@@ -30,7 +30,8 @@ func init() {
 	// Search the various places the arduino install may have
 	// gone, bailing at the first one that exists.
 	for _, arduinoPath := range arduinoPaths {
-		_, err := os.Stat(filepath.Join(arduinoPath, "resources", "app", "lib", "backend", "resources"))
+		arduinoPath = filepath.Join(arduinoPath, "resources", "app", "lib", "backend", "resources")
+		_, err := os.Stat(arduinoPath)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
 		}
