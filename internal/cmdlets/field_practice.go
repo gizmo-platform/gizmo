@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/http"
+	"github.com/gizmo-platform/gizmo/pkg/mdns"
 	"github.com/gizmo-platform/gizmo/pkg/metrics"
 	"github.com/gizmo-platform/gizmo/pkg/mqttpusher"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
@@ -126,6 +127,15 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 	tlm.InsertOnDemandMap(map[int]string{tNum: "field1:practice"})
 	tlm.Start()
 	stats.StartFlusher()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if _, err := mdns.NewServer(args[0]); err != nil {
+			appLogger.Error("Could not publish mdns service", "error", err)
+			quit <- syscall.SIGINT
+		}
+	}()
 
 	wg.Wait()
 	appLogger.Info("Startup Complete!")
