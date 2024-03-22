@@ -13,6 +13,18 @@ const (
 	dnsmasqConf = "/etc/dnsmasq/dnsmasq.conf"
 )
 
+// Install invokes xbps to install the necessary packages
+func (ds *DriverStation) Install() error {
+	pkgs := []string{
+		"arduino-cli",
+		"python3",
+		"hostapd",
+		"dnsmasq",
+	}
+
+	return exec.Command("xbps-install", append([]string{"-Suy"}, pkgs...)...).Run()
+}
+
 // Configure installs configuration files into the correct locations
 // to permit operation of the network components.  It also restarts
 // services as necessary.
