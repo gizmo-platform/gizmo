@@ -18,11 +18,11 @@ func NewFactory(l hclog.Logger) *Factory {
 }
 
 func (f *Factory) unpack(bc BuildConfig) error {
-	// The source has to wind up in a folder called 'gizmo-fw'
+	// The source has to wind up in a folder called 'firmware'
 	// because that's the name of the main file.  You can
 	// technically override this, but this also means you can open
 	// things in the Arduino IDE and it works.
-	dir := filepath.Join(bc.dir, "gizmo-fw")
+	dir := filepath.Join(bc.dir, "firmware")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (f *Factory) unpack(bc BuildConfig) error {
 
 func (f *Factory) configure(bc BuildConfig) error {
 	tmpl, _ := template.ParseFS(efs, "config.h.tpl")
-	fo, err := os.Create(filepath.Join(bc.dir, "gizmo-fw", "params.h"))
+	fo, err := os.Create(filepath.Join(bc.dir, "firmware", "params.h"))
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (f *Factory) compile(bc BuildConfig) error {
 		".",
 	}
 	cmd := exec.Command("arduino-cli", args...)
-	cmd.Dir = filepath.Join(bc.dir, "gizmo-fw")
+	cmd.Dir = filepath.Join(bc.dir, "firmware")
 
 	output, err := cmd.CombinedOutput()
 	f.l.Trace(string(output))
@@ -78,7 +78,7 @@ func (f *Factory) compile(bc BuildConfig) error {
 }
 
 func (f *Factory) exportTo(bc BuildConfig) error {
-	s := filepath.Join(bc.dir, "gizmo-fw", "gizmo-fw.ino.uf2")
+	s := filepath.Join(bc.dir, "firmware", "firmware.ino.uf2")
 	src, err := os.Open(s)
 	if err != nil {
 		f.l.Debug("Failed to open source", "path", s)
