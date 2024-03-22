@@ -9,13 +9,12 @@ import (
 // Config contains the information that a given firmware image will
 // bake in.
 type Config struct {
-	Team       int
-	UseConsole bool
-	UseAvahi   bool
-	UseExtNet  bool
-	NetSSID    string
-	NetPSK     string
-	ServerIP   string
+	Team             int
+	UseDriverStation bool
+	UseExtNet        bool
+	NetSSID          string
+	NetPSK           string
+	ServerIP         string
 }
 
 //go:embed src/*.cpp src/*.h src/*.ino src/*.yaml config.h.tpl

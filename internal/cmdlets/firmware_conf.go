@@ -43,18 +43,17 @@ func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 			},
 		},
 		{
-			Name:     "UseConsole",
+			Name:     "UseDriverStation",
 			Validate: survey.Required,
 			Prompt: &survey.Confirm{
-				Message: "Use the driver's console",
+				Message: "Use the driver's station",
 				Default: true,
 			},
 		},
 	}
 
 	cfg := firmware.Config{
-		UseAvahi: true,
-		ServerIP: "fms.local",
+		ServerIP: "gizmo-ds",
 		NetSSID:  strings.ReplaceAll(uuid.New().String(), "-", ""),
 		NetPSK:   strings.ReplaceAll(uuid.New().String(), "-", ""),
 	}
@@ -65,14 +64,6 @@ func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 
 	qAdvanced := []*survey.Question{
 		{
-			Name:     "UseAvahi",
-			Validate: survey.Required,
-			Prompt: &survey.Confirm{
-				Message: "Use Avahi (mDNS)",
-				Default: true,
-			},
-		},
-		{
 			Name:     "UseExtNet",
 			Validate: survey.Required,
 			Prompt: &survey.Confirm{
@@ -82,7 +73,7 @@ func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 		},
 	}
 
-	if !cfg.UseConsole {
+	if !cfg.UseDriverStation {
 		if err := survey.Ask(qAdvanced, &cfg); err != nil {
 			fmt.Println(err.Error())
 			return
@@ -104,28 +95,18 @@ func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 				Message: "Network PSK (Input will be obscured)",
 			},
 		},
-	}
-
-	if cfg.UseExtNet {
-		if err := survey.Ask(qExtNet, &cfg); err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	}
-
-	qAvahi := []*survey.Question{
 		{
 			Name:     "ServerIP",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
-				Message: "Address of the field server",
+				Message: "Address of the driver station (can be an mDNS name)",
 				Default: lAddr,
 			},
 		},
 	}
 
-	if !cfg.UseAvahi {
-		if err := survey.Ask(qAvahi, &cfg); err != nil {
+	if cfg.UseExtNet {
+		if err := survey.Ask(qExtNet, &cfg); err != nil {
 			fmt.Println(err.Error())
 			return
 		}
