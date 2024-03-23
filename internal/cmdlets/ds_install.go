@@ -23,7 +23,7 @@ func init() {
 
 func dsInstallCmdRun(c *cobra.Command, args []string) {
 	if err := ds.New().Install(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error during install: \n", err)
+		fmt.Fprintf(os.Stderr, "Error during install: %s\n", err)
 		return
 	}
 }
