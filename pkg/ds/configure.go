@@ -10,14 +10,14 @@ import (
 
 const (
 	hostAPdConf = "/etc/hostapd/hostapd.conf"
-	dnsmasqConf = "/etc/dnsmasq/dnsmasq.conf"
+	dnsmasqConf = "/etc/dnsmasq.conf"
+	dhcpcdConf  = "/etc/dhcpcd.conf"
+	dhcpcdPre   = "/etc/sv/dhcpcd/conf"
 )
 
 // Install invokes xbps to install the necessary packages
 func (ds *DriverStation) Install() error {
 	pkgs := []string{
-		"arduino-cli",
-		"python3",
 		"hostapd",
 		"dnsmasq",
 	}
@@ -32,10 +32,11 @@ func (ds *DriverStation) Configure() error {
 	steps := []ConfigureStep{
 		ds.configureHostname,
 		ds.configureHostAPd,
+		ds.configureDHCPCD,
 		ds.configureDNSMasq,
 		ds.enableServices,
 	}
-	names := []string{"hostname", "hostapd", "dnsmasq", "enable"}
+	names := []string{"hostname", "hostapd", "dhcpcd", "dnsmasq", "enable"}
 
 	for i, step := range steps {
 		ds.l.Info("Configuring", "step", names[i])
@@ -69,16 +70,24 @@ func (ds *DriverStation) configureHostAPd() error {
 	return nil
 }
 
-func (ds *DriverStation) configureDNSMasq() error {
-	if err := ds.doTemplate(dnsmasqConf, "tpl/dnsmasq.conf.tpl", ds.cfg); err != nil {
+func (ds *DriverStation) configureDHCPCD() error {
+	if err := ds.doTemplate(dhcpcdConf, "tpl/dhcpcd.conf.tpl", ds.cfg); err != nil {
+		return err
+	}
+
+	if err := ds.doTemplate(dhcpcdPre, "tpl/dhcpcd.pre.tpl", nil); err != nil {
 		return err
 	}
 	return nil
 }
 
+func (ds *DriverStation) configureDNSMasq() error {
+	return ds.doTemplate(dnsmasqConf, "tpl/dnsmasq.conf.tpl", ds.cfg)
+}
+
 func (ds *DriverStation) enableServices() error {
-	ds.svc.Enable("dnsmasq")
 	ds.svc.Enable("hostapd")
+	ds.svc.Enable("dnsmasq")
 	return nil
 }
 
