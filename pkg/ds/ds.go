@@ -8,7 +8,7 @@ import (
 func New(opts ...Option) *DriverStation {
 	d := new(DriverStation)
 	d.l = hclog.NewNullLogger()
-	d.svc = new(runit)
+	d.svc = new(Runit)
 
 	for _, o := range opts {
 		o(d)

@@ -17,7 +17,7 @@ type DriverStation struct {
 
 	cfg firmware.Config
 
-	svc *runit
+	svc *Runit
 }
 
 // Option enables variadic configuration of the driver's station

@@ -11,10 +11,11 @@ import (
 const (
 	coresvc = "/etc/runit/core-services/90-gizmo.sh"
 
-	hostAPdConf = "/etc/hostapd/hostapd.conf"
-	dnsmasqConf = "/etc/dnsmasq.conf"
-	dhcpcdConf  = "/etc/dhcpcd.conf"
-	gizmoSvc    = "/etc/sv/gizmo/run"
+	hostAPdConf      = "/etc/hostapd/hostapd.conf"
+	dnsmasqConf      = "/etc/dnsmasq.conf"
+	dhcpcdConf       = "/etc/dhcpcd.conf"
+	gizmoPracticeSvc = "/etc/sv/gizmo-practice/run"
+	gizmoLinkSvc     = "/etc/sv/gizmo-link/run"
 )
 
 // Install invokes xbps to install the necessary packages
@@ -129,12 +130,19 @@ func (ds *DriverStation) configureDNSMasq() error {
 }
 
 func (ds *DriverStation) configureGizmo() error {
-	return ds.doTemplate(gizmoSvc, "tpl/gizmo.run.tpl", 0755, ds.cfg)
+	if err := ds.doTemplate(gizmoPracticeSvc, "tpl/gizmo-practice.run.tpl", 0755, ds.cfg); err != nil {
+		return err
+	}
+	if err := ds.doTemplate(gizmoLinkSvc, "tpl/gizmo-link.run.tpl", 0755, nil); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ds *DriverStation) enableServices() error {
 	ds.svc.Enable("hostapd")
 	ds.svc.Enable("dnsmasq")
-	ds.svc.Enable("gizmo")
+	ds.svc.Enable("gizmo-practice")
+	ds.svc.Enable("gizmo-link")
 	return nil
 }
