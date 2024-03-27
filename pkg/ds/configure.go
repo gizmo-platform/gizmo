@@ -14,6 +14,7 @@ const (
 	hostAPdConf = "/etc/hostapd/hostapd.conf"
 	dnsmasqConf = "/etc/dnsmasq.conf"
 	dhcpcdConf  = "/etc/dhcpcd.conf"
+	gizmoSvc    = "/etc/sv/gizmo/run"
 )
 
 // Install invokes xbps to install the necessary packages
@@ -42,9 +43,18 @@ func (ds *DriverStation) Configure() error {
 		ds.configureHostAPd,
 		ds.configureDHCPCD,
 		ds.configureDNSMasq,
+		ds.configureGizmo,
 		ds.enableServices,
 	}
-	names := []string{"network", "hostname", "hostapd", "dhcpcd", "dnsmasq", "enable"}
+	names := []string{
+		"network",
+		"hostname",
+		"hostapd",
+		"dhcpcd",
+		"dnsmasq",
+		"gizmo",
+		"enable",
+	}
 
 	for i, step := range steps {
 		ds.l.Info("Configuring", "step", names[i])
@@ -118,8 +128,13 @@ func (ds *DriverStation) configureDNSMasq() error {
 	return ds.doTemplate(dnsmasqConf, "tpl/dnsmasq.conf.tpl", 0644, ds.cfg)
 }
 
+func (ds *DriverStation) configureGizmo() error {
+	return ds.doTemplate(gizmoSvc, "tpl/gizmo.run.tpl", 0755, ds.cfg)
+}
+
 func (ds *DriverStation) enableServices() error {
 	ds.svc.Enable("hostapd")
 	ds.svc.Enable("dnsmasq")
+	ds.svc.Enable("gizmo")
 	return nil
 }
