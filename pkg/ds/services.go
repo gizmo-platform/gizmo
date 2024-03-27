@@ -8,7 +8,7 @@ import (
 
 const (
 	serviceDir = "/etc/sv"
-	runsvDir   = "/var/service"
+	runsvDir   = "/etc/runit/runsvdir/default"
 )
 
 type runit struct{}

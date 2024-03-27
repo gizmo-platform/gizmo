@@ -22,8 +22,15 @@ func init() {
 }
 
 func dsInstallCmdRun(c *cobra.Command, args []string) {
-	if err := ds.New().Install(); err != nil {
+	drv := ds.New()
+
+	if err := drv.Install(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error during install: %s\n", err)
+		return
+	}
+
+	if err := drv.SetupBoot(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error during boot setup: %s\n", err)
 		return
 	}
 }

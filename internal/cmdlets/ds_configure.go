@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/ds"
@@ -42,7 +43,17 @@ func dsConfigureCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	d := ds.New(ds.WithGSSConfig(cfg))
+	ll := os.Getenv("LOG_LEVEL")
+	if ll == "" {
+		ll = "INFO"
+	}
+	appLogger := hclog.New(&hclog.LoggerOptions{
+		Name:  "field",
+		Level: hclog.LevelFromString(ll),
+	})
+	appLogger.Info("Log level", "level", appLogger.GetLevel())
+
+	d := ds.New(ds.WithGSSConfig(cfg), ds.WithLogger(appLogger))
 
 	if err := d.Configure(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error configuring: %s\n", err)

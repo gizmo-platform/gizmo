@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"text/template"
+
+	"github.com/vishvananda/netlink"
 )
 
 const (
+	coresvc = "/etc/runit/core-services/90-gizmo.sh"
+
 	hostAPdConf = "/etc/hostapd/hostapd.conf"
 	dnsmasqConf = "/etc/dnsmasq.conf"
 	dhcpcdConf  = "/etc/dhcpcd.conf"
-	dhcpcdPre   = "/etc/sv/dhcpcd/conf"
 )
 
 // Install invokes xbps to install the necessary packages
@@ -25,24 +26,63 @@ func (ds *DriverStation) Install() error {
 	return exec.Command("xbps-install", append([]string{"-Suy"}, pkgs...)...).Run()
 }
 
+// SetupBoot installs the runtime hooks that startup the configuration
+// jobs.
+func (ds *DriverStation) SetupBoot() error {
+	return ds.doTemplate(coresvc, "tpl/coresvc.sh.tpl", 0644, nil)
+}
+
 // Configure installs configuration files into the correct locations
 // to permit operation of the network components.  It also restarts
 // services as necessary.
 func (ds *DriverStation) Configure() error {
 	steps := []ConfigureStep{
+		ds.configureNetwork,
 		ds.configureHostname,
 		ds.configureHostAPd,
 		ds.configureDHCPCD,
 		ds.configureDNSMasq,
 		ds.enableServices,
 	}
-	names := []string{"hostname", "hostapd", "dhcpcd", "dnsmasq", "enable"}
+	names := []string{"network", "hostname", "hostapd", "dhcpcd", "dnsmasq", "enable"}
 
 	for i, step := range steps {
 		ds.l.Info("Configuring", "step", names[i])
 		if err := step(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (ds *DriverStation) configureNetwork() error {
+	eth0, err := netlink.LinkByName("eth0")
+	if err != nil {
+		ds.l.Error("Could not retrieve ethernet link", "error", err)
+		return err
+	}
+
+	err = netlink.LinkAdd(&netlink.Bridge{LinkAttrs: netlink.LinkAttrs{Name: "br0"}})
+	if err != nil && err.Error() != "file exists" {
+		ds.l.Error("Could not create bridge device", "error", err)
+		return err
+	}
+
+	br0, err := netlink.LinkByName("br0")
+	if err != nil {
+		ds.l.Error("Could not get handle to bridge interface", "error", err)
+		return err
+	}
+
+	if err := netlink.LinkSetMaster(eth0, br0); err != nil {
+		ds.l.Error("Error adding link to bridge", "error", err)
+		return err
+	}
+
+	if err := netlink.LinkSetUp(eth0); err != nil {
+		ds.l.Error("Error enabling eth0", "error", err)
+		return err
 	}
 
 	return nil
@@ -56,7 +96,7 @@ func (ds *DriverStation) configureHostname() error {
 	fmt.Fprintf(f, "gizmoDS-%d\n", ds.cfg.Team)
 	f.Close()
 
-	if err := exec.Command("hostname", fmt.Sprintf("%d", ds.cfg.Team)).Run(); err != nil {
+	if err := exec.Command("/usr/bin/hostname", fmt.Sprintf("gizmoDS-%d", ds.cfg.Team)).Run(); err != nil {
 		return err
 	}
 
@@ -64,64 +104,22 @@ func (ds *DriverStation) configureHostname() error {
 }
 
 func (ds *DriverStation) configureHostAPd() error {
-	if err := ds.doTemplate(hostAPdConf, "tpl/hostapd.conf.tpl", ds.cfg); err != nil {
+	if err := ds.doTemplate(hostAPdConf, "tpl/hostapd.conf.tpl", 0644, ds.cfg); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (ds *DriverStation) configureDHCPCD() error {
-	if err := ds.doTemplate(dhcpcdConf, "tpl/dhcpcd.conf.tpl", ds.cfg); err != nil {
-		return err
-	}
-
-	if err := ds.doTemplate(dhcpcdPre, "tpl/dhcpcd.pre.tpl", nil); err != nil {
-		return err
-	}
-	return nil
+	return ds.doTemplate(dhcpcdConf, "tpl/dhcpcd.conf.tpl", 0644, ds.cfg)
 }
 
 func (ds *DriverStation) configureDNSMasq() error {
-	return ds.doTemplate(dnsmasqConf, "tpl/dnsmasq.conf.tpl", ds.cfg)
+	return ds.doTemplate(dnsmasqConf, "tpl/dnsmasq.conf.tpl", 0644, ds.cfg)
 }
 
 func (ds *DriverStation) enableServices() error {
 	ds.svc.Enable("hostapd")
 	ds.svc.Enable("dnsmasq")
 	return nil
-}
-
-func (ds *DriverStation) doTemplate(path, source string, data interface{}) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		ds.l.Error("Error creating target template path", "path", path, "error", err)
-		return err
-	}
-
-	fMap := template.FuncMap{
-		"ip4prefix": ip4prefix,
-	}
-
-	tmpl, err := template.New(filepath.Base(source)).Funcs(fMap).ParseFS(efs, source)
-	if err != nil {
-		ds.l.Error("Error parsing template", "source", source, "error", err)
-		return err
-	}
-
-	f, err := os.Create(path)
-	if err != nil {
-		ds.l.Error("Error creating target file", "file", path, "error", err)
-		return err
-	}
-	defer f.Close()
-
-	if err := tmpl.Execute(f, data); err != nil {
-		ds.l.Error("Error executing template", "data", data, "error", err)
-		return err
-	}
-
-	return nil
-}
-
-func ip4prefix(t int) string {
-	return fmt.Sprintf("10.%d.%d", int(t/100), t%100)
 }
