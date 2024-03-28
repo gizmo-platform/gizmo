@@ -88,6 +88,10 @@ func fieldPracticeCmdRun(c *cobra.Command, args []string) {
 		http.WithQuads([]string{"field1:practice"}),
 		http.WithStartupWG(wg),
 	)
+	if err != nil {
+		appLogger.Error("Error initializing http", "error", err)
+		quit <- syscall.SIGINT
+	}
 
 	go func() {
 		if err := m.Serve(":1883"); err != nil {

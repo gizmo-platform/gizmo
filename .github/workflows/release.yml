@@ -18,10 +18,12 @@ jobs:
         with:
           submodules: 'true'
           fetch-depth: 0
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: stable
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
@@ -30,3 +32,16 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build Driver Station
+        run: sudo sh -x .release/build-ds.sh
+
+      - name: Upload artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: driver-station.zip
+          generate_release_notes: false
+          fail_on_unmatched_files: true

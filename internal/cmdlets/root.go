@@ -1,3 +1,5 @@
+// Package cmdlets contains the main entrypoints of the various
+// functions that the gizmo tool can perform.
 package cmdlets
 
 import (
