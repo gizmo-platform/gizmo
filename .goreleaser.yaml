@@ -10,6 +10,11 @@ builds:
     goos:
       - linux
       - windows
+    ldflags:
+      - '-s -w'
+      - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.Version={{.Version}}'
+      - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.Commit={{.Commit}}'
+      - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.BuildDate={{.Timestamp}}'
 
 archives:
   - format: tar.gz
