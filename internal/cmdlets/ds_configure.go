@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/ds"
-	"github.com/gizmo-platform/gizmo/pkg/firmware"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 var (
@@ -38,7 +38,7 @@ func dsConfigureCmdRun(c *cobra.Command, args []string) {
 	}
 	defer f.Close()
 
-	cfg := firmware.Config{}
+	cfg := config.Config{}
 
 	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Error decoding config: %s\n", err)

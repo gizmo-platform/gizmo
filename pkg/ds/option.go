@@ -3,12 +3,12 @@ package ds
 import (
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/gizmo-platform/gizmo/pkg/firmware"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 // WithGSSConfig configures this driver station to use a particular
 // GSS configuration set.
-func WithGSSConfig(cfg firmware.Config) Option {
+func WithGSSConfig(cfg config.Config) Option {
 	return func(d *DriverStation) { d.cfg = cfg }
 }
 
