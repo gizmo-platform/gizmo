@@ -1,10 +1,11 @@
 package cmdlets
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
-	"bufio"
+	"time"
 
 	"github.com/spf13/cobra"
 	"go.bug.st/serial"
@@ -13,11 +14,11 @@ import (
 
 var (
 	dsConfigServerCmd = &cobra.Command{
-		Use:   "config-server <file> <port>",
+		Use:   "config-server <file>",
 		Short: "config-server provides configuration data to an attached gizmo",
 		Long:  dsConfigServerCmdLongDocs,
 		Run:   dsConfigServerCmdRun,
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(1),
 	}
 
 	dsConfigServerCmdLongDocs = `config-server provides a means of a gizmo to receive the gsscfg.json file.  It does this by listening to the requested serial port and then providing the configuration file once a magic handshake string has been received.  Consult the documentation for further information about how this handshake process works, and if you need to drive it manually how to do that.`
@@ -28,31 +29,28 @@ func init() {
 }
 
 func dsConfigServerCmdRun(c *cobra.Command, args []string) {
-	ports, err := enumerator.GetDetailedPortsList()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return
-	}
-	if len(ports) == 0 {
-		fmt.Println("No serial ports found!")
-		return
-	}
+	t := time.NewTicker(time.Second)
 	pname := ""
-	for _, port := range ports {
-		if !port.IsUSB {
-			// We know the Gizmo must be connected via USB
-			continue
+out:
+	for range t.C {
+		ports, err := enumerator.GetDetailedPortsList()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			return
 		}
-		if args[1] == port.Name {
-			pname = port.Name
-			break
+		for _, port := range ports {
+			fmt.Println("Found port", port.Name)
+			if !port.IsUSB {
+				// We know the Gizmo must be connected via USB
+				continue
+			}
+			if port.VID == "2e8a" && port.PID == "f00a" {
+				pname = port.Name
+				break out
+			}
 		}
 	}
-
-	if pname == "" {
-		fmt.Fprintln(os.Stderr, "Specified serial port not found, try again")
-		return
-	}
+	t.Stop()
 
 	cfg, err := os.Open(args[0])
 	if err != nil {
@@ -73,6 +71,9 @@ func dsConfigServerCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 	defer port.Close()
+	if err := port.SetReadTimeout(time.Second * 15); err != nil {
+		return
+	}
 
 	fmt.Println("Waiting for Gizmo")
 	scanner := bufio.NewScanner(bufio.NewReader(port))

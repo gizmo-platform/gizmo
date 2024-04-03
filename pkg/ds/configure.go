@@ -16,6 +16,7 @@ const (
 	dhcpcdConf       = "/etc/dhcpcd.conf"
 	gizmoPracticeSvc = "/etc/sv/gizmo-practice/run"
 	gizmoLinkSvc     = "/etc/sv/gizmo-link/run"
+	gizmoConfigSvc   = "/etc/sv/gizmo-config/run"
 )
 
 // Install invokes xbps to install the necessary packages
@@ -136,6 +137,9 @@ func (ds *DriverStation) configureGizmo() error {
 	if err := ds.doTemplate(gizmoLinkSvc, "tpl/gizmo-link.run.tpl", 0755, nil); err != nil {
 		return err
 	}
+	if err := ds.doTemplate(gizmoConfigSvc, "tpl/gizmo-config.run.tpl", 0755, nil); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -144,5 +148,6 @@ func (ds *DriverStation) enableServices() error {
 	ds.svc.Enable("dnsmasq")
 	ds.svc.Enable("gizmo-practice")
 	ds.svc.Enable("gizmo-link")
+	ds.svc.Enable("gizmo-config")
 	return nil
 }
