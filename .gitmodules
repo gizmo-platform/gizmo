@@ -1,3 +1,6 @@
 [submodule "pkg/firmware/src"]
 	path = pkg/firmware/src
 	url = https://github.com/gizmo-platform/firmware.git
+[submodule "pkg/docs/mdbook"]
+	path = pkg/docs/mdbook
+	url = https://github.com/gizmo-platform/gizmo-platform.github.io
