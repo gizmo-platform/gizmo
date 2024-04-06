@@ -8,7 +8,7 @@ import (
 	"github.com/mdp/qrterminal/v3"
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/firmware"
 )
 
 var (
@@ -31,7 +31,7 @@ func debugWJoinRun(c *cobra.Command, args []string) {
 	}
 	defer f.Close()
 
-	cfg := config.Config{}
+	cfg := firmware.Config{}
 
 	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Error decoding config: %s\n", err)

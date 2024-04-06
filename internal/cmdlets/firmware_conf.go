@@ -11,25 +11,25 @@ import (
 	"github.com/hashicorp/go-sockaddr"
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/firmware"
 )
 
 var (
-	configCommand = &cobra.Command{
+	firmwareConfigCommand = &cobra.Command{
 		Use:   "configure",
 		Short: "configure prompts for required configuration values",
-		Long:  configCmdLongDocs,
-		Run:   configCmdRun,
+		Long:  firmwareConfigCmdLongDocs,
+		Run:   firmwareConfigCmdRun,
 	}
 
-	configCmdLongDocs = `configure prompts in a wizard style for the values that must be manually set.`
+	firmwareConfigCmdLongDocs = `configure prompts in a wizard style for the values that are required to configure the GSS firmware image.`
 )
 
 func init() {
-	rootCmd.AddCommand(configCommand)
+	firmwareCmd.AddCommand(firmwareConfigCommand)
 }
 
-func configCmdRun(c *cobra.Command, args []string) {
+func firmwareConfigCmdRun(c *cobra.Command, args []string) {
 	// We throw away this error because the worst case is the
 	// default isn't set.
 	lAddr, _ := sockaddr.GetPrivateIP()
@@ -52,7 +52,7 @@ func configCmdRun(c *cobra.Command, args []string) {
 		},
 	}
 
-	cfg := config.Config{
+	cfg := firmware.Config{
 		ServerIP: "gizmo-ds",
 		NetSSID:  strings.ReplaceAll(uuid.New().String(), "-", ""),
 		NetPSK:   strings.ReplaceAll(uuid.New().String(), "-", ""),

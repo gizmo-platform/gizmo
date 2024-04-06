@@ -5,7 +5,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/firmware"
 )
 
 // DriverStation binds all methods related to the driver station task,
@@ -15,7 +15,7 @@ import (
 type DriverStation struct {
 	l hclog.Logger
 
-	cfg config.Config
+	cfg firmware.Config
 
 	svc *Runit
 }
