@@ -10,6 +10,8 @@ import (
 	"net/http"
 )
 
+//go:generate mdbook build mdbook
+
 //go:embed mdbook/book/*
 var efs embed.FS
 

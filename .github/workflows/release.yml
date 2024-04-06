@@ -19,6 +19,23 @@ jobs:
           submodules: 'true'
           fetch-depth: 0
 
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: latest
+
+      - name: Install mdbook-callouts from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: mdbook-callouts
+          version: "v0.2.1"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+
+      - name: Install mdbook d2 preprocessor
+        run: go install github.com/Vaelatern/mdbook-d2-go@latest
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
