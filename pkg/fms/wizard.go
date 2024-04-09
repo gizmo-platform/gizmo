@@ -12,6 +12,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/google/uuid"
+	"github.com/martinhoefling/goxkcdpwgen/xkcdpwgen"
 )
 
 // ws binds together all the steps required to configure the FMS
@@ -96,7 +97,19 @@ func (w *ws) setFields() error {
 		w.c.Fields[i] = &Field{ID: i + 1}
 	}
 
-	return nil
+	w.c.AutoUser = AutomationUser
+	w.c.AutoPass = strings.ReplaceAll(uuid.New().String(), "-", "")
+
+	xkcd := xkcdpwgen.NewGenerator()
+	xkcd.SetNumWords(3)
+	xkcd.SetCapitalize(true)
+	xkcd.SetDelimiter("")
+	pPrompt := &survey.Input{
+		Message: fmt.Sprintf("Read-only user password (username: %s)", ViewOnlyUser),
+		Default: xkcd.GeneratePasswordString(),
+	}
+	w.c.ViewUser = ViewOnlyUser
+	return survey.AskOne(pPrompt, &w.c.ViewPass)
 }
 
 func (w *ws) loadTeams() error {

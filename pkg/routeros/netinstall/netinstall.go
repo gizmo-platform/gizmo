@@ -18,6 +18,8 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/vishvananda/netlink"
+
+	"github.com/gizmo-platform/gizmo/pkg/fms"
 )
 
 const (
@@ -75,6 +77,17 @@ func WithLogger(l hclog.Logger) InstallerOpt {
 // WithPackage configures what package should be installed
 func WithPackage(p string) InstallerOpt {
 	return func(i *Installer) { i.pkg = p }
+}
+
+// WithFMS pulls in the relevant settings from the config that needs
+// to be baked at netinstall time.
+func WithFMS(c *fms.Config) InstallerOpt {
+	return func(i *Installer) {
+		i.bootstrapCtx["AutoUser"] = c.AutoUser
+		i.bootstrapCtx["AutoPass"] = c.AutoPass
+		i.bootstrapCtx["ViewUser"] = c.ViewUser
+		i.bootstrapCtx["ViewPass"] = c.ViewPass
+	}
 }
 
 // WithNetwork configures the network line that is passed to the

@@ -19,3 +19,7 @@ sign self
 /ip service
 set www disabled=no
 set www-ssl certificate=self disabled=no
+/user/group/add name=automation policy=read,write,rest-api,ssh
+/user/group/add name=readonly policy=read,ssh,web
+/user/add name={{.AutoUser}} group=automation password={{.AutoPass}}
+/user/add name={{.ViewUser}} group=readonly password={{.ViewPass}}

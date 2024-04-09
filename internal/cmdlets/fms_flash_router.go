@@ -5,9 +5,11 @@ import (
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
+
+	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
 )
 
 var (
@@ -78,10 +80,17 @@ func fieldHardwareFlashRouterCmdRun(c *cobra.Command, args []string) {
 		Level: hclog.LevelFromString(ll),
 	})
 
+	cfg, err := fms.LoadConfig("fms.json")
+	if err != nil {
+		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
+		return
+	}
+
 	installer := netinstall.New(
 		netinstall.WithLogger(appLogger),
 		netinstall.WithPackage(netinstall.RouterPkg),
 		netinstall.WithNetwork(netinstall.RouterBootstrapNet),
+		netinstall.WithFMS(cfg),
 	)
 
 	if err := installer.Install(); err != nil {

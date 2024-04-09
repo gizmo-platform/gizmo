@@ -3,6 +3,17 @@
 // that talk to other systems.
 package fms
 
+const (
+	// AutomationUser is created on remote systems to allow the
+	// FMS to manage them programattically.
+	AutomationUser = "gizmo-fms"
+
+	// ViewOnlyUser is created on remote systems to enable
+	// debugging and generally make it possible to get into
+	// systems.
+	ViewOnlyUser = "gizmo-ro"
+)
+
 // Team maintains information about a team from the perspective of the
 // FMS
 type Team struct {
@@ -27,6 +38,11 @@ type Config struct {
 	// Fields contains a list of fields that are configured and
 	// managed by the system.
 	Fields map[int]*Field
+
+	AutoUser string
+	AutoPass string
+	ViewUser string
+	ViewPass string
 
 	AdvancedBGPAS int
 	AdvancedBGPIP string
