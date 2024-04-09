@@ -4,3 +4,5 @@ dist/
 gsscfg.json
 gizmo
 *.uf2
+*.csv
+fms.json

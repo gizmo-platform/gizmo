@@ -1,6 +1,6 @@
 module github.com/gizmo-platform/gizmo
 
-go 1.19
+go 1.22
 
 require (
 	github.com/0xcafed00d/joystick v1.0.1
