@@ -1,8 +1,8 @@
 package fms
 
 import (
-	"os"
 	"encoding/json"
+	"os"
 )
 
 // LoadConfig reads config off disk.

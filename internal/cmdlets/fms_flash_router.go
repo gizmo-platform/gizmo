@@ -89,7 +89,6 @@ func fieldHardwareFlashRouterCmdRun(c *cobra.Command, args []string) {
 	installer := netinstall.New(
 		netinstall.WithLogger(appLogger),
 		netinstall.WithPackage(netinstall.RouterPkg),
-		netinstall.WithNetwork(netinstall.RouterBootstrapNet),
 		netinstall.WithFMS(cfg),
 	)
 

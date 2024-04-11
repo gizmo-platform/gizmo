@@ -6,3 +6,4 @@ gizmo
 *.uf2
 *.csv
 fms.json
+.netstate

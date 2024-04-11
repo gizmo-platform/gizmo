@@ -43,10 +43,6 @@ const (
 	provisionAddr = "192.168.88.2/24"
 	targetAddr    = "192.168.88.1"
 
-	// RouterBootstrapNet is the static address and interface that we
-	// want to configure as part of the bootstrap configuration.
-	RouterBootstrapNet = "/ip/address/add address=169.254.0.1/16 interface=ether2"
-
 	// ImagePath is a location to store routerOS images into.
 	ImagePath = "/usr/share/routeros"
 )
@@ -88,12 +84,6 @@ func WithFMS(c *fms.Config) InstallerOpt {
 		i.bootstrapCtx["ViewUser"] = c.ViewUser
 		i.bootstrapCtx["ViewPass"] = c.ViewPass
 	}
-}
-
-// WithNetwork configures the network line that is passed to the
-// template context
-func WithNetwork(n string) InstallerOpt {
-	return func(i *Installer) { i.bootstrapCtx["network"] = n }
 }
 
 // New returns a new installer configured for use.

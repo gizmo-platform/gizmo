@@ -94,7 +94,10 @@ func (w *ws) setFields() error {
 	}
 
 	for i := 0; i <= numFields; i++ {
-		w.c.Fields[i] = &Field{ID: i + 1}
+		w.c.Fields[i] = &Field{
+			ID: i + 1,
+			IP: fmt.Sprintf("10.0.0.%d", 10+i),
+		}
 	}
 
 	w.c.AutoUser = AutomationUser
@@ -164,6 +167,7 @@ func (w *ws) loadTeams() error {
 				Name: dict["Name"],
 				SSID: strings.ReplaceAll(uuid.New().String(), "-", ""),
 				PSK:  strings.ReplaceAll(uuid.New().String(), "-", ""),
+				CIDR: fmt.Sprintf("10.%d.%d.0/24", int(num/100), num%100),
 			}
 			vlan++
 		}

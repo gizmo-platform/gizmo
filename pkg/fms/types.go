@@ -21,11 +21,13 @@ type Team struct {
 	SSID string
 	PSK  string
 	VLAN int
+	CIDR string
 }
 
 // Field contains the information related to each field.
 type Field struct {
 	ID int
+	IP string
 }
 
 // Config contains all the data that's necessary to setup the FMS and
