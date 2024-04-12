@@ -27,7 +27,7 @@ func New(opts ...Option) *Configurator {
 }
 
 // SyncState pushes the in-memory state down to the disk.
-func (c *Configurator) SyncState() error {
+func (c *Configurator) SyncState(bootstrap bool) error {
 	if err := os.MkdirAll(c.stateDir, 0755); err != nil {
 		c.l.Warn("Couldn't make state directory", "error", err)
 		return err
@@ -38,7 +38,7 @@ func (c *Configurator) SyncState() error {
 		return err
 	}
 
-	if err := c.configureWorkspace(); err != nil {
+	if err := c.configureWorkspace(bootstrap); err != nil {
 		c.l.Warn("Couldn't configure workspace", "error", err)
 		return err
 	}
@@ -112,10 +112,11 @@ func (c *Configurator) extractModules() error {
 	})
 }
 
-func (c *Configurator) configureWorkspace() error {
+func (c *Configurator) configureWorkspace(bootstrap bool) error {
 	ctx := make(map[string]interface{})
 	ctx["FMS"] = c.fc
 	ctx["RouterAddr"] = c.routerAddr
+	ctx["Bootstrap"] = bootstrap
 
 	tmpl, err := template.New(workspaceFile).ParseFS(efs, filepath.Join("tf", workspaceFile))
 	if err != nil {

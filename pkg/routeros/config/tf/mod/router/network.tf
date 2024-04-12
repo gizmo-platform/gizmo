@@ -72,7 +72,7 @@ resource "routeros_ip_address" "fms" {
 }
 
 resource "routeros_ip_address" "peer" {
-  count     = local.fms.AdvancedBGPAS != 0 ? 0 : 1
+  count     = local.fms.AdvancedBGPAS != 0 ? 1 : 0
   address   = local.fms.AdvancedBGPIP
   interface = routeros_interface_vlan.vlan_infra["peer0"].name
 }

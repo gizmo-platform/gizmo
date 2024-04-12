@@ -87,7 +87,7 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		config.WithRouter(routerAddr),
 	)
 
-	if err := controller.SyncState(); err != nil {
+	if err := controller.SyncState(bootstrap); err != nil {
 		appLogger.Error("Fatal error synchronizing state", "error", err)
 		return
 	}

@@ -21,6 +21,8 @@ module "router" {
   providers = {
     routeros = routeros.router
   }
+
+  bootstrap = {{.Bootstrap}}
 }
 
 {{- with $top := . }}

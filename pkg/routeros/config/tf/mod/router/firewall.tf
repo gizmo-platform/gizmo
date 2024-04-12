@@ -75,7 +75,7 @@ resource "routeros_ip_firewall_filter" "default_drop" {
   action       = "drop"
   comment      = "default-deny"
   in_interface = "!${routeros_interface_vlan.vlan_infra["fms0"].name}"
-  disabled     = true
+  disabled     = var.bootstrap
 }
 
 resource "routeros_ip_firewall_nat" "srcnat" {
