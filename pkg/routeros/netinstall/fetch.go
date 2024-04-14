@@ -21,7 +21,7 @@ const (
 func FetchPackages(l hclog.Logger) error {
 	pkgs := []string{
 		RouterPkg,
-		FieldPkg,
+		WifiPkg,
 	}
 
 	if err := os.MkdirAll(ImagePath, 0755); err != nil {

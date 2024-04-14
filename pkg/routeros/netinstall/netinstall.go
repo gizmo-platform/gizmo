@@ -32,10 +32,12 @@ const (
 	// use the most recent version, but this is what we tested.
 	RouterPkg = "routeros-" + RouterOSVersion + "-mipsbe.npk"
 
-	// FieldPkg is the most recent qualified firmware package for
-	// a field device to be installed to.  In general its safe to
-	// use the most recent version, but this is what we tested.
-	FieldPkg = "wireless-" + RouterOSVersion + "-mipsbe.npk"
+	// WifiPkg contains the wireless drivers qualified with the
+	// matched version to the RouterPkg above.  These must
+	// generally be updated in sync unless a specific assurance
+	// has been obtained from Mikrotik that it is safe to split
+	// the versions.
+	WifiPkg = "wireless-" + RouterOSVersion + "-mipsbe.npk"
 
 	netinstallPkg  = "netinstall-" + RouterOSVersion + ".tar.gz"
 	netinstallPath = "/usr/local/bin/netinstall-cli"
@@ -51,7 +53,7 @@ const (
 type Installer struct {
 	l hclog.Logger
 
-	pkg          string
+	pkgs         []string
 	bootstrap    string
 	bootstrapCtx map[string]string
 }
@@ -70,9 +72,23 @@ func WithLogger(l hclog.Logger) InstallerOpt {
 	return func(i *Installer) { i.l = l }
 }
 
-// WithPackage configures what package should be installed
-func WithPackage(p string) InstallerOpt {
-	return func(i *Installer) { i.pkg = p }
+// WithPackages configures what package should be installed
+func WithPackages(p []string) InstallerOpt {
+	return func(i *Installer) {
+		i.pkgs = p
+		switch len(p) {
+		case 1:
+			i.bootstrapCtx["network"] = `/interface/vlan/add comment="Bootstrap Interface" interface=ether2 name=bootstrap0 vlan-id=2
+/ip/address/add address=100.64.1.1/24 interface=bootstrap0`
+		case 2:
+			// If there are two packages, the second one
+			// will be for wifi.  This is an assumption
+			// that is going to prove wrong at some point
+			// in the future, but it works now.  Feel free
+			// to PR something less dumb.
+			i.bootstrapCtx["network"] = "/ip/dhcp-client/add interface=ether1 disabled=no"
+		}
+	}
 }
 
 // WithFMS pulls in the relevant settings from the config that needs
@@ -139,12 +155,14 @@ func (i *Installer) cleanup() error {
 }
 
 func (i *Installer) doInstall() error {
+	for p := range i.pkgs {
+		i.pkgs[p] = filepath.Join(ImagePath, i.pkgs[p])
+	}
 	args := []string{
 		"-s", i.bootstrap,
 		"-r", "-a", targetAddr,
-		filepath.Join(ImagePath, i.pkg),
 	}
-
+	args = append(args, i.pkgs...)
 	cmd := exec.Command(netinstallPath, args...)
 
 	stdout, _ := cmd.StdoutPipe()

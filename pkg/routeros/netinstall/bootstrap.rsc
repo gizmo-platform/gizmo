@@ -1,5 +1,4 @@
-/interface/vlan/add comment="Bootstrap Interface" interface=ether2 name=bootstrap0 vlan-id=2
-/ip/address/add address=100.64.1.1/24 interface=bootstrap0
+{{.network}}
 /certificate
 add name=ca common-name=local_ca key-usage=key-cert-sign
 add name=self common-name=localhost
