@@ -26,8 +26,9 @@ type Team struct {
 
 // Field contains the information related to each field.
 type Field struct {
-	ID int
-	IP string
+	ID  int
+	IP  string
+	MAC string
 }
 
 // Config contains all the data that's necessary to setup the FMS and
@@ -46,6 +47,7 @@ type Config struct {
 	ViewUser string
 	ViewPass string
 
-	AdvancedBGPAS int
-	AdvancedBGPIP string
+	AdvancedBGPAS   int
+	AdvancedBGPIP   string
+	AdvancedBGPVLAN int
 }

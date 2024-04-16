@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -53,9 +54,9 @@ func (c *Configurator) SyncState(bootstrap bool) error {
 
 // Converge commands all network hardware to achieve the state
 // currently on disk.
-func (c *Configurator) Converge(doInit bool) error {
+func (c *Configurator) Converge(doInit, refresh bool) error {
 	initCmd := exec.Command("terraform", "init")
-	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-refresh=false")
+	applyCmd := exec.Command("terraform", "apply", "-auto-approve", fmt.Sprintf("-refresh=%t", refresh))
 	cmds := []*exec.Cmd{}
 	if doInit {
 		cmds = append(cmds, initCmd)

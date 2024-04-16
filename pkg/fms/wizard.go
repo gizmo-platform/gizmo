@@ -73,7 +73,15 @@ func (w *ws) advancedNetCfg() error {
 			Validate: survey.Required,
 			Prompt: &survey.Input{
 				Message: "Peer IP",
-				Default: "169.254.2.2",
+				Default: "169.254.255.100/24",
+			},
+		},
+		{
+			Name:     "AdvancedBGPVLAN",
+			Validate: survey.Required,
+			Prompt: &survey.Input{
+				Message: "Peer VLAN",
+				Default: "101",
 			},
 		},
 	}
@@ -93,10 +101,18 @@ func (w *ws) setFields() error {
 		return err
 	}
 
+	fieldPrompt := &survey.Input{Message: "Input the MAC address of ether1 (label on the bottom)"}
+
 	for i := 0; i <= numFields; i++ {
+		mac := ""
+		if err := survey.AskOne(fieldPrompt, &mac); err != nil {
+			return err
+		}
+
 		w.c.Fields[i] = &Field{
-			ID: i + 1,
-			IP: fmt.Sprintf("10.0.0.%d", 10+i),
+			ID:  i + 1,
+			IP:  fmt.Sprintf("100.64.0.%d", 10+i),
+			MAC: mac,
 		}
 	}
 
@@ -137,7 +153,7 @@ func (w *ws) loadTeams() error {
 
 	r := csv.NewReader(f)
 	var header []string
-	vlan := 100
+	vlan := 500
 	for {
 		record, err := r.Read()
 		if err == io.EOF {

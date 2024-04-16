@@ -32,31 +32,12 @@ resource "routeros_interface_vlan" "vlan_infra" {
 
 resource "routeros_interface_bridge_vlan" "br_vlan" {
   bridge = routeros_interface_bridge.br0.name
-  vlan_ids = join(",", [for s in sort(formatlist("%03d", flatten([
+  vlan_ids = join(",", sort(flatten([
     [for vlan in routeros_interface_vlan.vlan_team : vlan.vlan_id],
     [for vlan in routeros_interface_vlan.vlan_infra : vlan.vlan_id],
-    ]))) : tonumber(s)]
-  )
+  ])))
   tagged  = [routeros_interface_bridge.br0.name]
   comment = "Bridge Networks"
-}
-
-resource "routeros_interface_bridge_port" "vlan_team" {
-  for_each = routeros_interface_vlan.vlan_team
-
-  interface = each.value.name
-  pvid      = each.value.vlan_id
-  bridge    = routeros_interface_bridge.br0.name
-  comment   = each.value.comment
-}
-
-resource "routeros_interface_bridge_port" "vlan_infra" {
-  for_each = routeros_interface_vlan.vlan_infra
-
-  interface = each.value.name
-  pvid      = each.value.vlan_id
-  bridge    = routeros_interface_bridge.br0.name
-  comment   = each.value.comment
 }
 
 resource "routeros_ip_address" "team" {

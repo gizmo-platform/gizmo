@@ -36,5 +36,18 @@ provider "routeros" {
   username = "{{$top.FMS.AutoUser}}"
   password = "{{$top.FMS.AutoPass}}"
 }
+
+module "field{{.ID}}" {
+  depends_on = [module.router]
+
+  source = "./mod/field"
+
+  providers = {
+    routeros = routeros.field{{.ID}}
+  }
+
+  bootstrap = {{$top.Bootstrap}}
+  field_id = {{.ID}}
+}
 {{- end }}
 {{- end }}

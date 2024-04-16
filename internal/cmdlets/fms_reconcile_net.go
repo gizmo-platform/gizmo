@@ -25,9 +25,16 @@ var (
 func init() {
 	fmsCmd.AddCommand(fmsReconcileNetCmd)
 	fmsReconcileNetCmd.Flags().Bool("bootstrap", false, "Enable bootstrap mode")
+	fmsReconcileNetCmd.Flags().Bool("skip-apply", false, "Skip applying changes")
+	fmsReconcileNetCmd.Flags().Bool("skip-refresh", false, "Skip refreshing current state")
 }
 
 func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
+	bootstrap, _ := c.Flags().GetBool("bootstrap")
+	skipApply, _ := c.Flags().GetBool("skip-apply")
+	skipRefresh, _ := c.Flags().GetBool("skip-refresh")
+	skipRefresh = !skipRefresh
+
 	ll := os.Getenv("LOG_LEVEL")
 	if ll == "" {
 		ll = "INFO"
@@ -42,11 +49,26 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
 	}
-
 	routerAddr := "100.64.0.1"
-	bootstrap, _ := c.Flags().GetBool("bootstrap")
 	if bootstrap {
 		routerAddr = "100.64.1.1"
+	}
+	controller := config.New(
+		config.WithFMS(*fmsConf),
+		config.WithLogger(appLogger),
+		config.WithRouter(routerAddr),
+	)
+
+	if err := controller.SyncState(bootstrap); err != nil {
+		appLogger.Error("Fatal error synchronizing state", "error", err)
+		return
+	}
+
+	if skipApply {
+		return
+	}
+
+	if bootstrap {
 		fmsAddr := "100.64.1.2"
 		appLogger.Info("Bootstrap mode enabled")
 
@@ -81,18 +103,7 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		}
 	}
 
-	controller := config.New(
-		config.WithFMS(*fmsConf),
-		config.WithLogger(appLogger),
-		config.WithRouter(routerAddr),
-	)
-
-	if err := controller.SyncState(bootstrap); err != nil {
-		appLogger.Error("Fatal error synchronizing state", "error", err)
-		return
-	}
-
-	if err := controller.Converge(bootstrap); err != nil {
+	if err := controller.Converge(bootstrap, skipRefresh); err != nil {
 		appLogger.Error("Fatal error converging state", "error", err)
 		return
 	}

@@ -48,3 +48,12 @@ resource "routeros_ip_dhcp_server_network" "network_team" {
   dns_server = cidrhost(each.value.CIDR, 1)
   comment    = each.value.Name
 }
+
+resource "routeros_ip_dhcp_server_lease" "field" {
+  for_each = local.fms.Fields
+
+  address     = each.value.IP
+  mac_address = each.value.MAC
+  comment     = format("Field %d", each.value.ID)
+  server      = routeros_ip_dhcp_server.server_infra.name
+}
