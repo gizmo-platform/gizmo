@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"text/template"
 )
 
@@ -45,6 +47,35 @@ func (c *Configurator) SyncState(bootstrap bool) error {
 
 	if err := c.syncFMSConfig(); err != nil {
 		c.l.Warn("Couldn't synchronize FMS config", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+// SyncTLM takes a mapping from the TLM and puts it down on disk so
+// that a later converge run may act upon it.
+func (c *Configurator) SyncTLM(tlm map[int]string) error {
+	// This is a map of field number to map of port name to team VLAN ID
+	fMap := make(map[int]map[string]int)
+
+	for team, location := range tlm {
+		parts := strings.Split(location, ":")
+		fNum, _ := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
+		if fMap[fNum] == nil {
+			fMap[fNum] = make(map[string]int)
+		}
+		fMap[fNum][c.quadToEther(parts[1])] = c.fc.Teams[team].VLAN
+	}
+
+	f, err := os.Create(filepath.Join(c.stateDir, "tlm.json"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	f.Chmod(0644)
+
+	if err := json.NewEncoder(f).Encode(fMap); err != nil {
 		return err
 	}
 
@@ -142,4 +173,18 @@ func (c *Configurator) configureWorkspace(bootstrap bool) error {
 	}
 
 	return nil
+}
+
+func (c *Configurator) quadToEther(quad string) string {
+	switch quad {
+	case "red":
+		return "ether2"
+	case "blue":
+		return "ether3"
+	case "green":
+		return "ether4"
+	case "yellow":
+		return "ether5"
+	}
+	return ""
 }

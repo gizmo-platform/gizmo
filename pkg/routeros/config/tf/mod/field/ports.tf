@@ -1,3 +1,8 @@
+locals {
+  tlm  = jsondecode(file("${path.root}/tlm.json"))
+  fmap = lookup(local.tlm, var.field_id, {})
+}
+
 resource "routeros_interface_bridge_vlan" "trunks" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = join(",", [for vlan in routeros_interface_vlan.vlan_team : tostring(vlan.vlan_id)])
@@ -16,5 +21,5 @@ resource "routeros_interface_bridge_port" "access" {
 
   bridge    = routeros_interface_bridge.br0.name
   interface = each.key
-  pvid      = routeros_interface_vlan.dump.vlan_id
+  pvid      = lookup(local.fmap, each.key, routeros_interface_vlan.dump.vlan_id)
 }
