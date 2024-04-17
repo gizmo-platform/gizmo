@@ -16,5 +16,5 @@ resource "routeros_interface_bridge_port" "access" {
 
   bridge    = routeros_interface_bridge.br0.name
   interface = each.key
-  pvid      = 500
+  pvid      = routeros_interface_vlan.dump.vlan_id
 }

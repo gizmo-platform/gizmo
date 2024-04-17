@@ -32,6 +32,13 @@ resource "routeros_interface_vlan" "fms" {
   comment   = "FMS Network"
 }
 
+resource "routeros_interface_vlan" "dump" {
+  name      = "dump0"
+  interface = routeros_interface_bridge.br0.name
+  vlan_id   = 450
+  comment   = "Empty dump network"
+}
+
 resource "routeros_interface_bridge_vlan" "team" {
   bridge = routeros_interface_bridge.br0.name
   vlan_ids = join(",", sort(flatten([
