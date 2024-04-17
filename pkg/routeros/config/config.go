@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -52,24 +51,33 @@ func (c *Configurator) SyncState(bootstrap bool) error {
 	return nil
 }
 
+// Init performs initialization of the underlying terraform workspace
+// to fetch plugins and initialize module links.
+func (c *Configurator) Init() error {
+	cmd := exec.Command("terraform", "init")
+	cmd.Dir = c.stateDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Start()
+	return cmd.Wait()
+}
+
 // Converge commands all network hardware to achieve the state
 // currently on disk.
-func (c *Configurator) Converge(doInit, refresh bool) error {
-	initCmd := exec.Command("terraform", "init")
-	applyCmd := exec.Command("terraform", "apply", "-auto-approve", fmt.Sprintf("-refresh=%t", refresh))
-	cmds := []*exec.Cmd{}
-	if doInit {
-		cmds = append(cmds, initCmd)
+func (c *Configurator) Converge(refresh bool, target string) error {
+	opts := []string{"apply", "-auto-approve"}
+	if !refresh {
+		opts = append(opts, "-refresh=false")
 	}
-	cmds = append(cmds, applyCmd)
-	for _, cmd := range cmds {
-		cmd.Dir = c.stateDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Start()
-		cmd.Wait()
+	if target != "" {
+		opts = append(opts, "-target="+target)
 	}
-	return nil
+	cmd := exec.Command("terraform", opts...)
+	cmd.Dir = c.stateDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Start()
+	return cmd.Wait()
 }
 
 func (c *Configurator) syncFMSConfig() error {

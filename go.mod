@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/0xcafed00d/joystick v1.0.1
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/google/uuid v1.6.0

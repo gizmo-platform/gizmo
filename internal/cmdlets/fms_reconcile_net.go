@@ -5,7 +5,6 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
-	"github.com/vishvananda/netlink"
 
 	"github.com/gizmo-platform/gizmo/pkg/fms"
 	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
@@ -24,13 +23,11 @@ var (
 
 func init() {
 	fmsCmd.AddCommand(fmsReconcileNetCmd)
-	fmsReconcileNetCmd.Flags().Bool("bootstrap", false, "Enable bootstrap mode")
 	fmsReconcileNetCmd.Flags().Bool("skip-apply", false, "Skip applying changes")
 	fmsReconcileNetCmd.Flags().Bool("skip-refresh", false, "Skip refreshing current state")
 }
 
 func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
-	bootstrap, _ := c.Flags().GetBool("bootstrap")
 	skipApply, _ := c.Flags().GetBool("skip-apply")
 	skipRefresh, _ := c.Flags().GetBool("skip-refresh")
 	skipRefresh = !skipRefresh
@@ -50,16 +47,14 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 	routerAddr := "100.64.0.1"
-	if bootstrap {
-		routerAddr = "100.64.1.1"
-	}
 	controller := config.New(
 		config.WithFMS(*fmsConf),
 		config.WithLogger(appLogger),
 		config.WithRouter(routerAddr),
 	)
 
-	if err := controller.SyncState(bootstrap); err != nil {
+	// Not in bootstrap mode, pass a "false" here.
+	if err := controller.SyncState(false); err != nil {
 		appLogger.Error("Fatal error synchronizing state", "error", err)
 		return
 	}
@@ -68,51 +63,8 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	if bootstrap {
-		fmsAddr := "100.64.1.2"
-		appLogger.Info("Bootstrap mode enabled")
-
-		eth0, err := netlink.LinkByName("eth0")
-		if err != nil {
-			appLogger.Error("Could not retrieve ethernet link", "error", err)
-			return
-		}
-
-		bootstrap0 := &netlink.Vlan{
-			LinkAttrs:    netlink.LinkAttrs{Name: "bootstrap0", ParentIndex: eth0.Attrs().Index},
-			VlanId:       2,
-			VlanProtocol: netlink.VLAN_PROTOCOL_8021Q,
-		}
-
-		if err := netlink.LinkAdd(bootstrap0); err != nil && err.Error() != "file exists" {
-			appLogger.Error("Could not create bootstrapping interface", "error", err)
-			return
-		}
-
-		for _, int := range []netlink.Link{eth0, bootstrap0} {
-			if err := netlink.LinkSetUp(int); err != nil {
-				appLogger.Error("Error enabling eth0", "error", err)
-				return
-			}
-		}
-
-		addr, _ := netlink.ParseAddr(fmsAddr + "/24")
-		if err := netlink.AddrAdd(bootstrap0, addr); err != nil {
-			appLogger.Error("Could not add IP", "error", err)
-			return
-		}
-	}
-
-	if err := controller.Converge(bootstrap, skipRefresh); err != nil {
+	if err := controller.Converge(skipRefresh, ""); err != nil {
 		appLogger.Error("Fatal error converging state", "error", err)
 		return
-	}
-
-	if bootstrap {
-		bootstrap0, _ := netlink.LinkByName("bootstrap0")
-		if err := netlink.LinkDel(bootstrap0); err != nil {
-			appLogger.Error("Error removing bootstrap link", "error", err)
-			return
-		}
 	}
 }
