@@ -38,8 +38,6 @@ provider "routeros" {
 }
 
 module "field{{.ID}}" {
-  depends_on = [module.router]
-
   source = "./mod/field"
 
   providers = {

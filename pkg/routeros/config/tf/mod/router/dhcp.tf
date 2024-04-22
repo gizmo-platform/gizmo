@@ -10,6 +10,7 @@ resource "routeros_ip_dhcp_server" "server_infra" {
   address_pool       = routeros_ip_pool.pool_infra.name
   comment            = "FMS Default DHCP Server"
   conflict_detection = true
+  lease_time         = "1h"
 }
 
 resource "routeros_ip_dhcp_server_network" "network_infra" {
@@ -38,6 +39,7 @@ resource "routeros_ip_dhcp_server" "server_team" {
   address_pool       = routeros_ip_pool.pool_team[each.key].name
   comment            = each.value.Name
   conflict_detection = true
+  lease_time         = "1h"
 }
 
 resource "routeros_ip_dhcp_server_network" "network_team" {

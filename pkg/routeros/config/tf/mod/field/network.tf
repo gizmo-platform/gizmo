@@ -49,6 +49,13 @@ resource "routeros_interface_bridge_vlan" "team" {
   comment = "Bridge Networks"
 }
 
+resource "routeros_interface_bridge_vlan" "fms" {
+  bridge   = routeros_interface_bridge.br0.name
+  vlan_ids = routeros_interface_vlan.fms.vlan_id
+  untagged = ["ether1"]
+  comment  = "Uplink"
+}
+
 resource "routeros_ip_dhcp_client" "upstream" {
   interface         = routeros_interface_vlan.fms.name
   add_default_route = "yes"

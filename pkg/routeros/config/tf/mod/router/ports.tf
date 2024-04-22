@@ -6,12 +6,6 @@ resource "routeros_interface_bridge_port" "internal" {
   pvid      = routeros_interface_vlan.vlan_infra["fms0"].vlan_id
 }
 
-resource "routeros_interface_bridge_vlan" "fmsport" {
-  bridge   = routeros_interface_bridge.br0.name
-  vlan_ids = tostring(routeros_interface_vlan.vlan_infra["fms0"].vlan_id)
-  untagged = ["ether2"]
-}
-
 resource "routeros_interface_bridge_vlan" "trunks" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = join(",", sort([for vlan in routeros_interface_vlan.vlan_team : tostring(vlan.vlan_id)]))

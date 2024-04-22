@@ -126,6 +126,11 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Could not create bootstrapping interface", "error", err)
 		return
 	}
+	defer func() {
+		if err := netlink.LinkDel(bootstrap0); err != nil {
+			appLogger.Error("Error removing bootstrap link", "error", err)
+		}
+	}()
 
 	for _, int := range []netlink.Link{eth0, bootstrap0} {
 		if err := netlink.LinkSetUp(int); err != nil {
@@ -140,16 +145,15 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
+	if err := controller.SyncTLM(make(map[int]string)); err != nil {
+		appLogger.Error("Could not shim the TLM", "error", err)
+		return
+	}
+
 	if err := controller.Converge(true, "module.router"); err != nil {
 		appLogger.Error("Fatal error converging state", "error", err)
 		return
 	}
-
-	defer func() {
-		if err := netlink.LinkDel(bootstrap0); err != nil {
-			appLogger.Error("Error removing bootstrap link", "error", err)
-		}
-	}()
 	appLogger.Info("Core network initialization complete, initializing fields")
 
 	instructions = []string{
@@ -203,9 +207,11 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 
 	for _, field := range fmsConf.Fields {
 		provisionFunc := func() error {
-			err := controller.Converge(false, fmt.Sprintf("module.field%d", field.ID))
-			appLogger.Error("Error configuring field", "field", field.ID, "error", err)
-			return err
+			if err := controller.Converge(false, fmt.Sprintf("module.field%d", field.ID)); err != nil {
+				appLogger.Error("Error configuring field", "field", field.ID, "error", err)
+				return err
+			}
+			return nil
 		}
 
 		bo := backoff.NewExponentialBackOff(backoff.WithMaxElapsedTime(time.Minute * 5))
