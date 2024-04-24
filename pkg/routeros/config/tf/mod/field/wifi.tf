@@ -5,6 +5,7 @@ resource "routeros_capsman_manager" "mgr" {
 
 resource "routeros_interface_wireless_cap" "settings" {
   discovery_interfaces = [routeros_interface_bridge.br0.name]
+  bridge               = routeros_interface_bridge.br0.name
   enabled              = true
   interfaces           = ["wlan1", "wlan2"]
 }
@@ -69,7 +70,7 @@ resource "routeros_capsman_datapath" "team" {
   for_each = local.fms.Teams
 
   name    = format("team%d", each.key)
-  vlan_id = routeros_interface_vlan.vlan_team[each.key].vlan_id
+  vlan_id = each.value.VLAN
   bridge  = routeros_interface_bridge.br0.name
 
   local_forwarding = true

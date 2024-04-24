@@ -3,12 +3,6 @@ locals {
   fmap = lookup(local.tlm, var.field_id, {})
 }
 
-resource "routeros_interface_bridge_vlan" "trunks" {
-  bridge   = routeros_interface_bridge.br0.name
-  vlan_ids = join(",", [for vlan in routeros_interface_vlan.vlan_team : tostring(vlan.vlan_id)])
-  tagged   = ["ether1"]
-}
-
 resource "routeros_interface_bridge_port" "trunk" {
   bridge    = routeros_interface_bridge.br0.name
   interface = "ether1"

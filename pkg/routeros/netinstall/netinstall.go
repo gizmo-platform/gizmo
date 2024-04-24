@@ -86,7 +86,7 @@ func WithPackages(p []string) InstallerOpt {
 			// that is going to prove wrong at some point
 			// in the future, but it works now.  Feel free
 			// to PR something less dumb.
-			i.bootstrapCtx["network"] = "/ip/dhcp-client/add interface=ether1 disabled=no"
+			i.bootstrapCtx["network"] = "/ip/dhcp-client/add interface=ether1 disabled=no add-default-route=no use-peer-dns=no use-peer-ntp=no"
 		}
 	}
 }

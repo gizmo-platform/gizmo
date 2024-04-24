@@ -2,6 +2,18 @@ resource "routeros_system_identity" "identity" {
   name = "gizmo-field-${var.field_id}"
 }
 
+resource "routeros_interface_list" "internal" {
+  name = "internal"
+}
+
+resource "routeros_interface_list_member" "ether1" {
+  interface = "ether1"
+  list      = routeros_interface_list.internal.name
+}
+
+resource "routeros_tool_mac_server" "mac_server" {
+  allowed_interface_list = routeros_interface_list.internal.name
+}
 
 resource "routeros_ip_service" "disabled" {
   for_each = {
