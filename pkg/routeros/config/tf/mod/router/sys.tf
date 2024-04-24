@@ -2,7 +2,6 @@ resource "routeros_system_identity" "identity" {
   name = "gizmo-edge"
 }
 
-
 resource "routeros_ip_service" "disabled" {
   for_each = {
     api-ssl = 8729
@@ -16,4 +15,8 @@ resource "routeros_ip_service" "disabled" {
   numbers  = each.key
   port     = each.value
   disabled = true
+}
+
+resource "routeros_dns" "dns" {
+  allow_remote_requests = true
 }
