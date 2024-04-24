@@ -22,7 +22,7 @@ resource "routeros_capsman_channel" "channel" {
 resource "routeros_capsman_security" "gizmo" {
   name                 = "gizmo"
   authentication_types = ["wpa2-psk"]
-  passphrase           = "password123"
+  passphrase           = var.infra_psk
   encryption           = ["tkip", "aes-ccm"]
 }
 
@@ -39,8 +39,8 @@ resource "routeros_capsman_configuration" "gizmo" {
   for_each = routeros_capsman_channel.channel
 
   name      = each.key
-  ssid      = "gizmo"
-  hide_ssid = false
+  ssid      = var.infra_ssid
+  hide_ssid = !var.infra_visible
   mode      = "ap"
   country   = "united states3"
 

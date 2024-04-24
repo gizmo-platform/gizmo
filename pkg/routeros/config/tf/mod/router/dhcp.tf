@@ -59,3 +59,18 @@ resource "routeros_ip_dhcp_server_lease" "field" {
   comment     = format("Field %d", each.value.ID)
   server      = routeros_ip_dhcp_server.server_infra.name
 }
+
+resource "routeros_ip_dhcp_server_lease" "fms" {
+  address     = "100.64.0.2"
+  mac_address = var.fms_mac
+  comment     = "FMS"
+  server      = routeros_ip_dhcp_server.server_infra.name
+}
+
+resource "routeros_ip_dns_record" "fms" {
+  for_each = toset(["fms.gizmo", "gizmo-fms.comp"])
+
+  name    = each.value
+  address = "100.64.0.2"
+  type    = "A"
+}

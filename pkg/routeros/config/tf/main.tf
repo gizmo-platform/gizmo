@@ -23,6 +23,7 @@ module "router" {
   }
 
   bootstrap = {{.Bootstrap}}
+  fms_mac   = "{{.FMS.FMSMac}}"
 }
 
 {{- with $top := . }}
@@ -44,8 +45,11 @@ module "field{{.ID}}" {
     routeros = routeros.field{{.ID}}
   }
 
-  bootstrap = {{$top.Bootstrap}}
-  field_id = {{.ID}}
+  bootstrap     = {{$top.Bootstrap}}
+  field_id      = {{.ID}}
+  infra_visible = {{$top.FMS.InfrastructureVisible}}
+  infra_ssid    = "{{$top.FMS.InfrastructureSSID}}"
+  infra_psk     = "{{$top.FMS.InfrastructurePSK}}"
 }
 {{- end }}
 {{- end }}

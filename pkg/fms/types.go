@@ -42,10 +42,18 @@ type Config struct {
 	// managed by the system.
 	Fields map[int]*Field
 
+	// FMSMac is the mac address of the FMS itself so that it can
+	// have a pinned address
+	FMSMac string
+
 	AutoUser string
 	AutoPass string
 	ViewUser string
 	ViewPass string
+
+	InfrastructureVisible bool
+	InfrastructureSSID    string
+	InfrastructurePSK     string
 
 	AdvancedBGPAS   int
 	AdvancedBGPIP   string

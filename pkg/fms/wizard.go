@@ -13,6 +13,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/google/uuid"
 	"github.com/martinhoefling/goxkcdpwgen/xkcdpwgen"
+	"github.com/vishvananda/netlink"
 )
 
 // ws binds together all the steps required to configure the FMS
@@ -32,6 +33,14 @@ func WizardSurvey() (*Config, error) {
 	}
 
 	if err := w.setFields(); err != nil {
+		return nil, err
+	}
+
+	if err := w.setInfraNetwork(); err != nil {
+		return nil, err
+	}
+
+	if err := w.setFMSMac(); err != nil {
 		return nil, err
 	}
 
@@ -89,6 +98,56 @@ func (w *ws) advancedNetCfg() error {
 	return survey.Ask(prompts, w.c)
 }
 
+func (w *ws) setFMSMac() error {
+	eth0, err := netlink.LinkByName("eth0")
+	if err != nil {
+		return err
+	}
+
+	prompt := &survey.Input{
+		Message: "MAC Address of the FMS",
+		Default: eth0.Attrs().HardwareAddr.String(),
+	}
+
+	return survey.AskOne(prompt, &w.c.FMSMac)
+}
+
+func (w *ws) setInfraNetwork() error {
+	xkcd := xkcdpwgen.NewGenerator()
+	xkcd.SetNumWords(3)
+	xkcd.SetCapitalize(true)
+	xkcd.SetDelimiter("")
+
+	prompts := []*survey.Question{
+		{
+			Name:     "InfrastructureVisible",
+			Validate: survey.Required,
+			Prompt: &survey.Confirm{
+				Message: "Make infrastructure network visible.",
+				Default: true,
+			},
+		},
+		{
+			Name:     "InfrastructureSSID",
+			Validate: survey.Required,
+			Prompt: &survey.Input{
+				Message: "Infrastructure network SSID",
+				Default: "gizmo",
+			},
+		},
+		{
+			Name:     "InfrastructurePSK",
+			Validate: survey.Required,
+			Prompt: &survey.Input{
+				Message: "Infrastructure network PSK",
+				Default: xkcd.GeneratePasswordString(),
+			},
+		},
+	}
+
+	return survey.Ask(prompts, w.c)
+}
+
 func (w *ws) setFields() error {
 	numFields := 0
 	prompt := &survey.Select{
@@ -101,10 +160,11 @@ func (w *ws) setFields() error {
 		return err
 	}
 
-	fieldPrompt := &survey.Input{Message: "Input the MAC address of ether1 (label on the bottom)"}
-
 	for i := 0; i <= numFields; i++ {
 		mac := ""
+		fieldPrompt := &survey.Input{
+			Message: fmt.Sprintf("Input the MAC address for ether1 for field %d (label on the bottom)", i+1),
+		}
 		if err := survey.AskOne(fieldPrompt, &mac); err != nil {
 			return err
 		}
