@@ -3,15 +3,12 @@
 package cmdlets
 
 import (
-	"bufio"
-	"fmt"
-	"io"
 	"os"
-	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
-	"go.bug.st/serial"
-	"go.bug.st/serial/enumerator"
+
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 var (
@@ -31,65 +28,28 @@ func init() {
 }
 
 func dsConfigServerCmdRun(c *cobra.Command, args []string) {
-	t := time.NewTicker(time.Second)
-	pname := ""
-out:
-	for range t.C {
-		ports, err := enumerator.GetDetailedPortsList()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-			return
-		}
-		for _, port := range ports {
-			fmt.Println("Found port", port.Name)
-			if !port.IsUSB {
-				// We know the Gizmo must be connected via USB
-				continue
-			}
-			if port.VID == "2e8a" && port.PID == "f00a" {
-				pname = port.Name
-				break out
-			}
-		}
+	ll := os.Getenv("LOG_LEVEL")
+	if ll == "" {
+		ll = "INFO"
 	}
-	t.Stop()
+	appLogger := hclog.New(&hclog.LoggerOptions{
+		Name:  "config-server",
+		Level: hclog.LevelFromString(ll),
+	})
 
-	cfg, err := os.Open(args[0])
+	cfg, err := config.Load(args[0])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not open config file: %s\n", err)
-		return
-	}
-	defer cfg.Close()
-
-	mode := &serial.Mode{
-		BaudRate: 9600,
-		Parity:   serial.NoParity,
-		DataBits: 8,
-		StopBits: serial.OneStopBit,
-	}
-	port, err := serial.Open(pname, mode)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not open port: %s\n", err)
-		return
-	}
-	defer port.Close()
-	if err := port.SetReadTimeout(time.Second * 15); err != nil {
+		appLogger.Error("Error loading config", "error", err)
 		return
 	}
 
-	fmt.Println("Waiting for Gizmo")
-	scanner := bufio.NewScanner(bufio.NewReader(port))
-	for scanner.Scan() {
-		if scanner.Text() == "GIZMO_REQUEST_CONFIG" {
-			break
-		}
+	prvdr := func() config.Config {
+		return *cfg
 	}
 
-	fmt.Println("Uploading config")
-	io.Copy(port, cfg)
-	if err := port.Drain(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error draining port: %s\n", err)
-		return
+	srv := config.NewServer(config.WithProvider(prvdr), config.WithLogger(appLogger))
+
+	if err := srv.Serve(); err != nil {
+		appLogger.Error("Error initializing config server", "error", err)
 	}
-	fmt.Println("Upload complete")
 }
