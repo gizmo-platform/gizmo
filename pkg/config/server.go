@@ -97,4 +97,5 @@ func (s *Server) installConfig(name string) {
 		return
 	}
 	s.l.Info("Upload complete")
+	time.Sleep(time.Second * 5)
 }
