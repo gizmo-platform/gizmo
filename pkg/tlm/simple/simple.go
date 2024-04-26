@@ -41,7 +41,7 @@ func New(opts ...Option) *TLM {
 	copts := mqtt.NewClientOptions().
 		AddBroker(t.mqttAddr).
 		SetAutoReconnect(true).
-		SetClientID("self").
+		SetClientID("gizmo-tlm").
 		SetConnectRetry(true).
 		SetConnectTimeout(time.Second).
 		SetConnectRetryInterval(time.Second)
@@ -62,16 +62,13 @@ func (tlm *TLM) GetFieldForTeam(team int) (string, error) {
 	return mapping, nil
 }
 
-// SetScheduleStep normally would advance the schedule when running a
-// scheduled match.
-func (tlm *TLM) SetScheduleStep(_ int) error { return nil }
-
 // InsertOnDemandMap inserts an on-demand mapping that overrides any
 // current schedule.  WARNING: This is immediate.
-func (tlm *TLM) InsertOnDemandMap(m map[int]string) {
+func (tlm *TLM) InsertOnDemandMap(m map[int]string) error {
 	tlm.mutex.Lock()
 	tlm.mapping = m
 	tlm.mutex.Unlock()
+	return nil
 }
 
 // GetCurrentMapping is a convenience function to retrieve the current
