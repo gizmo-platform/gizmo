@@ -32,7 +32,7 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 		ll = "INFO"
 	}
 	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "flash-router",
+		Name:  "config-server",
 		Level: hclog.LevelFromString(ll),
 	})
 

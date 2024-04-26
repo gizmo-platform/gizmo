@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -56,6 +57,12 @@ func (c *Configurator) SyncState(bootstrap bool) error {
 // SyncTLM takes a mapping from the TLM and puts it down on disk so
 // that a later converge run may act upon it.
 func (c *Configurator) SyncTLM(tlm map[int]string) error {
+	for team := range tlm {
+		if _, ok := c.fc.Teams[team]; !ok {
+			return fmt.Errorf("TLM requested an unknown team: %d", team)
+		}
+	}
+
 	// This is a map of field number to map of port name to team VLAN ID
 	fMap := make(map[int]map[string]int)
 

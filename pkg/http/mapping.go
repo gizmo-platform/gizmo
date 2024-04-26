@@ -17,7 +17,12 @@ func (s *Server) remapTeams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.tlm.InsertOnDemandMap(mapping)
+	if err := s.tlm.InsertOnDemandMap(mapping); err != nil {
+		s.l.Error("Error remapping teams!", "error", err)
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Error inserting map: %s", err)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	s.l.Info("Immediately remapped teams!", "map", mapping)
 }
