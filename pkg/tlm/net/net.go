@@ -1,9 +1,15 @@
 package net
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/metrics"
@@ -13,21 +19,37 @@ import (
 // TLM is a Team Location Mapper that contains a static mapping.
 type TLM struct {
 	l hclog.Logger
+	m mqtt.Client
 
 	mapping    map[int]string
 	mutex      sync.RWMutex
 	metrics    *metrics.Metrics
 	controller *config.Configurator
+	mqttAddr   string
+
+	swg  *sync.WaitGroup
+	stop chan struct{}
 }
 
 // New configures the TLM with the given options.
 func New(opts ...Option) *TLM {
 	t := new(TLM)
 	t.mapping = make(map[int]string)
+	t.stop = make(chan (struct{}))
+	t.mqttAddr = "mqtt://127.0.0.1:1883"
 
 	for _, o := range opts {
 		o(t)
 	}
+
+	copts := mqtt.NewClientOptions().
+		AddBroker(t.mqttAddr).
+		SetAutoReconnect(true).
+		SetClientID("gizmo-tlm").
+		SetConnectRetry(true).
+		SetConnectTimeout(time.Second).
+		SetConnectRetryInterval(time.Second)
+	t.m = mqtt.NewClient(copts)
 
 	return t
 }
@@ -90,4 +112,67 @@ func (tlm *TLM) GetCurrentTeams() []int {
 	tlm.mutex.RUnlock()
 
 	return ret
+}
+
+// Start starts up a pusher that publishes location information into
+// the broker.
+func (tlm *TLM) Start() error {
+	if tok := tlm.m.Connect(); tok.Wait() && tok.Error() != nil {
+		tlm.l.Error("Error connecting to broker", "error", tok.Error())
+		return tok.Error()
+	}
+	tlm.l.Info("Connected to broker")
+
+	locTicker := time.NewTicker(time.Second * 5)
+
+	go func() {
+		for {
+			select {
+			case <-tlm.stop:
+				locTicker.Stop()
+				return
+			case <-locTicker.C:
+				tlm.mutex.RLock()
+				tlm.metrics.ExportCurrentMatch(tlm.mapping)
+				bytes, err := json.Marshal(tlm.mapping)
+				if err != nil {
+					tlm.l.Error("Error marshalling mapping", "error", err)
+					tlm.mutex.RUnlock()
+					return
+				}
+				tlm.l.Debug("Pushing locations")
+				if tok := tlm.m.Publish("sys/tlm/locations", 1, false, bytes); tok.Wait() && tok.Error() != nil {
+					tlm.l.Warn("Error publishing new mapping to broker", "error", tok.Error())
+				}
+
+				for team, field := range tlm.mapping {
+					parts := strings.SplitN(field, ":", 2)
+					fnum, _ := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
+					vals := struct {
+						Field    int
+						Quadrant string
+					}{
+						Field:    fnum,
+						Quadrant: strings.ToUpper(parts[1]),
+					}
+					bytes, err := json.Marshal(vals)
+					if err != nil {
+						tlm.l.Warn("Error marshalling location", "error", err, "team", team)
+					}
+					if tok := tlm.m.Publish(fmt.Sprintf("robot/%d/location", team), 1, false, bytes); tok.Wait() && tok.Error() != nil {
+						tlm.l.Warn("Error publishing new mapping to broker", "error", tok.Error())
+					}
+				}
+				tlm.mutex.RUnlock()
+			}
+		}
+	}()
+	tlm.swg.Done()
+	return nil
+}
+
+// Stop cancels the async location pusher.
+func (tlm *TLM) Stop() {
+	tlm.l.Info("Stopping...")
+	tlm.stop <- struct{}{}
 }

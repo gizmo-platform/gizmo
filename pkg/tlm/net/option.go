@@ -1,6 +1,8 @@
 package net
 
 import (
+	"sync"
+
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/metrics"
@@ -22,6 +24,16 @@ func WithLogger(l hclog.Logger) Option {
 func WithMetrics(m *metrics.Metrics) Option {
 	return func(t *TLM) {
 		t.metrics = m
+	}
+}
+
+// WithStartupWG allows a waitgroup to be passed in so the server can
+// notify when its finished startup tasks with a nice message on the
+// console.
+func WithStartupWG(w *sync.WaitGroup) Option {
+	return func(t *TLM) {
+		w.Add(1)
+		t.swg = w
 	}
 }
 

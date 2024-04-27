@@ -70,6 +70,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		net.WithLogger(appLogger),
 		net.WithMetrics(stats),
 		net.WithController(controller),
+		net.WithStartupWG(wg),
 	)
 
 	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger), mqttserver.WithStartupWG(wg))
@@ -113,6 +114,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	}()
 
 	stats.StartFlusher()
+	tlm.Start()
 
 	wg.Wait()
 	appLogger.Info("Startup Complete!")
@@ -121,6 +123,8 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	appLogger.Info("Shutting down...")
 	stats.Shutdown()
 	appLogger.Info("Stats Stopped")
+	tlm.Stop()
+	appLogger.Info("TLM Stopped")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := w.Shutdown(ctx); err != nil {
