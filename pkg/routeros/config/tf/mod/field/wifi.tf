@@ -80,7 +80,7 @@ resource "routeros_capsman_datapath" "team" {
 resource "routeros_capsman_configuration" "team" {
   for_each = local.fms.Teams
 
-  name      = format("wifi%d", each.key)
+  name      = format("team%d", each.key)
   ssid      = each.value.SSID
   hide_ssid = true
   mode      = "ap"
@@ -111,6 +111,9 @@ resource "routeros_capsman_provisioning" "gizmo_2ghz" {
   comment = "gizmo-2ghz"
 
   master_configuration = routeros_capsman_configuration.gizmo["gizmo-2ghz"].name
-  action               = "create-dynamic-enabled"
-  hw_supported_modes   = "gn"
+  slave_configurations = join(",", [for cfg in routeros_capsman_configuration.team :
+    cfg.name if contains(values(local.fmap), routeros_capsman_datapath.team[replace(cfg.name, "team", "")].vlan_id)
+  ])
+  action             = "create-dynamic-enabled"
+  hw_supported_modes = "gn"
 }

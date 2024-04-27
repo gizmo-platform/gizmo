@@ -31,19 +31,19 @@ resource "routeros_interface_vlan" "dump" {
   comment   = "Empty dump network"
 }
 
-resource "routeros_interface_bridge_vlan" "tagged" {
-  bridge   = routeros_interface_bridge.br0.name
-  vlan_ids = join(",", sort([for team in local.fms.Teams : team.VLAN]))
-  tagged   = ["ether1", routeros_interface_bridge.br0.name]
-  comment  = "Bridge Networks"
-}
-
 resource "routeros_interface_bridge_vlan" "fms" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = routeros_interface_vlan.fms.vlan_id
   untagged = ["ether1"]
   tagged   = [routeros_interface_bridge.br0.name]
   comment  = "Uplink"
+}
+
+resource "routeros_interface_bridge_vlan" "team" {
+  bridge   = routeros_interface_bridge.br0.name
+  vlan_ids = join(",", sort([for t in local.fms.Teams : t.VLAN]))
+  tagged   = ["ether1", routeros_interface_bridge.br0.name]
+  comment  = "Team access VLAN"
 }
 
 resource "routeros_ip_dhcp_client" "upstream" {

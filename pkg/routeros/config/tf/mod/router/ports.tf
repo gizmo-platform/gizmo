@@ -6,10 +6,20 @@ resource "routeros_interface_bridge_port" "internal" {
   pvid      = routeros_interface_vlan.vlan_infra["fms0"].vlan_id
 }
 
-resource "routeros_interface_bridge_vlan" "trunks" {
+resource "routeros_interface_bridge_vlan" "fms" {
   bridge   = routeros_interface_bridge.br0.name
-  vlan_ids = join(",", sort([for vlan in routeros_interface_vlan.vlan_team : tostring(vlan.vlan_id)]))
-  tagged   = formatlist("ether%d", [3, 4, 5])
+  vlan_ids = tostring(routeros_interface_vlan.vlan_infra["fms0"].vlan_id)
+  tagged   = [routeros_interface_bridge.br0.name]
+  untagged = formatlist("ether%d", [2, 3, 4, 5])
+}
+
+resource "routeros_interface_bridge_vlan" "team" {
+  bridge   = routeros_interface_bridge.br0.name
+  vlan_ids = join(",", sort([for vlan in routeros_interface_vlan.vlan_team : vlan.vlan_id]))
+  tagged = flatten([
+    [routeros_interface_bridge.br0.name],
+    formatlist("ether%d", [3, 4, 5]),
+  ])
 }
 
 resource "routeros_interface_bridge_port" "wan" {
@@ -21,13 +31,14 @@ resource "routeros_interface_bridge_port" "wan" {
 resource "routeros_interface_bridge_vlan" "wan" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = tostring(routeros_interface_vlan.vlan_infra["wan0"].vlan_id)
+  tagged   = [routeros_interface_bridge.br0.name]
   untagged = ["ether1"]
 }
 
 resource "routeros_interface_bridge_vlan" "peer" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = tostring(routeros_interface_vlan.vlan_infra["peer0"].vlan_id)
-  tagged   = ["ether1"]
+  tagged   = ["ether1", routeros_interface_bridge.br0.name]
 }
 
 resource "routeros_interface_ethernet" "poe_ports" {

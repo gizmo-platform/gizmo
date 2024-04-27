@@ -70,6 +70,25 @@ resource "routeros_ip_firewall_filter" "accept_peer" {
   place_before = routeros_ip_firewall_filter.default_drop.id
 }
 
+resource "routeros_ip_firewall_filter" "accept_dns" {
+  chain             = "input"
+  action            = "accept"
+  comment           = "accept-team-dns"
+  dst_port          = 53
+  protocol          = "udp"
+  in_interface_list = routeros_interface_list.teams.name
+  place_before      = routeros_ip_firewall_filter.default_drop.id
+}
+
+resource "routeros_ip_firewall_filter" "prevent_team_to_team" {
+  chain              = "forward"
+  action             = "drop"
+  comment            = "prevent-team-to-team"
+  in_interface_list  = routeros_interface_list.teams.name
+  out_interface_list = routeros_interface_list.teams.name
+  place_before       = routeros_ip_firewall_filter.default_drop.id
+}
+
 resource "routeros_ip_firewall_filter" "default_drop" {
   chain        = "input"
   action       = "drop"

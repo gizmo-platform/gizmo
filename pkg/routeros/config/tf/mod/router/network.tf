@@ -8,6 +8,17 @@ resource "routeros_interface_bridge" "br0" {
   frame_types    = "admit-only-vlan-tagged"
 }
 
+resource "routeros_interface_list" "teams" {
+  name = "teams"
+}
+
+resource "routeros_interface_list_member" "teams" {
+  for_each = routeros_interface_vlan.vlan_team
+
+  interface = each.value.name
+  list      = routeros_interface_list.teams.name
+}
+
 resource "routeros_interface_vlan" "vlan_team" {
   for_each = local.fms.Teams
 
@@ -28,16 +39,6 @@ resource "routeros_interface_vlan" "vlan_infra" {
   name      = each.key
   comment   = each.value.description
   vlan_id   = each.value.id
-}
-
-resource "routeros_interface_bridge_vlan" "br_vlan" {
-  bridge = routeros_interface_bridge.br0.name
-  vlan_ids = join(",", sort(flatten([
-    [for vlan in routeros_interface_vlan.vlan_team : vlan.vlan_id],
-    [for vlan in routeros_interface_vlan.vlan_infra : vlan.vlan_id],
-  ])))
-  tagged  = [routeros_interface_bridge.br0.name]
-  comment = "Bridge Networks"
 }
 
 resource "routeros_ip_address" "team" {
