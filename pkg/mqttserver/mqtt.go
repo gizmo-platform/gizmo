@@ -51,7 +51,9 @@ func (s *Server) Serve(bind string) error {
 		return err
 	}
 
-	s.swg.Done()
+	if s.swg != nil {
+		s.swg.Done()
+	}
 	return s.s.Serve()
 }
 

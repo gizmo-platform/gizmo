@@ -3,6 +3,7 @@ package ds
 import (
 	"embed"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
@@ -14,10 +15,16 @@ import (
 // server.
 type DriverStation struct {
 	l hclog.Logger
+	m mqtt.Client
 
 	cfg config.Config
 
 	svc *Runit
+
+	fmsAvailable bool
+	quit         bool
+
+	stop chan struct{}
 }
 
 // Option enables variadic configuration of the driver's station
