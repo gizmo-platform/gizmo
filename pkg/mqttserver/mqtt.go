@@ -1,11 +1,13 @@
 package mqttserver
 
 import (
+	"net"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/mochi-co/mqtt/v2"
-	"github.com/mochi-co/mqtt/v2/hooks/auth"
 	"github.com/mochi-co/mqtt/v2/listeners"
 	"github.com/rs/zerolog"
 )
@@ -36,10 +38,7 @@ func NewServer(opts ...Option) (*Server, error) {
 			return nil, err
 		}
 	}
-
-	// Allow all, not necessarily a good idea but we control the
-	// network and can assert we know who's on it.
-	x.s.AddHook(new(auth.AllowHook), nil)
+	x.s.AddHook(newHook(x.l), nil)
 	return x, nil
 }
 
@@ -61,4 +60,27 @@ func (s *Server) Serve(bind string) error {
 func (s *Server) Shutdown() error {
 	s.l.Info("Stopping...")
 	return s.s.Close()
+}
+
+// This returns 2 values, the actual team number that connected, and
+// the number that we expected to show up based on the subnet that
+// they connected from.
+func teamNumberFromClient(cl *mqtt.Client) (int, int) {
+	host, _, err := net.SplitHostPort(cl.Net.Remote)
+	if err != nil {
+		return -1, -1
+	}
+
+	ip := net.ParseIP(host)
+	expected := int(ip[13])*100 + int(ip[14])
+
+	name := cl.ID
+	name = strings.TrimPrefix(name, "gizmo-ds")
+	name = strings.TrimPrefix(name, "gizmo-")
+
+	actual, err := strconv.Atoi(name)
+	if err != nil {
+		actual = -1
+	}
+	return expected, actual
 }
