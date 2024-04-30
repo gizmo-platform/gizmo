@@ -86,6 +86,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		http.WithTeamLocationMapper(tlm),
 		http.WithPrometheusRegistry(stats.Registry()),
 		http.WithFMSConf(*fmsConf),
+		http.WithMQTTServer(m),
 		http.WithStartupWG(wg),
 	)
 

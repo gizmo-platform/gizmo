@@ -26,6 +26,13 @@ type Server struct {
 	stopFeeds chan struct{}
 }
 
+// ClientInfo contains information on clients that are connected, and
+// if they're where they're supposed to be.
+type ClientInfo struct {
+	Number          int
+	CorrectLocation bool
+}
+
 // NewServer returns a running mqtt broker
 func NewServer(opts ...Option) (*Server, error) {
 	x := new(Server)
@@ -60,6 +67,24 @@ func (s *Server) Serve(bind string) error {
 func (s *Server) Shutdown() error {
 	s.l.Info("Stopping...")
 	return s.s.Close()
+}
+
+// Clients returns a list of all currently connected gizmo clients and
+// whether or not they are where they're supposed to be.
+func (s *Server) Clients() map[string]ClientInfo {
+	out := make(map[string]ClientInfo)
+
+	for id, cl := range s.s.Clients.GetAll() {
+		if !strings.HasPrefix(id, "gizmo-") {
+			continue
+		}
+		actualN, expectedN := teamNumberFromClient(cl)
+		out[id] = ClientInfo{
+			Number:          actualN,
+			CorrectLocation: actualN == expectedN,
+		}
+	}
+	return out
 }
 
 // This returns 2 values, the actual team number that connected, and

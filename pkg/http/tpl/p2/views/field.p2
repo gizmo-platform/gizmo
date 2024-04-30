@@ -1,0 +1,28 @@
+{% extends "../base.p2" %}
+
+{% block title %}Field HUD{% endblock %}
+
+{% block content %}
+<table>
+    <tr>
+        <th>Quadrant</th>
+        <th>Team</th>
+        <th>Driver Station</th>
+        <th>Correct Location</th>
+        <th>Gizmo</th>
+    </tr>
+    {% for quad, data in hudTable %}
+    <tr>
+        <td>{{ quad }}</td>
+        <td>{{ data.Number }}</td>
+        <td>{{ data.DS }}</td>
+        <td>{{ data.DSCorrectLocation }}</td>
+        <td>{{ data.Gizmo }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan=4>No Match Mapped</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -74,3 +74,12 @@ func WithStartupWG(wg *sync.WaitGroup) Option {
 		return nil
 	}
 }
+
+// WithMQTTServer provides the specific MQTTServer that's fronted by
+// this webserver.
+func WithMQTTServer(mq MQTTServer) Option {
+	return func(s *Server) error {
+		s.mq = mq
+		return nil
+	}
+}
