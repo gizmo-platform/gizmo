@@ -7,6 +7,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
+	github.com/flosch/pongo2/v5 v5.0.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-hclog v1.4.0
@@ -28,7 +29,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/flosch/pongo2/v5 v5.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
