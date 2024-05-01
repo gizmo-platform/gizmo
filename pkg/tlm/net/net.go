@@ -91,6 +91,11 @@ func (tlm *TLM) InsertOnDemandMap(m map[int]string) error {
 		tlm.l.Error("Error converging fields", "error", err)
 		return err
 	}
+
+	if err := tlm.controller.CycleRadio("2ghz"); err != nil {
+		tlm.l.Error("Error cycling radios", "error", err)
+		return err
+	}
 	return nil
 }
 

@@ -26,3 +26,14 @@ type Configurator struct {
 
 	routerAddr string
 }
+
+type rosInterface struct {
+	ID   string `json:".id"`
+	Band string `json:"band"`
+	MAC  string `json:"mac-address"`
+}
+
+type rosCapInterface struct {
+	ID  string `json:".id"`
+	MAC string `json:"radio-mac,omitempty"`
+}

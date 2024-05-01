@@ -1,16 +1,21 @@
 package config
 
 import (
+	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 )
 
 const (
@@ -116,6 +121,81 @@ func (c *Configurator) Converge(refresh bool, target string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Start()
 	return cmd.Wait()
+}
+
+// CycleRadio forces a provisioning cycle on the given band.
+func (c *Configurator) CycleRadio(band string) error {
+	cl := &http.Client{
+		Timeout: time.Second * 10,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	for _, field := range c.fc.Fields {
+		req := &http.Request{
+			Method: http.MethodGet,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   field.IP,
+				Path:   "/rest/interface/wireless",
+				User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+			},
+		}
+
+		resp, err := cl.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		ifList := []*rosInterface{}
+		if err := json.NewDecoder(resp.Body).Decode(&ifList); err != nil {
+			return err
+		}
+
+		req.URL.Path = "/rest/caps-man/radio"
+		resp, err = cl.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		capList := []*rosCapInterface{}
+		if err := json.NewDecoder(resp.Body).Decode(&capList); err != nil {
+			return err
+		}
+
+		for _, rosInterface := range ifList {
+			if strings.HasPrefix(rosInterface.Band, band) {
+				for _, capInterface := range capList {
+					if capInterface.MAC == rosInterface.MAC {
+						c.l.Debug("Found matching CAP", "id", capInterface.ID, "mac", capInterface.MAC)
+						capInterface.MAC = "" // Zero out so it doesn't get sent back
+						data, err := json.Marshal(capInterface)
+						if err != nil {
+							return err
+						}
+						c.l.Debug("JSON Message", "msg", string(data))
+
+						req.URL.Path = "/rest/caps-man/radio/provision"
+						req, err := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
+						req.Header.Set("Content-Type", "application/json")
+						resp, err = cl.Do(req)
+						if err != nil {
+							c.l.Error("Error cycling radio", "field", field.ID, "radio", capInterface.MAC, "band", band, "error", err)
+							return err
+						}
+						defer resp.Body.Close()
+
+						msg, _ := io.ReadAll(resp.Body)
+						c.l.Debug("Cycle response", "resp", string(msg))
+						c.l.Debug("Radio cycled", "band", band, "field", field.ID, "mac", rosInterface.MAC, "id", capInterface.ID)
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *Configurator) syncFMSConfig() error {

@@ -1,13 +1,16 @@
 resource "routeros_capsman_manager" "mgr" {
   enabled        = true
   upgrade_policy = "require-same-version"
+  certificate    = "auto"
+  ca_certificate = "auto"
 }
 
 resource "routeros_interface_wireless_cap" "settings" {
-  discovery_interfaces = [routeros_interface_bridge.br0.name]
-  bridge               = routeros_interface_bridge.br0.name
-  enabled              = true
-  interfaces           = ["wlan1", "wlan2"]
+  caps_man_addresses = ["127.0.0.1"]
+  bridge             = routeros_interface_bridge.br0.name
+  enabled            = true
+  interfaces         = ["wlan1", "wlan2"]
+  certificate        = routeros_capsman_manager.mgr.generated_certificate
 }
 
 resource "routeros_capsman_channel" "channel" {
