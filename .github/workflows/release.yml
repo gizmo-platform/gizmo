@@ -32,6 +32,8 @@ jobs:
 
       - name: Setup Go
         uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.22'
 
       - name: Install mdbook d2 preprocessor
         run: go install github.com/Vaelatern/mdbook-d2-go@latest
