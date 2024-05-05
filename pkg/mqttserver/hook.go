@@ -52,10 +52,10 @@ func (gh *GizmoHook) OnStarted() {
 // OnSessionEstablished happens after a client is completely connected
 // and ready to send and receive data.
 func (gh *GizmoHook) OnSessionEstablished(cl *mqtt.Client, pk packets.Packet) {
-	if strings.HasPrefix(cl.ID, "gizmo") && cl.ID != "gizmo-tlm" {
+	if strings.HasPrefix(cl.ID, "gizmo") {
 		expected, actual := teamNumberFromClient(cl)
 		gh.l.Info("Client Connected", "client", cl.ID, "expected", expected, "actual", actual)
-		if expected != actual {
+		if expected != actual && expected != 0 {
 			gh.l.Warn("UNEXPECTED CONNECTION! Check the client above is where you think it is!")
 		}
 	}

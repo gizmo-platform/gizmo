@@ -41,7 +41,7 @@ func New(opts ...Option) *TLM {
 	copts := mqtt.NewClientOptions().
 		AddBroker(t.mqttAddr).
 		SetAutoReconnect(true).
-		SetClientID("gizmo-tlm").
+		SetClientID("self-tlm").
 		SetConnectRetry(true).
 		SetConnectTimeout(time.Second).
 		SetConnectRetryInterval(time.Second)
