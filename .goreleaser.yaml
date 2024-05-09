@@ -16,6 +16,8 @@ builds:
       - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.Version={{.Version}}'
       - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.Commit={{.Commit}}'
       - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.BuildDate={{.Timestamp}}'
+    tags:
+      - docs
 
 archives:
   - format: tar.gz
