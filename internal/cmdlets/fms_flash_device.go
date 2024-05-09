@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/fms"
@@ -31,6 +30,8 @@ func init() {
 }
 
 func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
+	initLogger("flash-device")
+
 	instructions := []string{
 		"Welcome to the field-flash utility.",
 		"",
@@ -80,15 +81,6 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 		fmt.Println("Flash process aborted!")
 		return
 	}
-
-	ll := os.Getenv("LOG_LEVEL")
-	if ll == "" {
-		ll = "INFO"
-	}
-	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "flash-device",
-		Level: hclog.LevelFromString(ll),
-	})
 
 	cfg, err := fms.LoadConfig("fms.json")
 	if err != nil {

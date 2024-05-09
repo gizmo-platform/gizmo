@@ -3,10 +3,7 @@
 package cmdlets
 
 import (
-	"os"
-
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
@@ -29,14 +26,7 @@ func init() {
 }
 
 func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
-	ll := os.Getenv("LOG_LEVEL")
-	if ll == "" {
-		ll = "INFO"
-	}
-	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "config-server",
-		Level: hclog.LevelFromString(ll),
-	})
+	initLogger("config-server")
 
 	fmsConf, err := fms.LoadConfig("fms.json")
 	if err != nil {

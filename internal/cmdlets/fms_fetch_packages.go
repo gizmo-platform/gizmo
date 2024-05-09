@@ -3,9 +3,6 @@
 package cmdlets
 
 import (
-	"os"
-
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
@@ -27,14 +24,7 @@ func init() {
 }
 
 func fmsFetchPackagesCmdRun(c *cobra.Command, args []string) {
-	ll := os.Getenv("LOG_LEVEL")
-	if ll == "" {
-		ll = "INFO"
-	}
-	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "fetch-packages",
-		Level: hclog.LevelFromString(ll),
-	})
+	initLogger("fetch-packages")
 
 	if err := netinstall.FetchPackages(appLogger); err != nil {
 		appLogger.Error("Unable to fetch one or more packages, see above", "error", err)

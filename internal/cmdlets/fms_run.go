@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/fms"
@@ -41,15 +40,8 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	ll := os.Getenv("LOG_LEVEL")
-	if ll == "" {
-		ll = "INFO"
-	}
-	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "fms",
-		Level: hclog.LevelFromString(ll),
-	})
-	appLogger.Info("Log level", "level", appLogger.GetLevel())
+	initLogger("fms")
+
 	wg := new(sync.WaitGroup)
 
 	fmsConf, err := fms.LoadConfig("fms.json")

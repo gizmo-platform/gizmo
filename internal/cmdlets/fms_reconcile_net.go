@@ -3,9 +3,6 @@
 package cmdlets
 
 import (
-	"os"
-
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/fms"
@@ -34,14 +31,7 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 	skipRefresh, _ := c.Flags().GetBool("skip-refresh")
 	skipRefresh = !skipRefresh
 
-	ll := os.Getenv("LOG_LEVEL")
-	if ll == "" {
-		ll = "INFO"
-	}
-	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "flash-router",
-		Level: hclog.LevelFromString(ll),
-	})
+	initLogger("reconcile-net")
 
 	fmsConf, err := fms.LoadConfig("fms.json")
 	if err != nil {

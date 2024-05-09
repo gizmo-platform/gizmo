@@ -1,4 +1,5 @@
 //go:build !docs
+
 package docs
 
 import (

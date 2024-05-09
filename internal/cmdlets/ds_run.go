@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
@@ -31,17 +30,10 @@ func init() {
 }
 
 func dsRunCmdRun(c *cobra.Command, args []string) {
+	initLogger("ds")
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-	ll := os.Getenv("LOG_LEVEL")
-	if ll == "" {
-		ll = "INFO"
-	}
-	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "driver-station",
-		Level: hclog.LevelFromString(ll),
-	})
 
 	cfg, err := config.Load(args[0])
 	if err != nil {

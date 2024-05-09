@@ -9,7 +9,6 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
 
@@ -34,16 +33,9 @@ func init() {
 }
 
 func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
-	skipApply, _ := c.Flags().GetBool("skip-apply")
+	initLogger("bootstrap-net")
 
-	ll := os.Getenv("LOG_LEVEL")
-	if ll == "" {
-		ll = "INFO"
-	}
-	appLogger := hclog.New(&hclog.LoggerOptions{
-		Name:  "flash-router",
-		Level: hclog.LevelFromString(ll),
-	})
+	skipApply, _ := c.Flags().GetBool("skip-apply")
 
 	fmsConf, err := fms.LoadConfig("fms.json")
 	if err != nil {
