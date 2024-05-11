@@ -7,6 +7,7 @@ package netinstall
 import (
 	"bufio"
 	"os"
+	"io"
 	"os/exec"
 	"path/filepath"
 	"text/template"
@@ -165,16 +166,20 @@ func (i *Installer) doInstall() error {
 	args = append(args, i.pkgs...)
 	cmd := exec.Command(netinstallPath, args...)
 
-	stdout, _ := cmd.StdoutPipe()
+	rPipe, wPipe := io.Pipe()
+	cmd.Stdout = wPipe
+	cmd.Stderr = wPipe
+
 	cmd.Start()
 
-	scanner := bufio.NewScanner(stdout)
+	scanner := bufio.NewScanner(rPipe)
 	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		i.l.Info(scanner.Text())
-	}
-	cmd.Wait()
-	return nil
+	go func() {
+		for scanner.Scan() {
+			i.l.Info(scanner.Text())
+		}
+	}()
+	return 	cmd.Wait()
 }
 
 func (i *Installer) setupNetwork() error {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
@@ -97,18 +98,29 @@ func (c *Configurator) SyncTLM(tlm map[int]string) error {
 // Init performs initialization of the underlying terraform workspace
 // to fetch plugins and initialize module links.
 func (c *Configurator) Init() error {
-	cmd := exec.Command("terraform", "init")
+	cmd := exec.Command("terraform", "init", "-no-color")
 	cmd.Dir = c.stateDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	rPipe, wPipe := io.Pipe()
+	cmd.Stdout = wPipe
+	cmd.Stderr = wPipe
+
 	cmd.Start()
+
+	scanner := bufio.NewScanner(rPipe)
+	scanner.Split(bufio.ScanLines)
+	go func() {
+		for scanner.Scan() {
+			c.l.Info(scanner.Text())
+		}
+		c.l.Debug("Log copier shutting down")
+	}()
 	return cmd.Wait()
 }
 
 // Converge commands all network hardware to achieve the state
 // currently on disk.
 func (c *Configurator) Converge(refresh bool, target string) error {
-	opts := []string{"apply", "-auto-approve"}
+	opts := []string{"apply", "-auto-approve", "-no-color"}
 	if !refresh {
 		opts = append(opts, "-refresh=false")
 	}
@@ -117,9 +129,20 @@ func (c *Configurator) Converge(refresh bool, target string) error {
 	}
 	cmd := exec.Command("terraform", opts...)
 	cmd.Dir = c.stateDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	rPipe, wPipe := io.Pipe()
+	cmd.Stdout = wPipe
+	cmd.Stderr = wPipe
+
 	cmd.Start()
+
+	scanner := bufio.NewScanner(rPipe)
+	scanner.Split(bufio.ScanLines)
+	go func() {
+		for scanner.Scan() {
+			c.l.Info(scanner.Text())
+		}
+		c.l.Debug("Log copier shutting down")
+	}()
 	return cmd.Wait()
 }
 
