@@ -81,9 +81,11 @@ func (ds *DriverStation) findFMS() {
 			t.Stop()
 		case <-t.C:
 			ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*50)
+			_, err := r.LookupHost(ctx, "nxdomain.example.com")
+			dnsWrong := err == nil
 			_, err := r.LookupHost(ctx, "fms.gizmo")
 			ds.l.Trace("FMS Detection result", "error", err)
-			available := err == nil
+			available := (err == nil && !dnsWrong)
 
 			if ds.fmsAvailable != available {
 				ds.l.Debug("FMS Availability changed", "available", available)
