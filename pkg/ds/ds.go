@@ -83,7 +83,7 @@ func (ds *DriverStation) findFMS() {
 			ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*50)
 			_, err := r.LookupHost(ctx, "nxdomain.example.com")
 			dnsWrong := err == nil
-			_, err := r.LookupHost(ctx, "fms.gizmo")
+			_, err = r.LookupHost(ctx, "fms.gizmo")
 			ds.l.Trace("FMS Detection result", "error", err)
 			available := (err == nil && !dnsWrong)
 
