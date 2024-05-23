@@ -9,6 +9,8 @@ option interface_mtu
 option rapid_commit
 require dhcp_server_identifier
 slaac private
+nodelay
+reboot 3
 
 allowinterfaces br0
 
