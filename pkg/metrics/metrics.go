@@ -63,6 +63,13 @@ func New(opts ...Option) *Metrics {
 			Help:      "GPIO power supply available.",
 		}, []string{"team"}),
 
+		robotPowerServo: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "gizmo",
+			Subsystem: "robot",
+			Name:      "power_servo",
+			Help:      "Servo power available.",
+		}, []string{"team"}),
+
 		robotPowerBusA: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "gizmo",
 			Subsystem: "robot",
@@ -75,6 +82,13 @@ func New(opts ...Option) *Metrics {
 			Subsystem: "robot",
 			Name:      "power_bus_b",
 			Help:      "Motor Bus B power available.",
+		}, []string{"team"}),
+
+		robotPowerPixels: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "gizmo",
+			Subsystem: "robot",
+			Name:      "power_pixels",
+			Help:      "Student Pixel power available.",
 		}, []string{"team"}),
 
 		robotWatchdogOK: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -125,8 +139,10 @@ func New(opts ...Option) *Metrics {
 	x.r.MustRegister(x.robotPowerBoard)
 	x.r.MustRegister(x.robotPowerPico)
 	x.r.MustRegister(x.robotPowerGPIO)
+	x.r.MustRegister(x.robotPowerServo)
 	x.r.MustRegister(x.robotPowerBusA)
 	x.r.MustRegister(x.robotPowerBusB)
+	x.r.MustRegister(x.robotPowerPixels)
 	x.r.MustRegister(x.robotWatchdogOK)
 	x.r.MustRegister(x.robotWatchdogLifetime)
 	x.r.MustRegister(x.robotControlFrames)
@@ -158,8 +174,10 @@ func (m *Metrics) DeleteZombieRobot(team string) {
 	m.robotPowerBoard.Delete(l)
 	m.robotPowerPico.Delete(l)
 	m.robotPowerGPIO.Delete(l)
+	m.robotPowerServo.Delete(l)
 	m.robotPowerBusA.Delete(l)
 	m.robotPowerBusB.Delete(l)
+	m.robotPowerPixels.Delete(l)
 	m.robotWatchdogOK.Delete(l)
 	m.robotWatchdogLifetime.Delete(l)
 	m.robotControlFrameAge.Delete(l)
@@ -196,9 +214,10 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 		m.l.Warn("Bad stats report", "team", teamNum, "error", err)
 	}
 
-	// Determined by experimental sampling with regression.
-	// R^2=0.9995
-	voltage := 0.008848*float64(stats.VBat) - 0.30915
+	// This uses the same conversion that's used on the Gizmo to
+	// drive the battery status LED, which is why it has to have
+	// access to the values from the Gizmo itself.
+	voltage := (float64(stats.VBatM) / 100000) *float64(stats.VBat) + (float64(stats.VBatM) / 100000)
 
 	m.robotRSSI.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
 	m.robotWifiReconnects.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WifiReconnects))
@@ -210,8 +229,10 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 	m.robotPowerBoard.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrBoard))
 	m.robotPowerPico.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPico))
 	m.robotPowerGPIO.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrGPIO))
+	m.robotPowerServo.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrServo))
 	m.robotPowerBusA.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainA))
 	m.robotPowerBusB.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainB))
+	m.robotPowerPixels.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPixels))
 	m.robotWatchdogOK.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.WatchdogOK))
 
 	m.robotLastInteraction.With(prometheus.Labels{"team": teamNum}).SetToCurrentTime()
