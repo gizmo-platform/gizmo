@@ -217,7 +217,7 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 	// This uses the same conversion that's used on the Gizmo to
 	// drive the battery status LED, which is why it has to have
 	// access to the values from the Gizmo itself.
-	voltage := (float64(stats.VBatM) / 100000) *float64(stats.VBat) + (float64(stats.VBatM) / 100000)
+	voltage := (float64(stats.VBatM)/100000)*float64(stats.VBat) + (float64(stats.VBatM) / 100000)
 
 	m.robotRSSI.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
 	m.robotWifiReconnects.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WifiReconnects))

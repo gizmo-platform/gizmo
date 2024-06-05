@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/vishvananda/netlink"
 )
 
 const (
-	coresvc = "/etc/runit/core-services/90-gizmo.sh"
+	// We need to be before sysctls, which fire at 08.
+	coresvc = "/etc/runit/core-services/06-gizmo.sh"
 
+	sysctlConf     = "/etc/sysctl.conf"
 	hostAPdConf    = "/etc/hostapd/hostapd.conf"
 	dnsmasqConf    = "/etc/dnsmasq.conf"
 	dhcpcdConf     = "/etc/dhcpcd.conf"
@@ -42,6 +45,7 @@ func (ds *DriverStation) SetupBoot() error {
 // services as necessary.
 func (ds *DriverStation) Configure() error {
 	steps := []ConfigureStep{
+		ds.configureSysctl,
 		ds.configureNetwork,
 		ds.configureHostname,
 		ds.configureHostAPd,
@@ -51,6 +55,7 @@ func (ds *DriverStation) Configure() error {
 		ds.enableServices,
 	}
 	names := []string{
+		"sysctl",
 		"network",
 		"hostname",
 		"hostapd",
@@ -68,6 +73,10 @@ func (ds *DriverStation) Configure() error {
 	}
 
 	return nil
+}
+
+func (ds *DriverStation) configureSysctl() error {
+	return ds.doTemplate(sysctlConf, "tpl/sysctl.conf.tpl", 0644, nil)
 }
 
 func (ds *DriverStation) configureNetwork() error {
@@ -142,6 +151,17 @@ func (ds *DriverStation) configureGizmo() error {
 	if err := ds.doTemplate(gizmoConfigSvc, "tpl/gizmo-config.run.tpl", 0755, nil); err != nil {
 		return err
 	}
+
+	for _, svc := range []string{gizmoDSSvc, gizmoLinkSvc, gizmoConfigSvc} {
+		if err := os.MkdirAll(filepath.Join(filepath.Dir(svc), "log"), 0755); err != nil {
+			return err
+		}
+
+		if err := os.Link("/usr/bin/vlogger", filepath.Join(filepath.Dir(svc), "log", "run")); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

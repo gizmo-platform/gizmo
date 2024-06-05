@@ -8,8 +8,9 @@ option classless_static_routes
 option interface_mtu
 option rapid_commit
 require dhcp_server_identifier
-slaac private
 nodelay
+noipv6
+release
 reboot 3
 
 allowinterfaces br0
@@ -18,4 +19,5 @@ interface br0
 fallback local
 profile local
   static ip_address={{ .Team|ip4prefix }}.1/24
+  noipv6
   release

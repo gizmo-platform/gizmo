@@ -6,8 +6,8 @@ package netinstall
 
 import (
 	"bufio"
-	"os"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"text/template"
@@ -179,7 +179,7 @@ func (i *Installer) doInstall() error {
 			i.l.Info(scanner.Text())
 		}
 	}()
-	return 	cmd.Wait()
+	return cmd.Wait()
 }
 
 func (i *Installer) setupNetwork() error {
