@@ -19,6 +19,7 @@ mount -o bind /etc/resolv.conf /mnt/target/etc/resolv.conf
 cp dist/gizmo_linux_arm64/gizmo /mnt/target/usr/local/bin/gizmo
 cd /mnt/target || exit 1
 chroot /mnt/target /usr/local/bin/gizmo ds install
+echo root:gizmo | chpasswd -c SHA512 -R /mnt/target
 
 # Backout, unmount, compress
 cd - || exit 1
