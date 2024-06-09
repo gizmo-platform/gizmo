@@ -4,7 +4,7 @@ project_name: gizmo
 before:
   hooks:
     - go mod tidy
-    - go generate ./...
+    - go generate -tags docs ./...
 builds:
   - env:
       - CGO_ENABLED=0
