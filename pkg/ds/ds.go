@@ -3,6 +3,7 @@ package ds
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"path"
 	"strconv"
 	"time"
@@ -35,10 +36,24 @@ func New(opts ...Option) *DriverStation {
 
 // Run starts up the processes that actually push control data, and if
 // no external FMS is detected then it will also run the bare minimum
-// of FMS services locally.
+// of FMS services locally.  The FMS detection happens once per
+// startup, because every time the network link is cycled the DS
+// process gets restarted.
 func (ds *DriverStation) Run() error {
-	go ds.doLocalBroker()
-	go ds.doLocation()
+	_, mustFail := net.LookupIP("invalid.gizmo")
+	ips, err := net.LookupIP("fms.gizmo")
+	ds.l.Info("FMS probe result", "must-fail", mustFail != nil, "must-pass", err == nil, "fms-available", (mustFail != nil) && (err == nil))
+	if err == nil && mustFail != nil {
+		if err := ds.connectMQTT(fmt.Sprintf("mqtt://%s:1883", ips[0])); err != nil {
+			ds.l.Error("Could not connect to FMS")
+			return err
+		}
+	} else {
+		// FMS not available, start local services.
+		go ds.doLocalBroker()
+		go ds.doLocation()
+	}
+
 	ds.doGamepad()
 	return nil
 }
@@ -65,7 +80,7 @@ func (ds *DriverStation) connectMQTT(address string) error {
 		ds.l.Error("Error connecting to broker", "error", tok.Error())
 		return tok.Error()
 	}
-	ds.l.Info("Connected to broker")
+	ds.l.Info("Connected to broker", "broker", address)
 	return nil
 }
 
