@@ -1,7 +1,5 @@
 controlgroup wheel
 hostname
-duid
-persistent
 vendorclassid
 option domain_name_servers, domain_name, domain_search
 option classless_static_routes
@@ -10,7 +8,6 @@ option rapid_commit
 require dhcp_server_identifier
 nodelay
 noipv6
-release
 
 allowinterfaces br0
 
