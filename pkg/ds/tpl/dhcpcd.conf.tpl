@@ -11,7 +11,6 @@ require dhcp_server_identifier
 nodelay
 noipv6
 release
-reboot 3
 
 allowinterfaces br0
 

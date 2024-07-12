@@ -27,7 +27,10 @@ func init() {
 }
 
 func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
-	changes := make(chan netlink.LinkUpdate)
+	initLogger("ds")
+
+	linkChanges := make(chan netlink.LinkUpdate)
+	addrChanges := make(chan netlink.AddrUpdate)
 	done := make(chan struct{})
 	quit := make(chan os.Signal, 1)
 
@@ -38,8 +41,13 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 		close(done)
 	}()
 
-	if err := netlink.LinkSubscribe(changes, done); err != nil {
+	if err := netlink.LinkSubscribe(linkChanges, done); err != nil {
 		fmt.Fprintf(os.Stderr, "Could not subscribe to link state changes: %s\n", err)
+		return
+	}
+
+	if err := netlink.AddrSubscribe(addrChanges, done); err != nil {
+		fmt.Fprintf(os.Stderr, "Could not subscribe to addr state changes: %s\n", err)
 		return
 	}
 
@@ -47,12 +55,22 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 	r := new(ds.Runit)
 	for {
 		select {
-		case l := <-changes:
+		case l := <-linkChanges:
 			if l.Attrs().Name == "eth0" {
 				if l.Attrs().OperState != prevState {
-					r.Restart("dhcpcd")
+					if err := r.Restart("dhcpcd"); err != nil {
+						appLogger.Warn("Error restarting dhcpcd", "error", err)
+					}
+					appLogger.Info("Restarted dhcpcd")
 				}
 				prevState = l.Attrs().OperState
+			}
+		case a := <-addrChanges:
+			if a.NewAddr {
+				if err := r.Restart("gizmo-ds"); err != nil {
+					appLogger.Warn("Error restarting gizmo-ds", "error", err)
+				}
+				appLogger.Info("Restarted gizmo-ds")
 			}
 		case <-done:
 			return
