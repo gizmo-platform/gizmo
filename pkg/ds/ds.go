@@ -40,7 +40,7 @@ func New(opts ...Option) *DriverStation {
 // startup, because every time the network link is cycled the DS
 // process gets restarted.
 func (ds *DriverStation) Run() error {
-	_, mustFail := net.LookupIP("invalid.gizmo")
+	_, mustFail := net.LookupIP("nxdomain.gizmo")
 	ips, err := net.LookupIP("fms.gizmo")
 	ds.l.Info("FMS probe result", "must-fail", mustFail != nil, "must-pass", err == nil, "fms-available", (mustFail != nil) && (err == nil))
 	if err == nil && mustFail != nil {
