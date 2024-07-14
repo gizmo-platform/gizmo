@@ -1,6 +1,7 @@
 package ds
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -40,11 +41,10 @@ func New(opts ...Option) *DriverStation {
 // startup, because every time the network link is cycled the DS
 // process gets restarted.
 func (ds *DriverStation) Run() error {
-	_, mustFail := net.LookupIP("nxdomain.gizmo")
-	ips, err := net.LookupIP("fms.gizmo")
-	ds.l.Info("FMS probe result", "must-fail", mustFail != nil, "must-pass", err == nil, "fms-available", (mustFail != nil) && (err == nil))
-	if err == nil && mustFail != nil {
-		if err := ds.connectMQTT(fmt.Sprintf("mqtt://%s:1883", ips[0])); err != nil {
+	fmsAddr, fmsAvailable := ds.probeForFMS()
+	ds.l.Info("FMS probe result", "available", fmsAvailable)
+	if fmsAvailable {
+		if err := ds.connectMQTT(fmt.Sprintf("mqtt://%s:1883", fmsAddr)); err != nil {
 			ds.l.Error("Could not connect to FMS")
 			return err
 		}
@@ -64,6 +64,35 @@ func (ds *DriverStation) Stop() {
 	ds.l.Info("Receieved stop request")
 	ds.quit = true
 	close(ds.stop)
+}
+
+// probeForFMS tests to see if the FMS is available by checking for
+// its magic DNS names.
+func (ds *DriverStation) probeForFMS() (string, bool) {
+	const timeout = 50 * time.Millisecond
+	var r net.Resolver
+
+	ctx, cancel1 := context.WithTimeout(context.Background(), timeout)
+	defer cancel1()
+	_, err := r.LookupHost(ctx, "nxdomain.gizmo")
+	if err == nil {
+		ds.l.Warn("nxdomain.gizmo resolves; DNS on this network is unreliable!")
+		// If no error occured here then it means that the
+		// domain that is explicitly supposed to nxdomain
+		// didn't, and we can't trust DNS on this network.
+		return "", false
+	}
+	ds.l.Debug("nxdomain.gizmo nxdomains")
+
+	ctx, cancel2 := context.WithTimeout(context.Background(), timeout)
+	defer cancel2()
+	res, err := r.LookupHost(ctx, "fms.gizmo")
+	if err != nil {
+		ds.l.Warn("FMS Unavailable", "error", err)
+		return "", false
+	}
+
+	return res[0], true
 }
 
 func (ds *DriverStation) connectMQTT(address string) error {
