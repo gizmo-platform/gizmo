@@ -27,8 +27,10 @@ const (
 // Install invokes xbps to install the necessary packages
 func (ds *DriverStation) Install() error {
 	pkgs := []string{
-		"hostapd",
 		"dnsmasq",
+		"hostapd",
+		"mqttcli",
+		"tmux",
 	}
 
 	return exec.Command("xbps-install", append([]string{"-Suy"}, pkgs...)...).Run()

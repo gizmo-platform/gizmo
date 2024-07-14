@@ -7,3 +7,4 @@ gizmo
 *.csv
 fms.json
 .netstate
+driver-station.*
