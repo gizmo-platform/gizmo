@@ -15,6 +15,7 @@ import (
 
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
+	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 )
 
 const (
@@ -26,12 +27,13 @@ const (
 func New(opts ...Option) *DriverStation {
 	d := new(DriverStation)
 	d.l = hclog.NewNullLogger()
-	d.svc = new(Runit)
 	d.stop = make(chan struct{})
 
 	for _, o := range opts {
 		o(d)
 	}
+
+	d.sc = sysconf.New(sysconf.WithFS(efs), sysconf.WithLogger(d.l))
 	return d
 }
 

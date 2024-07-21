@@ -1,4 +1,4 @@
-package ds
+package sysconf
 
 import (
 	"os"

@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
 
-	"github.com/gizmo-platform/gizmo/pkg/ds"
+	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 )
 
 var (
@@ -52,7 +52,7 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 	}
 
 	var prevState netlink.LinkOperState
-	r := new(ds.Runit)
+	r := new(sysconf.Runit)
 	for {
 		select {
 		case l := <-linkChanges:

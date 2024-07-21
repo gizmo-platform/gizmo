@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 )
 
 // DriverStation binds all methods related to the driver station task,
@@ -19,7 +20,7 @@ type DriverStation struct {
 
 	cfg config.Config
 
-	svc *Runit
+	sc *sysconf.SysConf
 
 	fmsAvailable bool
 	quit         bool

@@ -33,13 +33,13 @@ func (ds *DriverStation) Install() error {
 		"tmux",
 	}
 
-	return exec.Command("xbps-install", append([]string{"-Suy"}, pkgs...)...).Run()
+	return ds.sc.InstallPkgs(pkgs...)
 }
 
 // SetupBoot installs the runtime hooks that startup the configuration
 // jobs.
 func (ds *DriverStation) SetupBoot() error {
-	return ds.doTemplate(coresvc, "tpl/coresvc.sh.tpl", 0644, nil)
+	return ds.sc.Template(coresvc, "tpl/coresvc.sh.tpl", 0644, nil)
 }
 
 // Configure installs configuration files into the correct locations
@@ -78,7 +78,7 @@ func (ds *DriverStation) Configure() error {
 }
 
 func (ds *DriverStation) configureSysctl() error {
-	return ds.doTemplate(sysctlConf, "tpl/sysctl.conf.tpl", 0644, nil)
+	return ds.sc.Template(sysctlConf, "tpl/sysctl.conf.tpl", 0644, nil)
 }
 
 func (ds *DriverStation) configureNetwork() error {
@@ -129,28 +129,28 @@ func (ds *DriverStation) configureHostname() error {
 }
 
 func (ds *DriverStation) configureHostAPd() error {
-	if err := ds.doTemplate(hostAPdConf, "tpl/hostapd.conf.tpl", 0644, ds.cfg); err != nil {
+	if err := ds.sc.Template(hostAPdConf, "tpl/hostapd.conf.tpl", 0644, ds.cfg); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (ds *DriverStation) configureDHCPCD() error {
-	return ds.doTemplate(dhcpcdConf, "tpl/dhcpcd.conf.tpl", 0644, ds.cfg)
+	return ds.sc.Template(dhcpcdConf, "tpl/dhcpcd.conf.tpl", 0644, ds.cfg)
 }
 
 func (ds *DriverStation) configureDNSMasq() error {
-	return ds.doTemplate(dnsmasqConf, "tpl/dnsmasq.conf.tpl", 0644, ds.cfg)
+	return ds.sc.Template(dnsmasqConf, "tpl/dnsmasq.conf.tpl", 0644, ds.cfg)
 }
 
 func (ds *DriverStation) configureGizmo() error {
-	if err := ds.doTemplate(gizmoDSSvc, "tpl/gizmo-ds.run.tpl", 0755, ds.cfg); err != nil {
+	if err := ds.sc.Template(gizmoDSSvc, "tpl/gizmo-ds.run.tpl", 0755, ds.cfg); err != nil {
 		return err
 	}
-	if err := ds.doTemplate(gizmoLinkSvc, "tpl/gizmo-link.run.tpl", 0755, nil); err != nil {
+	if err := ds.sc.Template(gizmoLinkSvc, "tpl/gizmo-link.run.tpl", 0755, nil); err != nil {
 		return err
 	}
-	if err := ds.doTemplate(gizmoConfigSvc, "tpl/gizmo-config.run.tpl", 0755, nil); err != nil {
+	if err := ds.sc.Template(gizmoConfigSvc, "tpl/gizmo-config.run.tpl", 0755, nil); err != nil {
 		return err
 	}
 
@@ -168,10 +168,10 @@ func (ds *DriverStation) configureGizmo() error {
 }
 
 func (ds *DriverStation) enableServices() error {
-	ds.svc.Enable("hostapd")
-	ds.svc.Enable("dnsmasq")
-	ds.svc.Enable("gizmo-ds")
-	ds.svc.Enable("gizmo-link")
-	ds.svc.Enable("gizmo-config")
+	ds.sc.Enable("hostapd")
+	ds.sc.Enable("dnsmasq")
+	ds.sc.Enable("gizmo-ds")
+	ds.sc.Enable("gizmo-link")
+	ds.sc.Enable("gizmo-config")
 	return nil
 }
