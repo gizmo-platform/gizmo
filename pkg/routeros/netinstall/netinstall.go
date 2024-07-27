@@ -26,7 +26,7 @@ import (
 const (
 	// RouterOSVersion contains the most recent qualified version
 	// of the suite to be installed.
-	RouterOSVersion = "7.14.2"
+	RouterOSVersion = "7.15.3"
 
 	// RouterPkg is the most recent qualified firmware package for
 	// a root router to be installed to.  In general its safe to
