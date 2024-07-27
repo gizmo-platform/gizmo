@@ -5,7 +5,6 @@ package ds
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/vishvananda/netlink"
@@ -114,18 +113,7 @@ func (ds *DriverStation) configureNetwork() error {
 }
 
 func (ds *DriverStation) configureHostname() error {
-	f, err := os.Create("/etc/hostname")
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(f, "gizmoDS-%d\n", ds.cfg.Team)
-	f.Close()
-
-	if err := exec.Command("/usr/bin/hostname", fmt.Sprintf("gizmoDS-%d", ds.cfg.Team)).Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return ds.sc.SetHostname(fmt.Sprintf("gizmoDS-%d", ds.cfg.Team))
 }
 
 func (ds *DriverStation) configureHostAPd() error {
