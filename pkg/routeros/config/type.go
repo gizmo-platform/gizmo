@@ -10,7 +10,7 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/fms"
 )
 
-//go:embed tf/*
+//go:embed tf/* tf/.terraform.lock.hcl
 var efs embed.FS
 
 // Option configures the Configurator

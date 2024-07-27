@@ -18,7 +18,7 @@ resource "routeros_ip_dhcp_server_network" "network_infra" {
   comment    = "Options for FMS"
   gateway    = "100.64.0.1"
   domain     = "gizmo"
-  dns_server = "100.64.0.1"
+  dns_server = ["100.64.0.1"]
 }
 
 # Team DHCP Pools
@@ -47,7 +47,7 @@ resource "routeros_ip_dhcp_server_network" "network_team" {
 
   address    = each.value.CIDR
   gateway    = cidrhost(each.value.CIDR, 1)
-  dns_server = cidrhost(each.value.CIDR, 1)
+  dns_server = [cidrhost(each.value.CIDR, 1)]
   comment    = each.value.Name
 }
 

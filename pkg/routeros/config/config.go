@@ -282,6 +282,22 @@ func (c *Configurator) configureWorkspace(bootstrap bool) error {
 		return err
 	}
 
+	src, err := efs.Open(filepath.Join("tf", ".terraform.lock.hcl"))
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	dst, err := os.Create(filepath.Join(c.stateDir, ".terraform.lock.hcl"))
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		return err
+	}
+
 	return nil
 }
 
