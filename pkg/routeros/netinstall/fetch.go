@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
@@ -91,6 +92,11 @@ loop:
 
 			if _, err := io.Copy(f, r); err != nil {
 				l.Error("Error writing files", "error", err)
+				return err
+			}
+
+			if err := exec.Command("/usr/bin/setcap", "cap_net_bind_service+ep", netinstallPath).Run(); err != nil {
+				l.Error("Error elevating capability on tool", "error", err)
 				return err
 			}
 			return nil
