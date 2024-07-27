@@ -68,6 +68,8 @@ func (st *SetupTool) Install() error {
 		"chrony",
 		"docker",
 		"dumb_runtime_dir",
+		"iwd",
+		"iwgtk",
 
 		// Multimedia
 		"pipewire",
@@ -216,10 +218,10 @@ func (st *SetupTool) enableServices() error {
 		"acpid",
 		"dbus",
 		"dhcpcd",
+		"iwd",
 		"ntpd",
 		"sddm",
 		"seatd",
-		"wpa_supplicant",
 	}
 	for _, s := range svcs {
 		st.l.Info("Enabling Service", "service", s)
