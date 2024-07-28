@@ -8,4 +8,4 @@ scrape_configs:
       - targets: ["localhost:9090"]
   - job_name: gizmo
     static_configs:
-      - targets: ["172.17.0.1:8080"]
+      - targets: ["localhost:8080"]

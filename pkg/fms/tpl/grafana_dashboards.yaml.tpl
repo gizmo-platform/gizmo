@@ -4,4 +4,4 @@ apiVersion: 1
 providers:
   - name: general
     options:
-      path: /dashboards/
+      path: /var/lib/grafana/dashboards/

@@ -16,9 +16,16 @@ const (
 	// We need to be before sysctls, which fire at 08.
 	coresvc = "/etc/runit/core-services/06-gizmo.sh"
 
+	promConf   = "/etc/prometheus/prometheus.yml"
 	sysctlConf = "/etc/sysctl.conf"
 	dhcpcdConf = "/etc/dhcpcd.conf"
 	sddmConf   = "/etc/sddm.conf.d/gizmo.conf"
+
+	grafanaPromSrc   = "/usr/share/grafana/conf/provisioning/datasources/default.yaml"
+	grafanaDashCfg   = "/usr/share/grafana/conf/provisioning/dashboards/default.yaml"
+	grafanaDashGizmo = "/var/lib/grafana/dashboards/gizmo.json"
+	grafanaDashHome  = "/usr/share/grafana/public/dashboards/home.json"
+	grafanaDashLand  = "/var/lib/grafana/dashboards/home.json"
 
 	pipeWireConfDir         = "/etc/pipewire/pipewire.conf.d/"
 	pipeWirePulseConf       = "/usr/share/examples/pipewire/20-pipewire-pulse.conf"
@@ -125,6 +132,8 @@ func (st *SetupTool) Configure() error {
 		"sddm":          st.configureSDDM,
 		"qemu":          st.configureQEMU,
 		"icewm-session": st.configureIceWM,
+		"prometheus":    st.configurePrometheus,
+		"grafana":       st.configureGrafana,
 		"services":      st.enableServices,
 	}
 
@@ -213,13 +222,43 @@ func (st *SetupTool) configureQEMU() error {
 	return nil
 }
 
+func (st *SetupTool) configurePrometheus() error {
+	return st.sc.Template(promConf, "tpl/prometheus.yml.tpl", 0644, nil)
+}
+
+func (st *SetupTool) configureGrafana() error {
+	if err := st.sc.Template(grafanaPromSrc, "tpl/grafana_default.yaml.tpl", 0644, nil); err != nil {
+		return err
+	}
+
+	if err := st.sc.Template(grafanaDashCfg, "tpl/grafana_dashboards.yaml.tpl", 0644, nil); err != nil {
+		return err
+	}
+
+	if err := st.sc.Template(grafanaDashGizmo, "tpl/grafana_dash_gizmo.json.tpl", 0644, nil); err != nil {
+		return err
+	}
+
+	if err := st.sc.Template(grafanaDashHome, "tpl/grafana_dash_home.json.tpl", 0644, nil); err != nil {
+		return err
+	}
+
+	if err := st.sc.Template(grafanaDashLand, "tpl/grafana_dash_home.json.tpl", 0644, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (st *SetupTool) enableServices() error {
 	svcs := []string{
 		"acpid",
 		"dbus",
 		"dhcpcd",
+		"grafana",
 		"iwd",
 		"ntpd",
+		"prometheus",
 		"sddm",
 		"seatd",
 	}
