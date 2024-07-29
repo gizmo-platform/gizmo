@@ -73,10 +73,12 @@ func (st *SetupTool) Install() error {
 	pkgs := []string{
 		// System Components
 		"chrony",
+		"cloud-guest-utils",
 		"docker",
 		"dumb_runtime_dir",
 		"iwd",
 		"iwgtk",
+		"tzupdate",
 
 		// Multimedia
 		"pipewire",

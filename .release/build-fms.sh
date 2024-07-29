@@ -31,6 +31,7 @@ chroot /mnt/target /usr/local/bin/gizmo fms system-install
 chroot /mnt/target /usr/bin/useradd -m -s /bin/bash -c "FMS Admin" -G wheel,storage,dialout,docker admin
 chroot /mnt/target /usr/bin/rm -rf /var/cache/xbps
 passwd -R /mnt/target -l root
+echo ENABLE_ROOT_GROWPART=yes > /mnt/target/etc/default/growpart
 echo admin:gizmo | chpasswd -c SHA512 -R /mnt/target
 
 # Backout, unmount, compress
