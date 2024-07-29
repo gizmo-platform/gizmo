@@ -258,6 +258,7 @@ func (st *SetupTool) enableServices() error {
 		"acpid",
 		"dbus",
 		"dhcpcd",
+		"docker",
 		"grafana",
 		"iwd",
 		"ntpd",
