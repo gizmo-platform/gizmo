@@ -21,7 +21,6 @@ mount -o bind /etc/resolv.conf /mnt/target/etc/resolv.conf
 
 # Update, Install the Gizmo Tools, Clean up
 cp dist/gizmo_linux_arm64/gizmo /mnt/target/usr/local/bin/gizmo
-setcap cap_net_admin+ep /mnt/target/usr/local/bin/gizmo
 cd /mnt/target || exit 1
 chroot /mnt/target /usr/bin/xbps-install -Suy xbps
 chroot /mnt/target /usr/bin/xbps-install -y xmirror
@@ -31,7 +30,7 @@ chroot /mnt/target /usr/bin/chsh -s /bin/bash
 chroot /mnt/target /usr/local/bin/gizmo fms system-install
 chroot /mnt/target /usr/bin/useradd -m -s /bin/bash -c "FMS Admin" -G wheel,storage,dialout,docker admin
 chroot /mnt/target /usr/bin/rm -rf /var/cache/xbps
-echo root:gizmo | chpasswd -c SHA512 -R /mnt/target
+passwd -R /mnt/target -l root
 echo admin:gizmo | chpasswd -c SHA512 -R /mnt/target
 
 # Backout, unmount, compress

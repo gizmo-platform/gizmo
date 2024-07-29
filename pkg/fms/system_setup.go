@@ -95,6 +95,7 @@ func (st *SetupTool) Install() error {
 		"xorg-fonts",
 		"xorg-minimal",
 		"xterm",
+		"xsel",
 
 		// Useful Tools
 		"htop",

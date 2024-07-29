@@ -100,6 +100,7 @@ func WithFMS(c *fms.Config) InstallerOpt {
 		i.bootstrapCtx["AutoPass"] = c.AutoPass
 		i.bootstrapCtx["ViewUser"] = c.ViewUser
 		i.bootstrapCtx["ViewPass"] = c.ViewPass
+		i.bootstrapCtx["AdminPass"] = c.AdminPass
 	}
 }
 

@@ -181,6 +181,8 @@ func (w *ws) setFields() error {
 	w.c.AutoUser = AutomationUser
 	w.c.AutoPass = strings.ReplaceAll(uuid.New().String(), "-", "")
 
+	w.c.AdminPass = strings.ReplaceAll(uuid.New().String(), "-", "")
+
 	xkcd := xkcdpwgen.NewGenerator()
 	xkcd.SetNumWords(3)
 	xkcd.SetCapitalize(true)

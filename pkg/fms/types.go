@@ -51,6 +51,11 @@ type Config struct {
 	ViewUser string
 	ViewPass string
 
+	// This is the actual "admin" user in RouterOS.  Generally
+	// nobody should be logged in as this, but its here anyway so
+	// its a known value.
+	AdminPass string
+
 	InfrastructureVisible bool
 	InfrastructureSSID    string
 	InfrastructurePSK     string
