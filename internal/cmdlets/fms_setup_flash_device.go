@@ -26,14 +26,14 @@ var (
 )
 
 func init() {
-	fmsCmd.AddCommand(fmsFlashDeviceCmd)
+	fmsSetupCmd.AddCommand(fmsFlashDeviceCmd)
 }
 
 func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 	initLogger("flash-device")
 
 	instructions := []string{
-		"Welcome to the field-flash utility.",
+		"Welcome to the Device Flash utility.",
 		"",
 		"This process will guide you through the process of installing the most",
 		"recently confirmed working firmware on your field device.",

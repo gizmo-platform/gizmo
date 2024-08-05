@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	fmsCmd.AddCommand(fmsFetchPackagesCmd)
+	fmsSetupCmd.AddCommand(fmsFetchPackagesCmd)
 }
 
 func fmsFetchPackagesCmdRun(c *cobra.Command, args []string) {

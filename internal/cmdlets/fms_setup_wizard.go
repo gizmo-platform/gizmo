@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	fmsCmd.AddCommand(fmsWizardCmd)
+	fmsSetupCmd.AddCommand(fmsWizardCmd)
 }
 
 func fmsWizardCmdRun(c *cobra.Command, args []string) {
