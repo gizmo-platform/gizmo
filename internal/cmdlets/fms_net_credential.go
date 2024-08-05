@@ -13,7 +13,7 @@ import (
 
 var (
 	fmsNetCredentialsCmd = &cobra.Command{
-		Use: "net-credential <admin|view|auto>",
+		Use: "credential <admin|view|auto>",
 		Short: "Print the specified credential to stdout (useful with xsel)",
 		Run: fmsNetCredentialCmdRun,
 		Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	fmsCmd.AddCommand(fmsNetCredentialsCmd)
+	fmsNetCmd.AddCommand(fmsNetCredentialsCmd)
 }
 
 func fmsNetCredentialCmdRun(c *cobra.Command, args []string) {

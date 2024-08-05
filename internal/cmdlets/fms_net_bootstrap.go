@@ -18,7 +18,7 @@ import (
 
 var (
 	fmsBootstrapNetCmd = &cobra.Command{
-		Use:   "bootstrap-net",
+		Use:   "bootstrap",
 		Short: "bootstrap a new field network immediately after installing OS data",
 		Long:  fmsBootstrapNetCmdLongDocs,
 		Run:   fmsBootstrapNetCmdRun,
@@ -28,7 +28,7 @@ var (
 )
 
 func init() {
-	fmsCmd.AddCommand(fmsBootstrapNetCmd)
+	fmsNetCmd.AddCommand(fmsBootstrapNetCmd)
 	fmsBootstrapNetCmd.Flags().Bool("skip-apply", false, "Skip applying changes")
 }
 

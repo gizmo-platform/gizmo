@@ -11,7 +11,7 @@ import (
 
 var (
 	fmsReconcileNetCmd = &cobra.Command{
-		Use:   "reconcile-net",
+		Use:   "reconcile",
 		Short: "compare existing network and desired configuration, reconciling differnces.",
 		Long:  fmsReconcileNetCmdLongDocs,
 		Run:   fmsReconcileNetCmdRun,
@@ -21,7 +21,7 @@ var (
 )
 
 func init() {
-	fmsCmd.AddCommand(fmsReconcileNetCmd)
+	fmsNetCmd.AddCommand(fmsReconcileNetCmd)
 	fmsReconcileNetCmd.Flags().Bool("skip-apply", false, "Skip applying changes")
 	fmsReconcileNetCmd.Flags().Bool("skip-refresh", false, "Skip refreshing current state")
 }
