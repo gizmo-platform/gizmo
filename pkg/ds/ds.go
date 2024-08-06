@@ -132,7 +132,10 @@ func (ds *DriverStation) doLocalBroker() error {
 		}
 	}()
 
-	ds.connectMQTT("mqtt://localhost:1883")
+	if err := ds.connectMQTT("mqtt://localhost:1883"); err != nil {
+		ds.l.Error("Error linking MQTT", "error", err)
+		ds.stop <- struct{}{}
+	}
 	<-ds.stop
 	m.Shutdown()
 
