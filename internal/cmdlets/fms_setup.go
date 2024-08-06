@@ -8,9 +8,9 @@ import (
 
 var (
 	fmsSetupCmd = &cobra.Command{
-		Use: "setup",
+		Use:   "setup",
 		Short: "provides all one-time setup commands",
-		Long: fmsSetupCmdLongDocs,
+		Long:  fmsSetupCmdLongDocs,
 	}
 
 	fmsSetupCmdLongDocs = `The FMS setup procedure involves a number of setup tasks that are performed once per competition.  Those commands are grouped under this menu.`

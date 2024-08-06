@@ -13,10 +13,10 @@ import (
 
 var (
 	fmsNetCredentialsCmd = &cobra.Command{
-		Use: "credential <admin|view|auto>",
-		Short: "Print the specified credential to stdout (useful with xsel)",
-		Run: fmsNetCredentialCmdRun,
-		Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+		Use:       "credential <admin|view|auto>",
+		Short:     "Print the specified credential to stdout (useful with xsel)",
+		Run:       fmsNetCredentialCmdRun,
+		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{"admin", "view", "auto"},
 	}
 )

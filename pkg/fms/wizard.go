@@ -3,13 +3,10 @@
 package fms
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -62,6 +59,41 @@ func WizardSurvey() (*Config, error) {
 	}
 
 	return w.c, nil
+}
+
+// WizardChangeRoster is used to change the roster in an FMS Config
+// that already exists.  Teams will be loaded then reconciled.
+// Existing teams can have name updated, but wireless parameters will
+// not be changed.
+func WizardChangeRoster(c *Config) (*Config, error) {
+	w := new(ws)
+	w.c = new(Config)
+	w.initCfg()
+	if err := w.loadTeams(); err != nil {
+		return nil, err
+	}
+
+	// Add any team that isn't in the existing import, and update
+	// the VLAN and name for any team that is present.
+	seen := make(map[int]struct{})
+	for num, team := range w.c.Teams {
+		seen[num] = struct{}{}
+		if _, exists := c.Teams[num]; exists {
+			c.Teams[num].Name = w.c.Teams[num].Name
+			c.Teams[num].VLAN = w.c.Teams[num].VLAN
+		} else {
+			c.Teams[num] = team
+		}
+	}
+
+	// Delete any team that isn't present in the new list.
+	for id := range c.Teams {
+		if _, present := seen[id]; !present {
+			delete(c.Teams, id)
+		}
+	}
+
+	return c, nil
 }
 
 func (w *ws) initCfg() {
@@ -215,43 +247,11 @@ func (w *ws) loadTeams() error {
 	}
 	defer f.Close()
 
-	r := csv.NewReader(f)
-	var header []string
-	vlan := 500
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if header == nil {
-			header = record
-			for col := range header {
-				header[col] = strings.ReplaceAll(header[col], "Team Name", "Name")
-				header[col] = strings.ReplaceAll(header[col], "Team Number", "Number")
-				header[col] = strings.ReplaceAll(header[col], "Hub Name", "Hub")
-			}
-		} else {
-			dict := map[string]string{}
-			for i := range header {
-				dict[header[i]] = record[i]
-			}
-			num, err := strconv.Atoi(dict["Number"])
-			if err != nil {
-				return fmt.Errorf("bad team number: %s %s", dict["Name"], dict["Number"])
-			}
-			w.c.Teams[num] = &Team{
-				VLAN: vlan,
-				Name: dict["Name"],
-				SSID: strings.ReplaceAll(uuid.New().String(), "-", ""),
-				PSK:  strings.ReplaceAll(uuid.New().String(), "-", ""),
-				CIDR: fmt.Sprintf("10.%d.%d.0/24", int(num/100), num%100),
-			}
-			vlan++
-		}
+	t, err := loadTeams(f)
+	if err != nil {
+		return err
 	}
+	w.c.Teams = t
 
 	confirm := false
 	cPrompt := &survey.Confirm{
