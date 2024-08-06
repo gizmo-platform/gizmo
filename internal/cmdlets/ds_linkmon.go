@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
@@ -51,26 +52,36 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	var prevState netlink.LinkOperState
 	r := new(sysconf.Runit)
+	delayRestart := func(svc string) {
+		// This delay ensures that linkstate has settled prior
+		// to bouncing services.  The kernel fires the events
+		// for link changes as they occur, so if we
+		// immediately do things, the device state may not be
+		// settled.  The correct way to handle this is to do a
+		// more intelligent poll and verify approach to make
+		// sure things are done changing, but this is easier
+		// to implement and understand.
+		time.Sleep(time.Second * 2)
+		if err := r.Restart(svc); err != nil {
+			appLogger.Warn("Error restarting service", "service", svc, "error", err)
+		}
+		appLogger.Info("Restarted Service", "service", svc)
+	}
+
+	var prevState netlink.LinkOperState
 	for {
 		select {
 		case l := <-linkChanges:
 			if l.Attrs().Name == "eth0" {
 				if l.Attrs().OperState != prevState {
-					if err := r.Restart("dhcpcd"); err != nil {
-						appLogger.Warn("Error restarting dhcpcd", "error", err)
-					}
-					appLogger.Info("Restarted dhcpcd")
+					go delayRestart("dhcpcd")
 				}
 				prevState = l.Attrs().OperState
 			}
 		case a := <-addrChanges:
 			if a.NewAddr {
-				if err := r.Restart("gizmo-ds"); err != nil {
-					appLogger.Warn("Error restarting gizmo-ds", "error", err)
-				}
-				appLogger.Info("Restarted gizmo-ds")
+				go delayRestart("gizmo-ds")
 			}
 		case <-done:
 			return
