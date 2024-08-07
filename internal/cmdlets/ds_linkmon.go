@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"net"
+	"slices"
 
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
@@ -34,6 +36,7 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 	addrChanges := make(chan netlink.AddrUpdate)
 	done := make(chan struct{})
 	quit := make(chan os.Signal, 1)
+	var prevAddr net.IP
 
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
@@ -80,7 +83,9 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 				prevState = l.Attrs().OperState
 			}
 		case a := <-addrChanges:
-			if a.NewAddr {
+			if a.NewAddr && !slices.Equal(a.LinkAddress.IP, prevAddr) {
+				prevAddr = a.LinkAddress.IP
+				appLogger.Info("New Address", "address", a.LinkAddress.IP)
 				go delayRestart("gizmo-ds")
 			}
 		case <-done:
