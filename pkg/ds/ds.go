@@ -54,8 +54,14 @@ func (ds *DriverStation) Run() error {
 		// FMS not available, start local services.
 		go ds.doLocalBroker()
 		go ds.doLocation()
+
+		if err := ds.connectMQTT("mqtt://127.0.0.1:1883"); err != nil {
+			ds.l.Error("Error linking MQTT", "error", err)
+			ds.stop <- struct{}{}
+		}
 	}
 
+	ds.l.Info("Starting gamepad pusher")
 	ds.doGamepad()
 	return nil
 }
@@ -132,13 +138,8 @@ func (ds *DriverStation) doLocalBroker() error {
 		}
 	}()
 
-	if err := ds.connectMQTT("mqtt://localhost:1883"); err != nil {
-		ds.l.Error("Error linking MQTT", "error", err)
-		ds.stop <- struct{}{}
-	}
 	<-ds.stop
 	m.Shutdown()
-
 	return nil
 }
 

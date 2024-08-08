@@ -31,7 +31,7 @@ func (ds *DriverStation) Install() error {
 		"hostapd",
 		"mqttcli",
 		"tmux",
-		"rsyslogd",
+		"rsyslog",
 	}
 
 	return ds.sc.InstallPkgs(pkgs...)
@@ -169,7 +169,7 @@ func (ds *DriverStation) enableServices() error {
 	ds.sc.Enable("gizmo-ds")
 	ds.sc.Enable("gizmo-link")
 	ds.sc.Enable("gizmo-config")
-	ds.sc.Enable("rsyslog")
+	ds.sc.Enable("rsyslogd")
 	ds.sc.Enable("gizmo-logmon")
 	for _, i := range []int{1, 4, 5, 6} {
 		ds.sc.Disable(fmt.Sprintf("agetty-tty%d", i))
