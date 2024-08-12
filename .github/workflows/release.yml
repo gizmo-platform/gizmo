@@ -58,9 +58,14 @@ jobs:
       - name: Build Driver Station
         run: sudo sh -x .release/build-ds.sh
 
+      - name: Build FMS Station
+        run: sudo sh -x .release/build-fms.sh
+
       - name: Upload artifacts
         uses: softprops/action-gh-release@v2
         with:
-          files: driver-station.zip
+          files: |
+            driver-station.zip
+            fms.zip
           generate_release_notes: false
           fail_on_unmatched_files: true
