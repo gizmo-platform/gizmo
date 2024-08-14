@@ -705,7 +705,7 @@
           "editorMode": "code",
           "expr": "gizmo_robot_battery_voltage{team=\"$team\"}",
           "instant": false,
-          "legendFormat": "RSSI",
+          "legendFormat": "Volts",
           "range": true,
           "refId": "A"
         }
