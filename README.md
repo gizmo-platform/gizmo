@@ -4,10 +4,10 @@ Welcome, lets drive some robots!  The Gizmo is an open source and open
 hardware platform developed in cooperation with the team behind [BEST
 Robotics](https://bestrobotics.org) which you can use to build and
 control robots.  The system is composed of multiple parts including a
-[hardware device](https://github.com/gizmo-platform/gizmo-hw) that
+[hardware device](https://github.com/gizmo-platform/hardware) that
 contains the control components, the Gizmo utilities (this repo), the
 system software that runs on the hardware
-[firmware](https://github.com/gizmo-platform/gizmo-fw), and an [Arduino
+[firmware](https://github.com/gizmo-platform/firmware), and an [Arduino
 library](https://github.com/gizmo-platform/ArduinoGizmo) that lets you
 build custom code to control your robot.
 
