@@ -4,12 +4,12 @@ package cmdlets
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 	"time"
-	"net"
-	"slices"
 
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"

@@ -3,8 +3,12 @@
 package cmdlets
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -32,7 +36,111 @@ func init() {
 	fmsBootstrapNetCmd.Flags().Bool("skip-apply", false, "Skip applying changes")
 }
 
+const (
+	bootstrapAddr = "100.64.1.1"
+)
+
 func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
+	confirm := func() bool {
+		qProceed := &survey.Confirm{
+			Message: "Acknowledge and Proceed",
+			Default: false,
+		}
+		proceed := false
+		if err := survey.AskOne(qProceed, &proceed); err != nil {
+			fmt.Fprintf(os.Stderr, "Impossible error confirming bootstrap: %s\n", err)
+		}
+		return proceed
+	}
+
+	bootstrapNet := func() error {
+		// Setup the bootstrap mode which talks via a distinct vlan to
+		// configure everything.  This is necessary since part of the
+		// setup changes the layer 2 network and we need to not change
+		// the network we're configuring from.
+		fmsAddr := "100.64.1.2"
+		appLogger.Info("Bootstrap mode enabled")
+
+		eth0, err := netlink.LinkByName("eth0")
+		if err != nil {
+			appLogger.Error("Could not retrieve ethernet link", "error", err)
+			return err
+		}
+
+		bootstrap0 := &netlink.Vlan{
+			LinkAttrs:    netlink.LinkAttrs{Name: "bootstrap0", ParentIndex: eth0.Attrs().Index},
+			VlanId:       2,
+			VlanProtocol: netlink.VLAN_PROTOCOL_8021Q,
+		}
+
+		if err := netlink.LinkAdd(bootstrap0); err != nil && err.Error() != "file exists" {
+			appLogger.Error("Could not create bootstrapping interface", "error", err)
+			return err
+		}
+
+		for _, int := range []netlink.Link{eth0, bootstrap0} {
+			if err := netlink.LinkSetUp(int); err != nil {
+				appLogger.Error("Error enabling eth0", "error", err)
+				return err
+			}
+		}
+
+		addr, _ := netlink.ParseAddr(fmsAddr + "/24")
+		if err := netlink.AddrAdd(bootstrap0, addr); err != nil {
+			appLogger.Error("Could not add IP", "error", err)
+			return err
+		}
+		return nil
+	}
+
+	unbootstrapNet := func() error {
+		bootstrap0, err := netlink.LinkByName("bootstrap0")
+		if err != nil {
+			appLogger.Error("Could not retrieve ethernet link", "error", err)
+			return err
+		}
+
+		if err := netlink.LinkDel(bootstrap0); err != nil {
+			appLogger.Error("Error removing bootstrap link", "error", err)
+			return err
+		}
+		return nil
+	}
+
+	waitForROS := func(wg *sync.WaitGroup, addr, user, pass string) {
+		defer wg.Done()
+		cl := http.Client{
+			Timeout: time.Second * 10,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+
+		req := &http.Request{
+			Method: http.MethodGet,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   addr,
+				Path:   "/rest/system/identity",
+				User:   url.UserPassword(user, pass),
+			},
+		}
+
+		retryFunc := func() error {
+			_, err := cl.Do(req)
+			if err != nil {
+				appLogger.Info("Waiting for device", "address", addr)
+			}
+			return err
+		}
+
+		if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff()); err != nil {
+			appLogger.Error("Permanent error encountered while waiting for RouterOS", "error", err)
+			appLogger.Error("You need to reboot network boxes and try again")
+			return
+		}
+	}
+
 	initLogger("bootstrap-net")
 
 	skipApply, _ := c.Flags().GetBool("skip-apply")
@@ -45,7 +153,7 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 	controller := config.New(
 		config.WithFMS(*fmsConf),
 		config.WithLogger(appLogger),
-		config.WithRouter("100.64.1.1"),
+		config.WithRouter(bootstrapAddr),
 	)
 
 	// Sync with bootstrap state enabled
@@ -74,23 +182,9 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		"programmed.  You will receive more instructions on when to connect",
 		"field boxes after the main scoring box provisioning completes.",
 	}
-
 	for _, line := range instructions {
 		fmt.Println(line)
 	}
-
-	confirm := func() bool {
-		qProceed := &survey.Confirm{
-			Message: "Acknowledge and Proceed",
-			Default: false,
-		}
-		proceed := false
-		if err := survey.AskOne(qProceed, &proceed); err != nil {
-			fmt.Fprintf(os.Stderr, "Impossible error confirming bootstrap: %s\n", err)
-		}
-		return proceed
-	}
-
 	if !confirm() {
 		fmt.Println("Bootstrap process aborted!")
 		return
@@ -101,49 +195,34 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	fmsAddr := "100.64.1.2"
-	appLogger.Info("Bootstrap mode enabled")
-
-	eth0, err := netlink.LinkByName("eth0")
-	if err != nil {
-		appLogger.Error("Could not retrieve ethernet link", "error", err)
-		return
-	}
-
-	bootstrap0 := &netlink.Vlan{
-		LinkAttrs:    netlink.LinkAttrs{Name: "bootstrap0", ParentIndex: eth0.Attrs().Index},
-		VlanId:       2,
-		VlanProtocol: netlink.VLAN_PROTOCOL_8021Q,
-	}
-
-	if err := netlink.LinkAdd(bootstrap0); err != nil && err.Error() != "file exists" {
-		appLogger.Error("Could not create bootstrapping interface", "error", err)
-		return
-	}
-	defer func() {
-		if err := netlink.LinkDel(bootstrap0); err != nil {
-			appLogger.Error("Error removing bootstrap link", "error", err)
-		}
-	}()
-
-	for _, int := range []netlink.Link{eth0, bootstrap0} {
-		if err := netlink.LinkSetUp(int); err != nil {
-			appLogger.Error("Error enabling eth0", "error", err)
+	if err := bootstrapNet(); err != nil {
+		appLogger.Error("Fatal error with bootstrap network", "error", err)
+		if err := unbootstrapNet(); err != nil {
+			appLogger.Error("Error occured while unbootstrapping network.  You may need to run `ip link del bootstrap0`.", "error", err)
 			return
 		}
-	}
-
-	addr, _ := netlink.ParseAddr(fmsAddr + "/24")
-	if err := netlink.AddrAdd(bootstrap0, addr); err != nil {
-		appLogger.Error("Could not add IP", "error", err)
 		return
 	}
+	defer unbootstrapNet()
 
+	// At this point we're ready to actually configure the root
+	// router.  This requires the TLM to sync even with empty
+	// state since that results in state files on disk.
 	if err := controller.SyncTLM(make(map[int]string)); err != nil {
 		appLogger.Error("Could not shim the TLM", "error", err)
 		return
 	}
 
+	var swg sync.WaitGroup
+	swg.Add(1)
+	go waitForROS(&swg, bootstrapAddr, fmsConf.AutoUser, fmsConf.AutoPass)
+	swg.Wait()
+
+	// We limit module.router here to configure only the scoring
+	// router.  This needs to get configured first since this sets
+	// up the DHCP reservations for the field access points.
+	// Without setting this up we wouldn't be able to assert the
+	// location of the field devices later.
 	if err := controller.Converge(true, "module.router"); err != nil {
 		appLogger.Error("Fatal error converging state", "error", err)
 		return
@@ -164,17 +243,18 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		"This process can take up to 10 minutes to complete.",
 		"",
 	}
-
 	for _, line := range instructions {
 		fmt.Println(line)
 	}
-
 	if !confirm() {
 		fmt.Println("Bootstrap process aborted!")
 		return
 	}
 
 	for _, field := range fmsConf.Fields {
+		swg.Add(1)
+		go waitForROS(&swg, field.IP, fmsConf.AutoUser, fmsConf.AutoPass)
+		swg.Wait()
 		provisionFunc := func() error {
 			err := controller.Converge(false, fmt.Sprintf("module.field%d", field.ID))
 			appLogger.Error("Error configuring field", "field", field.ID, "error", err)
