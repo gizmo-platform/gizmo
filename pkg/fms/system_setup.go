@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/hashicorp/go-hclog"
 
@@ -197,6 +198,13 @@ func (st *SetupTool) configureIceWM() error {
 }
 
 func (st *SetupTool) configureQEMU() error {
+	if runtime.GOARCH == "amd64" || runtime.GOARCH == "386" {
+		// Extremely important, do not register the native ELF
+		// handler to itself.  This is unrecoverable and you
+		// have to reboot.
+		return nil
+	}
+
 	name := "qemu-i386-static"
 	magic := "\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x03\x00"
 	mask := "\xff\xff\xff\xff\xff\xfe\xfe\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff"
