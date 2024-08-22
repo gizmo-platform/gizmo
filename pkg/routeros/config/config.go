@@ -27,7 +27,7 @@ const (
 func New(opts ...Option) *Configurator {
 	c := new(Configurator)
 	c.stateDir = ".netstate"
-	c.routerAddr = "10.0.0.1"
+	c.routerAddr = "100.64.0.1"
 
 	for _, o := range opts {
 		o(c)
