@@ -132,6 +132,17 @@ func (i *Installer) Install() error {
 	return nil
 }
 
+// TemplateConfig writes the configuration file to the specified
+// location and does nothing else.
+func (i *Installer) TemplateConfig(path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return i.writeUserScript(f)
+}
+
 func (i *Installer) makeBootstrap() error {
 	f, err := os.CreateTemp("", "*.rsc")
 	if err != nil {
@@ -140,13 +151,16 @@ func (i *Installer) makeBootstrap() error {
 	defer f.Close()
 	i.bootstrap = f.Name()
 	i.l.Info("Writing configuration to file", "path", i.bootstrap)
+	return i.writeUserScript(f)
+}
 
+func (i *Installer) writeUserScript(w io.Writer) error {
 	tpl, err := template.New("bootstrap.rsc").Parse(bootstrapCfg)
 	if err != nil {
 		return err
 	}
 
-	if err := tpl.Execute(f, i.bootstrapCtx); err != nil {
+	if err := tpl.Execute(w, i.bootstrapCtx); err != nil {
 		return err
 	}
 	return nil

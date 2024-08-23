@@ -27,10 +27,18 @@ var (
 
 func init() {
 	fmsSetupCmd.AddCommand(fmsFlashDeviceCmd)
+	fmsFlashDeviceCmd.Flags().String("template-to", "", "Template the config without installing")
 }
 
 func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 	initLogger("flash-device")
+	templateTo, _ := c.Flags().GetString("template-to")
+
+	cfg, err := fms.LoadConfig("fms.json")
+	if err != nil {
+		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
+		return
+	}
 
 	instructions := []string{
 		"Welcome to the Device Flash utility.",
@@ -67,6 +75,25 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
+	pkgs := []string{netinstall.RouterPkg}
+	if fDev != "Scoring Table Box" {
+		pkgs = append(pkgs, netinstall.WifiPkg)
+	}
+
+	installer := netinstall.New(
+		netinstall.WithLogger(appLogger),
+		netinstall.WithPackages(pkgs),
+		netinstall.WithFMS(cfg),
+	)
+
+	if templateTo != "" {
+		if err := installer.TemplateConfig(templateTo); err != nil {
+			appLogger.Error("Error templating file", "error", err)
+			return
+		}
+		return
+	}
+
 	qProceed := &survey.Confirm{
 		Message: strings.Join(confirmPrompt, "\n"),
 		Default: false,
@@ -81,23 +108,6 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 		fmt.Println("Flash process aborted!")
 		return
 	}
-
-	cfg, err := fms.LoadConfig("fms.json")
-	if err != nil {
-		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
-		return
-	}
-
-	pkgs := []string{netinstall.RouterPkg}
-	if fDev != "Scoring Table Box" {
-		pkgs = append(pkgs, netinstall.WifiPkg)
-	}
-
-	installer := netinstall.New(
-		netinstall.WithLogger(appLogger),
-		netinstall.WithPackages(pkgs),
-		netinstall.WithFMS(cfg),
-	)
 
 	if err := installer.Install(); err != nil {
 		appLogger.Error("Fatal error during install", "error", err)
