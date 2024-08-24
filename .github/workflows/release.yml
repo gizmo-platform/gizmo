@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   goreleaser:
@@ -19,24 +20,25 @@ jobs:
           submodules: 'true'
           fetch-depth: 0
 
-      - name: Setup mdBook
-        uses: peaceiris/actions-mdbook@v1
-        with:
-          mdbook-version: latest
+      - name: Get Documentation Run ID
+        id: run_id
+        run: |
+          run_id="$(gh api -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -q '[ .workflow_runs[].id ] | max' \
+            /repos/${{ github.repository_owner }}/gizmo-platform.github.io/actions/runs)"
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
 
-      - name: Install mdbook-callouts from crates.io
-        uses: baptiste0928/cargo-install@v3
+      - name: Download Documentation
+        uses: actions/download-artifact@v4
         with:
-          crate: mdbook-callouts
-          version: "v0.2.1"
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '>=1.22'
-
-      - name: Install mdbook d2 preprocessor
-        run: go install github.com/Vaelatern/mdbook-d2-go@latest
+          repository: "${{ github.repository_owner }}/gizmo-platform.github.io"
+          name: github-pages
+          path: pkg/docs/mdbook/book/
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.run_id.outputs.run_id }}
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -50,7 +52,8 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GENERATE_EXTRA_ARGS: '-skip mdbook'
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
