@@ -30,7 +30,7 @@ func init() {
 }
 
 func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
-	initLogger("ds")
+	initLogger("ds.linkmon")
 
 	linkChanges := make(chan netlink.LinkUpdate)
 	addrChanges := make(chan netlink.AddrUpdate)
