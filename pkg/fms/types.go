@@ -17,11 +17,13 @@ const (
 // Team maintains information about a team from the perspective of the
 // FMS
 type Team struct {
-	Name string
-	SSID string
-	PSK  string
-	VLAN int
-	CIDR string
+	Name     string
+	SSID     string
+	PSK      string
+	VLAN     int
+	CIDR     string
+	GizmoMAC string
+	DSMAC    string
 }
 
 // Field contains the information related to each field.

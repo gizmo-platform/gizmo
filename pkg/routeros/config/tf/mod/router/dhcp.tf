@@ -67,6 +67,15 @@ resource "routeros_ip_dhcp_server_lease" "fms" {
   server      = routeros_ip_dhcp_server.server_infra.name
 }
 
+resource "routeros_ip_dhcp_server_lease" "driver_station" {
+  for_each = local.fms.Teams
+
+  address     = cidrhost(each.value.CIDR, 3)
+  mac_address = each.value.DSMAC
+  comment     = format("DS %d", each.key)
+  server      = routeros_ip_dhcp_server.server_team[each.key].name
+}
+
 resource "routeros_ip_dns_record" "fms" {
   for_each = toset(["fms.gizmo", "gizmo-fms.comp"])
 

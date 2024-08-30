@@ -91,7 +91,10 @@ func (ds *DriverStation) configureNetwork() error {
 		return err
 	}
 
-	err = netlink.LinkAdd(&netlink.Bridge{LinkAttrs: netlink.LinkAttrs{Name: "br0"}})
+	err = netlink.LinkAdd(&netlink.Bridge{LinkAttrs: netlink.LinkAttrs{
+		Name:         "br0",
+		HardwareAddr: NumberToMAC(ds.cfg.Team, 1),
+	}})
 	if err != nil && err.Error() != "file exists" {
 		ds.l.Error("Could not create bridge device", "error", err)
 		return err

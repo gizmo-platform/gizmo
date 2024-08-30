@@ -81,6 +81,8 @@ func WizardChangeRoster(c *Config) (*Config, error) {
 		if _, exists := c.Teams[num]; exists {
 			c.Teams[num].Name = w.c.Teams[num].Name
 			c.Teams[num].VLAN = w.c.Teams[num].VLAN
+			c.Teams[num].GizmoMAC = w.c.Teams[num].GizmoMAC
+			c.Teams[num].DSMAC = w.c.Teams[num].DSMAC
 		} else {
 			c.Teams[num] = team
 		}

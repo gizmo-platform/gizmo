@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
+	"github.com/gizmo-platform/gizmo/pkg/ds"
 )
 
 func loadTeams(fr io.Reader) (map[int]*Team, error) {
@@ -40,11 +42,13 @@ func loadTeams(fr io.Reader) (map[int]*Team, error) {
 				return nil, fmt.Errorf("bad team number: %s %s", dict["Name"], dict["Number"])
 			}
 			teams[num] = &Team{
-				VLAN: vlan,
-				Name: dict["Name"],
-				SSID: strings.ReplaceAll(uuid.New().String(), "-", ""),
-				PSK:  strings.ReplaceAll(uuid.New().String(), "-", ""),
-				CIDR: fmt.Sprintf("10.%d.%d.0/24", int(num/100), num%100),
+				VLAN:     vlan,
+				Name:     dict["Name"],
+				SSID:     strings.ReplaceAll(uuid.New().String(), "-", ""),
+				PSK:      strings.ReplaceAll(uuid.New().String(), "-", ""),
+				CIDR:     fmt.Sprintf("10.%d.%d.0/24", int(num/100), num%100),
+				GizmoMAC: ds.NumberToMAC(num, 0).String(),
+				DSMAC:    ds.NumberToMAC(num, 1).String(),
 			}
 			vlan++
 		}
