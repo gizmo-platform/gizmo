@@ -22,7 +22,6 @@ type DriverStation struct {
 
 	sc *sysconf.SysConf
 
-	fmsAvailable bool
 	quit         bool
 
 	stop chan struct{}

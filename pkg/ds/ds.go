@@ -61,7 +61,6 @@ func (ds *DriverStation) Run() error {
 		}
 	}
 
-	ds.l.Info("Starting gamepad pusher")
 	ds.doGamepad()
 	return nil
 }
@@ -195,6 +194,7 @@ func (ds *DriverStation) doGamepad() error {
 	defer jsc.Close()
 
 	ticker := time.NewTicker(ctrlRate)
+	ds.l.Info("Starting gamepad pusher")
 	for {
 		select {
 		case <-ds.stop:
@@ -202,6 +202,7 @@ func (ds *DriverStation) doGamepad() error {
 			ds.l.Info("Stopped publishing control data")
 			return nil
 		case <-ticker.C:
+			ds.l.Trace("Control loop tick")
 			vals, err := jsc.GetState()
 			if err != nil {
 				ds.l.Warn("Error retrieving controller state", "error", err)
