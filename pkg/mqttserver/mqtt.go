@@ -7,14 +7,9 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/mochi-co/mqtt/v2"
-	"github.com/mochi-co/mqtt/v2/listeners"
-	"github.com/rs/zerolog"
+	"github.com/mochi-mqtt/server/v2"
+	"github.com/mochi-mqtt/server/v2/listeners"
 )
-
-func init() {
-	zerolog.SetGlobalLevel(zerolog.Disabled)
-}
 
 // Server binds the server's methods
 type Server struct {
@@ -53,7 +48,11 @@ func NewServer(opts ...Option) (*Server, error) {
 // returned if the srever cannot initialize.
 func (s *Server) Serve(bind string) error {
 	s.l.Info("MQTT is starting")
-	if err := s.s.AddListener(listeners.NewTCP("default", bind, nil)); err != nil {
+	l := listeners.NewTCP(listeners.Config{
+		ID:      "tcp",
+		Address: bind,
+	})
+	if err := s.s.AddListener(l); err != nil {
 		return err
 	}
 
