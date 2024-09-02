@@ -22,7 +22,7 @@ type DriverStation struct {
 
 	sc *sysconf.SysConf
 
-	quit         bool
+	quit bool
 
 	stop chan struct{}
 }

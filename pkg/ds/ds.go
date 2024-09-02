@@ -208,8 +208,8 @@ func (ds *DriverStation) doGamepad() error {
 				ds.l.Warn("Error retrieving controller state", "error", err)
 				if err := backoff.Retry(retryFunc, backoff.NewConstantBackOff(time.Second*3)); err != nil {
 					ds.l.Error("Permanent error encountered while rebinding", "error", err)
+					return err
 				}
-				return err
 			}
 
 			bytes, err := json.Marshal(vals)
