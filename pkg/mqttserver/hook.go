@@ -30,9 +30,11 @@ func (gh *GizmoHook) Provides(b byte) bool {
 	provides := map[byte]struct{}{
 		mqtt.OnACLCheck:            struct{}{},
 		mqtt.OnConnectAuthenticate: struct{}{},
+		mqtt.OnConnect:             struct{}{},
 		mqtt.OnDisconnect:          struct{}{},
 		mqtt.OnSessionEstablished:  struct{}{},
 		mqtt.OnStarted:             struct{}{},
+		mqtt.OnSubscribed:          struct{}{},
 	}
 	_, ok := provides[b]
 	return ok
@@ -61,9 +63,17 @@ func (gh *GizmoHook) OnSessionEstablished(cl *mqtt.Client, pk packets.Packet) {
 	}
 }
 
+// OnConnect fires when a client connects, and we use this to forcibly
+// clear all state for clients connecting to the server.
+func (gh *GizmoHook) OnConnect(cl *mqtt.Client, pk packets.Packet) error {
+	gh.l.Debug("Client Connect", "client", cl.ID)
+	cl.ClearInflights()
+	return nil
+}
+
 // OnDisconnect fires when a client is disconnected for any reason.
 func (gh *GizmoHook) OnDisconnect(cl *mqtt.Client, err error, expire bool) {
-	gh.l.Info("Client Disconnected", "client", cl.ID)
+	gh.l.Info("Client Disconnected", "client", cl.ID, "expired", expire)
 }
 
 // OnConnectAuthenticate allows anyone to connect, but what they can
@@ -104,4 +114,15 @@ func (gh *GizmoHook) OnACLCheck(cl *mqtt.Client, topic string, write bool) bool 
 	expectedTeam, _ := teamNumberFromClient(cl)
 	approved := num == expectedTeam
 	return approved
+}
+
+// OnSubscribed logs subscriptions as they come in for a given client.
+// Useful for debugging and normally a noop.
+func (gh *GizmoHook) OnSubscribed(cl *mqtt.Client, pk packets.Packet, reasonCodes []byte) {
+	s := cl.State.Subscriptions.GetAll()
+	subs := []string{}
+	for k := range s {
+		subs = append(subs, k)
+	}
+	gh.l.Debug("Subscribed", "client", cl.ID, "subscriptions", subs)
 }

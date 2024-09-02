@@ -42,6 +42,8 @@ type JSController struct {
 	l  hclog.Logger
 	id int
 
+	firstEvent bool
+
 	controller joystick.Joystick
 }
 
@@ -76,12 +78,28 @@ func (j *JSController) BindController(id int) error {
 	return nil
 }
 
+func (j *JSController) firstEventGuard(s joystick.State) error {
+	if j.firstEvent {
+		return nil
+	}
+	if s.AxisData[0] < -32700 {
+		return errors.New("uninitialized gamepad state")
+	}
+	j.firstEvent = true
+	j.l.Info("First event fired, releasing idle status")
+	return nil
+}
+
 // GetState polls the joystick and updates the values available to the
 // controller.
 func (j *JSController) GetState() (*Values, error) {
 	jinfo, err := j.controller.Read()
 	if err != nil {
-		return nil, err
+		return idleGamepad(), err
+	}
+
+	if err := j.firstEventGuard(jinfo); err != nil {
+		return idleGamepad(), nil
 	}
 
 	jvals := Values{
@@ -123,4 +141,17 @@ func (j *JSController) Close() {
 
 func mapRange(x, xMin, xMax, oMin, oMax int) int {
 	return (x-xMin)*(oMax-oMin)/(xMax-xMin) + oMin
+}
+
+func idleGamepad() *Values {
+	// Don't need to set the buttons because they're all going to
+	// default to False anyway.
+	return &Values{
+		AxisLX: 127,
+		AxisLY: 127,
+		AxisRX: 127,
+		AxisRY: 127,
+		AxisDX: 127,
+		AxisDY: 127,
+	}
 }
