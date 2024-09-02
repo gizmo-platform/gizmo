@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"path"
 	"strconv"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
+	"github.com/gizmo-platform/gizmo/pkg/watchdog"
 )
 
 const (
@@ -71,6 +73,13 @@ func (ds *DriverStation) Stop() {
 	ds.l.Info("Receieved stop request")
 	ds.quit = true
 	close(ds.stop)
+}
+
+// DieNow forces an immediate exit without cleaning up references.
+// This may have side effects!
+func (ds *DriverStation) DieNow() {
+	ds.l.Error("Told to Die!")
+	os.Exit(2)
 }
 
 // probeForFMS tests to see if the FMS is available by checking for
@@ -143,6 +152,13 @@ func (ds *DriverStation) doLocalBroker() error {
 }
 
 func (ds *DriverStation) doLocation() error {
+	dog := watchdog.New(
+		watchdog.WithName("location"),
+		watchdog.WithFoodDuration(time.Second*10),
+		watchdog.WithHandFunction(ds.DieNow),
+		watchdog.WithLogger(ds.l),
+	)
+
 	ticker := time.NewTicker(locRate)
 	for {
 		select {
@@ -151,6 +167,7 @@ func (ds *DriverStation) doLocation() error {
 			ds.l.Info("Stopped publishing location data")
 			return nil
 		case <-ticker.C:
+			dog.Feed()
 			vals := struct {
 				Field    int
 				Quadrant string
@@ -175,6 +192,13 @@ func (ds *DriverStation) doLocation() error {
 }
 
 func (ds *DriverStation) doGamepad() error {
+	dog := watchdog.New(
+		watchdog.WithName("gamepad"),
+		watchdog.WithFoodDuration(time.Second),
+		watchdog.WithHandFunction(ds.DieNow),
+		watchdog.WithLogger(ds.l),
+	)
+
 	jsc := gamepad.NewJSController(gamepad.WithLogger(ds.l))
 	retryFunc := func() error {
 		if err := jsc.Rebind(); err != nil {
@@ -203,6 +227,7 @@ func (ds *DriverStation) doGamepad() error {
 			return nil
 		case <-ticker.C:
 			ds.l.Trace("Control loop tick")
+			dog.Feed()
 			vals, err := jsc.GetState()
 			if err != nil {
 				ds.l.Warn("Error retrieving controller state", "error", err)
