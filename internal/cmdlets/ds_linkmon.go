@@ -77,8 +77,10 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 		select {
 		case l := <-linkChanges:
 			if l.Attrs().Name == "eth0" {
+				appLogger.Info("Operational state change", "state", l.Attrs().OperState)
 				if l.Attrs().OperState != prevState {
 					go delayRestart("dhcpcd")
+
 				}
 				prevState = l.Attrs().OperState
 			}
