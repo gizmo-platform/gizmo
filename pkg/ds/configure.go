@@ -29,9 +29,10 @@ func (ds *DriverStation) Install() error {
 	pkgs := []string{
 		"dnsmasq",
 		"hostapd",
+		"jq",
 		"mqttcli",
-		"tmux",
 		"rsyslog",
+		"tmux",
 	}
 
 	return ds.sc.InstallPkgs(pkgs...)
