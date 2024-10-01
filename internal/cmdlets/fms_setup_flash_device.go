@@ -48,7 +48,7 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 		"",
 		"Before you begin, you should ensure that you have the field device, an",
 		"unfolded paperclip or similar instrument, and a cable to connect port",
-		"1 of the field device (says 'Internet'), and the FMS workstation (this",
+		"1 of the network device (says 'Internet'), and the FMS workstation (this",
 		"computer).",
 	}
 
