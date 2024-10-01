@@ -29,7 +29,8 @@ func init() {
 
 func fmsWizardCmdRun(c *cobra.Command, args []string) {
 	os.Exit(func() int {
-		cfg, err := fms.WizardSurvey()
+		_, err := fms.LoadConfig("fms.json")
+		cfg, err := fms.WizardSurvey(err == nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error running the wizard! (%s)\n", err)
 			return 1

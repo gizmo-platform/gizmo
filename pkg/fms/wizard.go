@@ -23,10 +23,14 @@ type ws struct {
 // WizardSurvey runs a step by step config workflow to gather all the
 // information required to generate the software configuration for the
 // FMS.
-func WizardSurvey() (*Config, error) {
+func WizardSurvey(wouldOverwrite bool) (*Config, error) {
 	w := new(ws)
 	w.c = new(Config)
 	w.initCfg()
+	if err := w.bigScaryOverwriteWarning(wouldOverwrite); err != nil {
+		return nil, err
+	}
+
 	if err := w.loadTeams(); err != nil {
 		return nil, err
 	}
@@ -101,6 +105,33 @@ func WizardChangeRoster(c *Config) (*Config, error) {
 func (w *ws) initCfg() {
 	w.c.Teams = make(map[int]*Team)
 	w.c.Fields = make(map[int]*Field)
+}
+
+func (w *ws) bigScaryOverwriteWarning(wouldOverwrite bool) error {
+	if !wouldOverwrite {
+		return nil
+	}
+
+	qOverwrite := &survey.Confirm{
+		Message: "Overwrite existing config?  You will have to re-flash all devices if you answer yes!.",
+	}
+
+	fmt.Println("                         BIG SCARY WARNING")
+	fmt.Println()
+	fmt.Println("This question asks you to confirm that you are okay wiping your old")
+	fmt.Println("configuration, which will require you to reconfigure all your network")
+	fmt.Println("devices.  This is normal if you're resetting between seasons or major")
+	fmt.Println("events, but is not normal within a single competition season or")
+	fmt.Println("event.")
+
+	if err := survey.AskOne(qOverwrite, &wouldOverwrite); err != nil {
+		return err
+	}
+	if !wouldOverwrite {
+		return fmt.Errorf("configuration canceled")
+	}
+
+	return nil
 }
 
 func (w *ws) advancedNetCfg() error {
