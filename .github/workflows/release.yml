@@ -73,6 +73,7 @@ jobs:
       matrix:
         image:
           - driver-station
+          - ds-ramdisk
           - fms
     steps:
       - name: Checkout
@@ -116,5 +117,6 @@ jobs:
           files: |
             dist/driver-station.zip
             dist/fms.zip
+            dist/ramds.zip
           generate_release_notes: false
           fail_on_unmatched_files: true

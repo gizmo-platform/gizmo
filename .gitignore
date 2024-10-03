@@ -7,5 +7,5 @@ gizmo
 *.csv
 fms.json
 .netstate
-driver-station.*
-fms.*
+*.zip
+*.img

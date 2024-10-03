@@ -168,13 +168,14 @@ func (ds *DriverStation) configureRsyslog() error {
 }
 
 func (ds *DriverStation) enableServices() error {
-	ds.sc.Enable("hostapd")
+	ds.sc.Enable("dhcpcd")
 	ds.sc.Enable("dnsmasq")
+	ds.sc.Enable("gizmo-config")
 	ds.sc.Enable("gizmo-ds")
 	ds.sc.Enable("gizmo-link")
-	ds.sc.Enable("gizmo-config")
-	ds.sc.Enable("rsyslogd")
 	ds.sc.Enable("gizmo-logmon")
+	ds.sc.Enable("hostapd")
+	ds.sc.Enable("rsyslogd")
 	for _, i := range []int{1, 4, 5, 6} {
 		ds.sc.Disable(fmt.Sprintf("agetty-tty%d", i))
 	}
