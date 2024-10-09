@@ -117,6 +117,6 @@ jobs:
           files: |
             dist/driver-station.zip
             dist/fms.zip
-            dist/ramds.zip
+            dist/ds-ramdisk.zip
           generate_release_notes: false
           fail_on_unmatched_files: true

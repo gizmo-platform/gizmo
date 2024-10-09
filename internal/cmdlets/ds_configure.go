@@ -30,7 +30,7 @@ func init() {
 }
 
 func dsConfigureCmdRun(c *cobra.Command, args []string) {
-	initLogger("ds-config-server")
+	initLogger("ds")
 
 	f, err := os.Open(args[0])
 	if err != nil {

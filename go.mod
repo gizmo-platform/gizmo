@@ -1,11 +1,14 @@
 module github.com/gizmo-platform/gizmo
 
-go 1.22
+go 1.23
+
+toolchain go1.23.2
 
 require (
 	github.com/0xcafed00d/joystick v1.0.1
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/diskfs/go-diskfs v1.4.2
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/flosch/pongo2/v5 v5.0.0
 	github.com/go-chi/chi/v5 v5.1.0
@@ -25,6 +28,8 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/creack/goselect v0.1.2 // indirect
+	github.com/djherbis/times v1.6.0 // indirect
+	github.com/elliotwutingfeng/asciiset v0.0.0-20230602022725-51bbb787efab // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -34,11 +39,15 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/pierrec/lz4/v4 v4.1.17 // indirect
+	github.com/pkg/xattr v0.4.9 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.57.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
