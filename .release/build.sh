@@ -85,6 +85,7 @@ install() {
     inst /usr/bin/sv
     inst /usr/bin/vlogger
     inst /usr/lib/dhcpcd/dev/udev.so
+    inst /usr/libexec/dhcpcd-hooks/20-resolv.conf
     inst /usr/libexec/dhcpcd-run-hooks
     inst /usr/local/bin/gizmo
 
