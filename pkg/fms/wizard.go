@@ -102,6 +102,30 @@ func WizardChangeRoster(c *Config) (*Config, error) {
 	return c, nil
 }
 
+// WizardChangeChannels is used to reconfigure the channels each field
+// is assigned to.  This function duplicates some of the config in the
+// field configuration step, but this is to avoid any possibility of
+// creating or destroying a field.
+func WizardChangeChannels(c *Config) (*Config, error) {
+	for i := range c.Fields {
+		channelPrompt := &survey.Select{
+			Message: "Select the channel to pin this field to.  You can change this later.",
+			Options: []string{"Auto", "1", "6", "11"},
+			Default: func() string {
+				if c.Fields[i].Channel != "" {
+					return c.Fields[i].Channel
+				}
+				return "Auto"
+			}(),
+		}
+		if err := survey.AskOne(channelPrompt, &c.Fields[i].Channel); err != nil {
+			return nil, err
+		}
+	}
+
+	return c, nil
+}
+
 func (w *ws) initCfg() {
 	w.c.Teams = make(map[int]*Team)
 	w.c.Fields = make(map[int]*Field)
@@ -229,6 +253,7 @@ func (w *ws) setFields() error {
 
 	for i := 0; i <= numFields; i++ {
 		mac := ""
+		channel := ""
 		fieldPrompt := &survey.Input{
 			Message: fmt.Sprintf("Input the MAC address for ether1 for field %d (label on the bottom)", i+1),
 		}
@@ -236,10 +261,19 @@ func (w *ws) setFields() error {
 			return err
 		}
 
+		channelPrompt := &survey.Select{
+			Message: "Select the channel to pin this field to.  You can change this later.",
+			Options: []string{"Auto", "1", "6", "11"},
+		}
+		if err := survey.AskOne(channelPrompt, &channel); err != nil {
+			return err
+		}
+
 		w.c.Fields[i] = &Field{
-			ID:  i + 1,
-			IP:  fmt.Sprintf("100.64.0.%d", 10+i),
-			MAC: mac,
+			ID:      i + 1,
+			IP:      fmt.Sprintf("100.64.0.%d", 10+i),
+			MAC:     mac,
+			Channel: channel,
 		}
 	}
 

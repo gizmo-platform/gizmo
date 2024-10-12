@@ -31,6 +31,8 @@ type Field struct {
 	ID  int
 	IP  string
 	MAC string
+
+	Channel string
 }
 
 // Config contains all the data that's necessary to setup the FMS and
