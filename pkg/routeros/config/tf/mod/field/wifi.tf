@@ -1,3 +1,12 @@
+locals {
+  frequencies = {
+    "Auto" = [],
+    "1"    = [2412],
+    "6"    = [2437],
+    "11"   = [2462],
+  }
+}
+
 resource "routeros_capsman_manager" "mgr" {
   enabled        = true
   upgrade_policy = "require-same-version"
@@ -13,13 +22,16 @@ resource "routeros_interface_wireless_cap" "settings" {
   certificate        = routeros_capsman_manager.mgr.generated_certificate
 }
 
-resource "routeros_capsman_channel" "channel" {
-  for_each = {
-    gizmo-2ghz = { band = "2ghz-g/n" }
-    gizmo-5ghz = { band = "5ghz-n/ac" }
-  }
-  name = each.key
-  band = each.value.band
+resource "routeros_capsman_channel" "gizmo" {
+  name = "gizmo-2ghz"
+  band = "2ghz-g/n"
+
+  frequency = local.frequencies[var.gizmo_channel]
+}
+
+resource "routeros_capsman_channel" "aux" {
+  name = "gizmo-5ghz"
+  band = "5ghz-n/ac"
 }
 
 resource "routeros_capsman_security" "gizmo" {
@@ -39,7 +51,10 @@ resource "routeros_capsman_datapath" "gizmo" {
 }
 
 resource "routeros_capsman_configuration" "gizmo" {
-  for_each = routeros_capsman_channel.channel
+  for_each = {
+    gizmo-2ghz = routeros_capsman_channel.gizmo
+    gizmo-5ghz = routeros_capsman_channel.aux
+  }
 
   name      = each.key
   ssid      = var.infra_ssid
@@ -48,7 +63,7 @@ resource "routeros_capsman_configuration" "gizmo" {
   country   = "united states3"
 
   channel = {
-    config = routeros_capsman_channel.channel[each.key].name
+    config = each.value.name
   }
 
   security = {
@@ -90,7 +105,7 @@ resource "routeros_capsman_configuration" "team" {
   country   = "united states3"
 
   channel = {
-    config = routeros_capsman_channel.channel["gizmo-2ghz"].name
+    config = routeros_capsman_channel.gizmo.name
   }
 
   security = {

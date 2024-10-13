@@ -25,3 +25,8 @@ variable "infra_psk" {
   type        = string
   description = "PSK for the infrastructure SSID"
 }
+
+variable "gizmo_channel" {
+  type        = string
+  description = "Channel for the Gizmo network"
+}
