@@ -59,4 +59,14 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Fatal error converging state", "error", err)
 		return
 	}
+
+	if err := controller.CycleRadio("2ghz"); err != nil {
+		appLogger.Error("Error cycling 2ghz radios", "error", err)
+		return
+	}
+
+	if err := controller.CycleRadio("5ghz"); err != nil {
+		appLogger.Error("Error cycling 5ghz radios", "error", err)
+		return
+	}
 }
