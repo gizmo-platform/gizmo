@@ -1,5 +1,6 @@
 interface=wlan0
 driver=nl80211
+hw_mode=g
 ssid={{.NetSSID}}
 channel=1
 auth_algs=1
