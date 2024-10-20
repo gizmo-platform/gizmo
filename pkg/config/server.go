@@ -16,6 +16,8 @@ type Server struct {
 	l hclog.Logger
 	t *time.Ticker
 
+	once bool
+
 	provider Provider
 }
 
@@ -32,6 +34,10 @@ func WithLogger(l hclog.Logger) Option { return func(s *Server) { s.l = l } }
 
 // WithProvider sets up the config provider that will be used by this server.
 func WithProvider(p Provider) Option { return func(s *Server) { s.provider = p } }
+
+// WithOneshotMode instructs the configserver to exit after a single
+// provisioning cycle.
+func WithOneshotMode() Option { return func(s *Server) { s.once = true } }
 
 // NewServer returns the server instance with the options set
 func NewServer(opts ...Option) *Server {
@@ -60,6 +66,10 @@ func (s *Server) Serve() error {
 			}
 			if port.VID == "2e8a" && port.PID == "f00a" {
 				s.installConfig(port.Name)
+			}
+			if s.once {
+				s.t.Stop()
+				return nil
 			}
 		}
 	}
@@ -97,5 +107,7 @@ func (s *Server) installConfig(name string) {
 		return
 	}
 	s.l.Info("Upload complete")
-	time.Sleep(time.Second * 5)
+	if !s.once {
+		time.Sleep(time.Second * 5)
+	}
 }

@@ -23,9 +23,11 @@ var (
 
 func init() {
 	fmsCmd.AddCommand(fmsConfigServerCmd)
+	fmsConfigServerCmd.Flags().Bool("oneshot", false, "Only apply config to one Gizmo")
 }
 
 func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
+	oneshot, _ := c.Flags().GetBool("oneshot")
 	initLogger("config-server")
 
 	fmsConf, err := fms.LoadConfig("fms.json")
@@ -60,7 +62,11 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 		return teams[selected]
 	}
 
-	srv := config.NewServer(config.WithProvider(prvdr), config.WithLogger(appLogger))
+	opts := []config.Option{config.WithProvider(prvdr), config.WithLogger(appLogger)}
+	if oneshot {
+		opts = append(opts, config.WithOneshotMode())
+	}
+	srv := config.NewServer(opts...)
 
 	if err := srv.Serve(); err != nil {
 		appLogger.Error("Error initializing config server", "error", err)
