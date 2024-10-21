@@ -6,6 +6,8 @@
     <title>{% block title %}PCSM Pages{% endblock %}</title>
     <link href="/static/css/reset.css" rel="stylesheet">
     <link href="/static/css/theme.css" rel="stylesheet">
+    <script defer src="/static/fa/js/solid.js"></script>
+    <script defer src="/static/fa/js/fontawesome.js"></script>
     {% block head %}
     {% endblock %}
   </head>

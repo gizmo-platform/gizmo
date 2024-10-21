@@ -3,14 +3,23 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/flosch/pongo2/v5"
 )
 
-type hudTableRow struct {
-	Number            int
-	Gizmo             bool
-	DS                bool
+type hudField struct {
+	Red    hudQuad
+	Blue   hudQuad
+	Green  hudQuad
+	Yellow hudQuad
+}
+
+type hudQuad struct {
+	Team              int
+	GizmoConnected    bool
+	DSConnected       bool
 	DSCorrectLocation bool
 }
 
@@ -19,20 +28,37 @@ func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	clients := s.mq.Clients()
 	mapping, _ := s.tlm.GetCurrentMapping()
 
-	table := make(map[string]hudTableRow)
+	fields := make(map[int]*hudField)
 
 	for team, quad := range mapping {
-		r := hudTableRow{Number: team}
+		parts := strings.Split(quad, ":")
+		fID, _ := strconv.Atoi(strings.Split(parts[0], ":")[0])
+		color := strings.ToUpper(parts[1])
 
-		_, r.Gizmo = clients[fmt.Sprintf("gizmo-%d", team)]
-		_, r.DS = clients[fmt.Sprintf("gizmo-ds%d", team)]
-		if r.DS {
-			r.DSCorrectLocation = clients[fmt.Sprintf("gizmo-ds%d", team)].CorrectLocation
+		if _, ok := fields[fID]; !ok {
+			fields[fID] = &hudField{}
 		}
 
-		table[quad] = r
+		fTmp := hudQuad{Team: team}
+		_, fTmp.GizmoConnected = clients[fmt.Sprintf("gizmo-%d", team)]
+		_, fTmp.DSConnected = clients[fmt.Sprintf("gizmo-ds%d", team)]
+		if fTmp.DSConnected {
+			fTmp.DSCorrectLocation = clients[fmt.Sprintf("gizmo-ds%d", team)].CorrectLocation
+		}
+
+		switch color {
+		case "RED":
+			fields[fID].Red = fTmp
+		case "BLUE":
+			fields[fID].Blue = fTmp
+		case "GREEN":
+			fields[fID].Green = fTmp
+		case "YELLOW":
+			fields[fID].Yellow = fTmp
+		}
+
 	}
-	ctx["hudTable"] = table
+	ctx["fields"] = fields
 
 	s.doTemplate(w, r, "p2/views/field.p2", ctx)
 }

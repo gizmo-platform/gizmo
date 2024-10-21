@@ -3,6 +3,12 @@ html, body {
     height: 100%;
 }
 
+h1 {
+    font-size: x-large;
+    font-weight: 600;
+    margin-bottom: 1em;
+}
+
 h2 {
     font-size: large;
     font-weight: 600;
@@ -27,6 +33,18 @@ table {
     font-weight: 550;
 }
 
+.hud-container {
+    background: black;
+    padding: 5%;
+    height: 100%;
+}
+
+.icon-row {
+    font-size: xxx-large;
+    justify-content: space-evenly;
+    background-color: #222222bb;
+}
+
 .flex-container {
     display: flex;
 }
@@ -40,7 +58,7 @@ table {
 }
 
 .flex-item {
-    padding: 1em;
+    padding: 0.5em;
 }
 
 .flex-max {
@@ -62,31 +80,45 @@ table {
     width: 100%;
 }
 
-.clock {
-    font-size: 75vh;
-}
-
 .center-container {
     margin-left: auto;
     margin-right: auto;
 }
 
-.red {
+.quad-label {
+    font-size: xxx-large;
+    font-weight: 800;
+    margin-bottom: 0.25em;
+}
+
+.field-red {
     background: #f4a2a2;
 }
 
-.blue {
+.field-blue {
     background: #9fb1d4;
 }
 
-.green {
+.field-green {
     background: #8de98d;
 }
 
-.yellow {
+.field-yellow {
     background: #f5f551;
 }
 
 .header {
     background: lightgrey;
+}
+
+.white-text {
+    color: #eeeeee;
+}
+
+.status-ok {
+    color: lightgreen;
+}
+
+.status-error {
+    color: red;
 }

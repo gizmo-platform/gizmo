@@ -67,7 +67,7 @@ func NewServer(opts ...Option) (*Server, error) {
 	}
 
 	x.r.Handle("/metrics", promhttp.HandlerFor(x.reg, promhttp.HandlerOpts{Registry: x.reg}))
-	x.r.Handle("/static", http.FileServer(http.FS(sub)))
+	x.r.Handle("/static/*", http.FileServer(http.FS(sub)))
 
 	x.r.Get("/admin/cfg/quads", x.configuredQuads)
 	x.r.Post("/admin/map/immediate", x.remapTeams)
