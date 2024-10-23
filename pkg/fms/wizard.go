@@ -47,21 +47,6 @@ func WizardSurvey(wouldOverwrite bool) (*Config, error) {
 		return nil, err
 	}
 
-	advanced := false
-	qAdvanced := &survey.Confirm{
-		Message: "Configure really advanced network features?",
-	}
-
-	if err := survey.AskOne(qAdvanced, &advanced); err != nil {
-		return nil, err
-	}
-
-	if advanced {
-		if err := w.advancedNetCfg(); err != nil {
-			return nil, err
-		}
-	}
-
 	return w.c, nil
 }
 
@@ -156,37 +141,6 @@ func (w *ws) bigScaryOverwriteWarning(wouldOverwrite bool) error {
 	}
 
 	return nil
-}
-
-func (w *ws) advancedNetCfg() error {
-	prompts := []*survey.Question{
-		{
-			Name:     "AdvancedBGPAS",
-			Validate: survey.Required,
-			Prompt: &survey.Input{
-				Message: "ASN",
-				Default: "64512",
-			},
-		},
-		{
-			Name:     "AdvancedBGPIP",
-			Validate: survey.Required,
-			Prompt: &survey.Input{
-				Message: "Peer IP",
-				Default: "169.254.255.100/24",
-			},
-		},
-		{
-			Name:     "AdvancedBGPVLAN",
-			Validate: survey.Required,
-			Prompt: &survey.Input{
-				Message: "Peer VLAN",
-				Default: "101",
-			},
-		},
-	}
-
-	return survey.Ask(prompts, w.c)
 }
 
 func (w *ws) setFMSMac() error {
