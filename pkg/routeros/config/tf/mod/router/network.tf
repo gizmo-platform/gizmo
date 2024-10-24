@@ -32,7 +32,6 @@ resource "routeros_interface_vlan" "vlan_infra" {
   for_each = {
     fms0  = { id = 10, description = "FMS Network" }
     wan0  = { id = 20, description = "Upstream Networks" }
-    peer0 = { id = 30, description = "Peer Networks" }
   }
 
   interface = routeros_interface_bridge.br0.name
@@ -51,10 +50,4 @@ resource "routeros_ip_address" "team" {
 resource "routeros_ip_address" "fms" {
   address   = "100.64.0.1/24"
   interface = routeros_interface_vlan.vlan_infra["fms0"].name
-}
-
-resource "routeros_ip_address" "peer" {
-  count     = local.fms.AdvancedBGPAS != 0 ? 1 : 0
-  address   = local.fms.AdvancedBGPIP
-  interface = routeros_interface_vlan.vlan_infra["peer0"].name
 }

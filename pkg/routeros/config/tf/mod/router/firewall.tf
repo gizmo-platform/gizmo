@@ -29,13 +29,6 @@ resource "routeros_ip_firewall_filter" "accept_icmp" {
   place_before = routeros_ip_firewall_filter.default_drop.id
 }
 
-resource "routeros_ip_firewall_filter" "accept_peer" {
-  chain        = "input"
-  action       = "accept"
-  in_interface = routeros_interface_vlan.vlan_infra["peer0"].name
-  place_before = routeros_ip_firewall_filter.default_drop.id
-}
-
 resource "routeros_ip_firewall_filter" "accept_dns" {
   chain             = "input"
   action            = "accept"
@@ -69,4 +62,13 @@ resource "routeros_ip_firewall_nat" "srcnat" {
   out_interface    = routeros_interface_vlan.vlan_infra["wan0"].name
   src_address_list = "nat_sources"
   comment          = "nat-masquerade"
+}
+
+resource "routeros_ip_firewall_nat" "dstnat" {
+  chain        = "dstnat"
+  action       = "dst-nat"
+  in_interface = routeros_interface_vlan.vlan_infra["wan0"].name
+  to_addresses = "100.64.0.2"
+  protocol     = "tcp"
+  dst_port     = 22
 }
