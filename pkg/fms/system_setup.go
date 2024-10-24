@@ -109,7 +109,7 @@ func (st *SetupTool) Install() error {
 		"tmux",
 
 		// Direct Gizmo Dependencies
-		"qemu-user-static",
+		"qemu-user-i386",
 		"terraform",
 
 		// Gizmo Telemetry
