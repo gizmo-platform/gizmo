@@ -23,9 +23,6 @@
               <span class="{{ field.Red.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
                 <i class="flex-item fa-solid fa-gamepad"></i>
               </span>
-              <span class="{{ field.Red.DSCorrectLocation|yesno:'status-ok,status-error' }} hud-icon">
-                <i class="flex-item fa-solid fa-location-dot"></i>
-              </span>
             </div>
           </div>
           <div class="flex-item flex-max field-green">
@@ -36,9 +33,6 @@
               </span>
               <span class="{{ field.Green.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
                 <i class="flex-item fa-solid fa-gamepad"></i>
-              </span>
-              <span class="{{ field.Green.DSCorrectLocation|yesno:'status-ok,status-error' }} hud-icon">
-                <i class="flex-item fa-solid fa-location-dot"></i>
               </span>
             </div>
           </div>
@@ -51,9 +45,6 @@
               <span class="{{ field.Yellow.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
                 <i class="flex-item fa-solid fa-gamepad"></i>
               </span>
-              <span class="{{ field.Yellow.DSCorrectLocation|yesno:'status-ok,status-error' }} hud-icon">
-                <i class="flex-item fa-solid fa-location-dot"></i>
-              </span>
             </div>
           </div>
           <div class="flex-item flex-max field-blue">
@@ -64,9 +55,6 @@
               </span>
               <span class="{{ field.Blue.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
                 <i class="flex-item fa-solid fa-gamepad"></i>
-              </span>
-              <span class="{{ field.Blue.DSCorrectLocation|yesno:'status-ok,status-error' }} hud-icon">
-                <i class="flex-item fa-solid fa-location-dot"></i>
               </span>
             </div>
           </div>

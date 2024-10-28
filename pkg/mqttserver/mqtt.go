@@ -43,7 +43,9 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.s = mqtt.New(&mqtt.Options{InlineClient: true})
 	x.stopFeeds = make(chan (struct{}))
 	x.connectedGizmo = make(map[int]time.Time)
+	x.connectedGizmoMutex = new(sync.RWMutex)
 	x.connectedDS = make(map[int]time.Time)
+	x.connectedDSMutex = new(sync.RWMutex)
 
 	for _, o := range opts {
 		if err := o(x); err != nil {
