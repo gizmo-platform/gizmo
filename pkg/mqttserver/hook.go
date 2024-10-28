@@ -111,7 +111,7 @@ func (gh *GizmoHook) OnACLCheck(cl *mqtt.Client, topic string, write bool) bool 
 		return false
 	}
 
-	expectedTeam, _ := teamNumberFromClient(cl)
+	expectedTeam := teamNumberFromClient(cl)
 	approved := num == expectedTeam
 	return approved
 }
