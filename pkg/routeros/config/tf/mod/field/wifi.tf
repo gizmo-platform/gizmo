@@ -56,11 +56,14 @@ resource "routeros_capsman_configuration" "gizmo" {
     gizmo-5ghz = routeros_capsman_channel.aux
   }
 
-  name      = each.key
-  ssid      = var.infra_ssid
-  hide_ssid = !var.infra_visible
-  mode      = "ap"
-  country   = "united states3"
+  name             = each.key
+  ssid             = var.infra_ssid
+  hide_ssid        = !var.infra_visible
+  mode             = "ap"
+  country          = "united states3"
+  installation     = "indoor"
+  distance         = "indoors"
+  keepalive_frames = "enabled"
 
   channel = {
     config = each.value.name
@@ -98,11 +101,14 @@ resource "routeros_capsman_datapath" "team" {
 resource "routeros_capsman_configuration" "team" {
   for_each = local.fms.Teams
 
-  name      = format("team%d", each.key)
-  ssid      = each.value.SSID
-  hide_ssid = true
-  mode      = "ap"
-  country   = "united states3"
+  name             = format("team%d", each.key)
+  ssid             = each.value.SSID
+  hide_ssid        = true
+  mode             = "ap"
+  country          = "united states3"
+  installation     = "indoor"
+  distance         = "indoors"
+  keepalive_frames = "enabled"
 
   channel = {
     config = routeros_capsman_channel.gizmo.name
