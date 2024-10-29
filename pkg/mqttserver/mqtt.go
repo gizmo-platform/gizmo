@@ -3,10 +3,10 @@ package mqttserver
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"strconv"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/mochi-mqtt/server/v2"
@@ -89,21 +89,21 @@ func (s *Server) Clients() map[string]ClientInfo {
 
 	s.connectedDSMutex.RLock()
 	for id, t := range s.connectedDS {
-		if time.Now().After(t.Add(time.Second*3)) {
+		if time.Now().After(t.Add(time.Second * 3)) {
 			continue
 		}
 		out[fmt.Sprintf("gizmo-ds%d", id)] = ClientInfo{
-			Number:          id,
+			Number: id,
 		}
 	}
 	s.connectedDSMutex.RUnlock()
 	s.connectedGizmoMutex.RLock()
 	for id, t := range s.connectedGizmo {
-		if time.Now().After(t.Add(time.Second*3)) {
+		if time.Now().After(t.Add(time.Second * 3)) {
 			continue
 		}
 		out[fmt.Sprintf("gizmo-%d", id)] = ClientInfo{
-			Number:          id,
+			Number: id,
 		}
 	}
 	s.connectedGizmoMutex.RUnlock()
@@ -119,7 +119,7 @@ func (s *Server) lastSeenUpdater(cl *mqtt.Client, sub packets.Subscription, pk p
 	if err != nil {
 		return
 	}
-	switch(parts[2]) {
+	switch parts[2] {
 	case "gamepad":
 		s.connectedDSMutex.Lock()
 		s.connectedDS[num] = time.Now()

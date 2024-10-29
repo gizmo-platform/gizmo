@@ -34,6 +34,7 @@ install_common() {
     chroot /mnt/target /usr/bin/xmirror -s https://repo-fastly.voidlinux.org/current
     chroot /mnt/target /usr/bin/xbps-install -uy
     chroot /mnt/target /usr/bin/chsh -s /bin/bash
+    chroot /mnt/target /usr/local/bin/gizmo version
 }
 
 install_fms() {
@@ -105,6 +106,7 @@ EOF
 
     cat <<EOF > /mnt/target/usr/lib/dracut/modules.d/01gizmo/gizmo.sh
 #!/bin/sh
+export GIZMO_BOOTMODE=RAMDISK
 /usr/bin/mkdir -p /etc/runit/runsvdir/default
 /usr/bin/mkdir -p /var/db/dhcpcd
 /usr/bin/ln -s /etc/sv/console /etc/runit/runsvdir/default/
@@ -120,6 +122,7 @@ EOF
 /usr/local/bin/gizmo ds configure /boot/gsscfg.json
 /usr/bin/sysctl -p /etc/sysctl.conf
 /usr/bin/ip link set lo up
+/usr/local/bin/gizmo version
 exec /usr/bin/runsvdir /etc/runit/runsvdir/default
 EOF
 

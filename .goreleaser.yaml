@@ -16,9 +16,9 @@ builds:
       - windows
     ldflags:
       - '-s -w'
-      - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.Version={{.Version}}'
-      - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.Commit={{.Commit}}'
-      - '-X github.com/gizmo-platform/gizmo/internal/cmdlets.BuildDate={{.Timestamp}}'
+      - '-X github.com/gizmo-platform/gizmo/pkg/buildinfo.Version={{.Version}}'
+      - '-X github.com/gizmo-platform/gizmo/pkg/buildinfo.Commit={{.Commit}}'
+      - '-X github.com/gizmo-platform/gizmo/pkg/buildinfo.BuildDate={{.Date}}'
     tags:
       - docs
 

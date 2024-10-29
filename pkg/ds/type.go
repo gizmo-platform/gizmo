@@ -37,3 +37,10 @@ type ConfigureStep func() error
 
 //go:embed tpl/*.tpl
 var efs embed.FS
+
+// Meta stores information about the driver's station itself that's
+// reported to the FMS.
+type Meta struct {
+	Version  string
+	Bootmode string
+}

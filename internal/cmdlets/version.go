@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 )
 
 var (
@@ -20,7 +22,7 @@ func init() {
 
 func versionCmdRun(c *cobra.Command, args []string) {
 	fmt.Println("Gizmo Platform Tools")
-	fmt.Printf("Version: %s\n", Version)
-	fmt.Printf("Commit: %s\n", Commit)
-	fmt.Printf("Built: %s\n", BuildDate)
+	fmt.Printf("Version: %s\n", buildinfo.Version)
+	fmt.Printf("Commit: %s\n", buildinfo.Commit)
+	fmt.Printf("Built: %s\n", buildinfo.BuildDate)
 }

@@ -14,6 +14,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
+	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
@@ -23,6 +24,7 @@ import (
 const (
 	ctrlRate = time.Millisecond * 20
 	locRate  = time.Second * 3
+	metaRate = time.Second * 5
 )
 
 // New returns a configured driverstation.
@@ -52,6 +54,11 @@ func (ds *DriverStation) Run() error {
 			ds.l.Error("Could not connect to FMS")
 			return err
 		}
+		go func() {
+			if err := ds.doMetaPublish(); err != nil {
+				ds.l.Error("Error starting meta publisher", "error", err)
+			}
+		}()
 	} else {
 		// FMS not available, start local services.
 		go ds.doLocalBroker()
@@ -244,6 +251,43 @@ func (ds *DriverStation) doGamepad() error {
 			}
 
 			topic := path.Join("robot", strconv.Itoa(ds.cfg.Team), "gamepad")
+			if tok := ds.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
+				ds.l.Warn("Error publishing message for team", "error", tok.Error())
+			}
+		}
+	}
+
+	return nil
+}
+
+func (ds *DriverStation) doMetaPublish() error {
+	ticker := time.NewTicker(metaRate)
+
+	vals := &Meta{
+		Version:  buildinfo.Version,
+		Bootmode: os.Getenv("GIZMO_BOOTMODE"),
+	}
+
+	if vals.Bootmode == "" {
+		vals.Bootmode = "UNKNOWN"
+	}
+
+	bytes, err := json.Marshal(vals)
+	if err != nil {
+		ds.l.Warn("Error marshalling controller state", "error", err)
+		return err
+	}
+
+	ds.l.Info("Starting metadata pusher")
+	for {
+		select {
+		case <-ds.stop:
+			ticker.Stop()
+			ds.l.Info("Stopped publishing metadata")
+			return nil
+		case <-ticker.C:
+
+			topic := path.Join("robot", strconv.Itoa(ds.cfg.Team), "ds-meta")
 			if tok := ds.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
 				ds.l.Warn("Error publishing message for team", "error", tok.Error())
 			}
