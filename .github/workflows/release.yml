@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install bsdtar
-        run: sudo apt-get install -y bsdtar
+        run: sudo apt-get install -y libarchive-tools
 
       - name: Get Documentation Run ID
         id: run_id
