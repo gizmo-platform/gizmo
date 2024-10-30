@@ -75,6 +75,7 @@ install() {
     inst /etc/sv/hostapd/run
     inst /etc/sv/nanoklogd/run
     inst /etc/sv/socklog-unix/check
+    inst /etc/sv/socklog-unix/log/run
     inst /etc/sv/socklog-unix/run
     inst /etc/sv/udevd/run
     inst /usr/bin/agetty
