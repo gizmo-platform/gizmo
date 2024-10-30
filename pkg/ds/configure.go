@@ -18,6 +18,9 @@ const (
 	hostAPdConf    = "/etc/hostapd/hostapd.conf"
 	dnsmasqConf    = "/etc/dnsmasq.conf"
 	dhcpcdConf     = "/etc/dhcpcd.conf"
+	dhcpcdSvc      = "/etc/sv/dhcpcd/run"
+	dnsmasqSvc     = "/etc/sv/dnsmasq/run"
+	hostapdSvc     = "/etc/sv/hostapd/run"
 	gizmoDSSvc     = "/etc/sv/gizmo-ds/run"
 	gizmoLinkSvc   = "/etc/sv/gizmo-link/run"
 	gizmoConfigSvc = "/etc/sv/gizmo-config/run"
@@ -31,7 +34,7 @@ func (ds *DriverStation) Install() error {
 		"hostapd",
 		"jq",
 		"mqttcli",
-		"rsyslog",
+		"socklog-void",
 		"tmux",
 	}
 
@@ -56,7 +59,7 @@ func (ds *DriverStation) Configure() error {
 		ds.configureDHCPCD,
 		ds.configureDNSMasq,
 		ds.configureGizmo,
-		ds.configureRsyslog,
+		ds.configureLogmon,
 		ds.enableServices,
 	}
 	names := []string{
@@ -67,7 +70,7 @@ func (ds *DriverStation) Configure() error {
 		"dhcpcd",
 		"dnsmasq",
 		"gizmo",
-		"rsyslog",
+		"logmon",
 		"enable",
 	}
 
@@ -150,7 +153,8 @@ func (ds *DriverStation) configureGizmo() error {
 		return err
 	}
 
-	for _, svc := range []string{gizmoDSSvc, gizmoLinkSvc, gizmoConfigSvc} {
+	svcs := []string{gizmoDSSvc, gizmoLinkSvc, gizmoConfigSvc, dnsmasqSvc, hostapdSvc, dhcpcdSvc}
+	for _, svc := range svcs {
 		if err := os.MkdirAll(filepath.Join(filepath.Dir(svc), "log"), 0755); err != nil {
 			return err
 		}
@@ -163,7 +167,7 @@ func (ds *DriverStation) configureGizmo() error {
 	return nil
 }
 
-func (ds *DriverStation) configureRsyslog() error {
+func (ds *DriverStation) configureLogmon() error {
 	return ds.sc.Template(gizmoLogmonSvc, "tpl/gizmo-logmon.run.tpl", 0755, nil)
 }
 
@@ -175,7 +179,8 @@ func (ds *DriverStation) enableServices() error {
 	ds.sc.Enable("gizmo-link")
 	ds.sc.Enable("gizmo-logmon")
 	ds.sc.Enable("hostapd")
-	ds.sc.Enable("rsyslogd")
+	ds.sc.Enable("socklog-unix")
+	ds.sc.Enable("nanoklogd")
 	for _, i := range []int{1, 4, 5, 6} {
 		ds.sc.Disable(fmt.Sprintf("agetty-tty%d", i))
 	}

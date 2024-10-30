@@ -69,28 +69,34 @@ installkernel() {
 install() {
     inst /etc/group
     inst /etc/passwd
-    inst /etc/rsyslog.conf
     inst /etc/sv/console/run
     inst /etc/sv/dhcpcd/run
     inst /etc/sv/dnsmasq/run
     inst /etc/sv/hostapd/run
-    inst /etc/sv/rsyslogd/run
+    inst /etc/sv/nanoklogd/run
+    inst /etc/sv/socklog-unix/check
+    inst /etc/sv/socklog-unix/run
     inst /etc/sv/udevd/run
     inst /usr/bin/agetty
     inst /usr/bin/dhcpcd
     inst /usr/bin/dnsmasq
     inst /usr/bin/hostapd
-    inst /usr/bin/rsyslogd
+    inst /usr/bin/nanoklogd
     inst /usr/bin/runsv
     inst /usr/bin/runsvdir
+    inst /usr/bin/socklog
+    inst /usr/bin/socklog-check
     inst /usr/bin/sv
+    inst /usr/bin/syslog-stripdate
+    inst /usr/bin/tryto
+    inst /usr/bin/uncat
     inst /usr/bin/vlogger
-    inst /usr/lib/dhcpcd/dev/udev.so
     inst /usr/libexec/dhcpcd-hooks/20-resolv.conf
     inst /usr/libexec/dhcpcd-run-hooks
     inst /usr/local/bin/gizmo
+    inst /var/log/socklog/everything/config
 
-    inst_multiple /usr/lib/rsyslog/immark.so /usr/lib/rsyslog/imuxsock.so /usr/lib/rsyslog/imklog.so /usr/lib/rsyslog/lmnet.so
+    inst_libdir_file /usr/lib/dhcpcd/dev/udev.so
 
     inst_hook pre-mount 01 "$moddir/gizmo.sh"
     inst_hook cmdline 99 "$moddir/parse-gizmo-root.sh"

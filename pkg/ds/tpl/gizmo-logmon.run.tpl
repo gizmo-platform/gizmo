@@ -1,3 +1,3 @@
 #!/bin/sh
 
-exec tail -f /var/log/messages > /dev/tty1
+exec tail -f /var/log/socklog/*/current > /dev/tty1
