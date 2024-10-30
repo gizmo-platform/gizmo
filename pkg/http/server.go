@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/flosch/pongo2/v5"
@@ -14,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 )
 
@@ -30,6 +33,15 @@ type TeamLocationMapper interface {
 // made available for the HUD
 type MQTTServer interface {
 	Clients() map[string]mqttserver.ClientInfo
+	GizmoMeta(int) (bool, config.GizmoMeta)
+	DSMeta(int) (bool, config.DSMeta)
+}
+
+type hudVersions struct {
+	HardwareVersions string
+	FirmwareVersions string
+	Bootmodes        string
+	DSVersions       string
 }
 
 // Server manages the HTTP serving components
@@ -44,6 +56,8 @@ type Server struct {
 	tpl *pongo2.TemplateSet
 
 	quads []string
+
+	hudVersions hudVersions
 }
 
 //go:embed tpl
@@ -59,6 +73,15 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.n = &http.Server{}
 	x.l = hclog.NewNullLogger()
 	x.tpl = pongo2.NewSet("html", ldr)
+	x.hudVersions = hudVersions{
+		HardwareVersions: "GIZMO_V00_R6E,GIZMO_V1_0_R00",
+		FirmwareVersions: "0.1.3",
+		Bootmodes:        "RAMDISK",
+		DSVersions:       "0.1.4",
+	}
+	x.populateHUDVersions()
+
+	pongo2.RegisterFilter("valueok", x.filterValueOK)
 
 	for _, o := range opts {
 		if err := o(x); err != nil {
@@ -108,5 +131,37 @@ func (s *Server) doTemplate(w http.ResponseWriter, r *http.Request, tmpl string,
 	}
 	if err := t.ExecuteWriter(ctx, w); err != nil {
 		s.templateErrorHandler(w, err)
+	}
+}
+
+func (s *Server) filterValueOK(in *pongo2.Value, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
+	list := strings.Split(param.String(), ",")
+	for _, val := range list {
+		if strings.TrimSpace(in.String()) == strings.TrimSpace(val) {
+			return pongo2.AsValue(true), nil
+		}
+	}
+	return pongo2.AsValue(false), nil
+}
+
+func (s *Server) populateHUDVersions() {
+	fw := os.Getenv("GIZMO_HUD_FWVERSIONS")
+	if fw != "" {
+		s.hudVersions.FirmwareVersions = fw
+	}
+
+	hw := os.Getenv("GIZMO_HUD_HWVERSIONS")
+	if hw != "" {
+		s.hudVersions.HardwareVersions = hw
+	}
+
+	bm := os.Getenv("GIZMO_HUD_BOOTMODES")
+	if bm != "" {
+		s.hudVersions.Bootmodes = bm
+	}
+
+	ds := os.Getenv("GIZMO_HUD_DSVERSIONS")
+	if ds != "" {
+		s.hudVersions.DSVersions = ds
 	}
 }

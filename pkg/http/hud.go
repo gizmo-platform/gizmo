@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/flosch/pongo2/v5"
+
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 type hudField struct {
@@ -19,8 +21,10 @@ type hudField struct {
 type hudQuad struct {
 	Team              int
 	GizmoConnected    bool
+	GizmoMeta         config.GizmoMeta
 	DSConnected       bool
 	DSCorrectLocation bool
+	DSMeta            config.DSMeta
 }
 
 func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +49,8 @@ func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 		if fTmp.DSConnected {
 			fTmp.DSCorrectLocation = clients[fmt.Sprintf("gizmo-ds%d", team)].CorrectLocation
 		}
+		_, fTmp.GizmoMeta = s.mq.GizmoMeta(team)
+		_, fTmp.DSMeta = s.mq.DSMeta(team)
 
 		switch color {
 		case "RED":
@@ -59,6 +65,10 @@ func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 
 	}
 	ctx["fields"] = fields
+	ctx["hwversions"] = s.hudVersions.HardwareVersions
+	ctx["fwversions"] = s.hudVersions.FirmwareVersions
+	ctx["bootmodes"] = s.hudVersions.Bootmodes
+	ctx["dsversions"] = s.hudVersions.DSVersions
 
 	s.doTemplate(w, r, "p2/views/field.p2", ctx)
 }

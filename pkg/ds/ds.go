@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
@@ -263,7 +264,7 @@ func (ds *DriverStation) doGamepad() error {
 func (ds *DriverStation) doMetaPublish() error {
 	ticker := time.NewTicker(metaRate)
 
-	vals := &Meta{
+	vals := &config.DSMeta{
 		Version:  buildinfo.Version,
 		Bootmode: os.Getenv("GIZMO_BOOTMODE"),
 	}

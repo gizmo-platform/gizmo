@@ -1,6 +1,7 @@
 package mqttserver
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
@@ -12,6 +13,8 @@ import (
 	"github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/mochi-mqtt/server/v2/packets"
+
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 // Server binds the server's methods
@@ -23,6 +26,10 @@ type Server struct {
 	connectedGizmoMutex *sync.RWMutex
 	connectedDS         map[int]time.Time
 	connectedDSMutex    *sync.RWMutex
+
+	gizmoMeta map[int]config.GizmoMeta
+	dsMeta    map[int]config.DSMeta
+	metaMutex *sync.RWMutex
 
 	swg *sync.WaitGroup
 
@@ -38,24 +45,30 @@ type ClientInfo struct {
 
 // NewServer returns a running mqtt broker
 func NewServer(opts ...Option) (*Server, error) {
-	x := new(Server)
-	x.l = hclog.NewNullLogger()
-	x.s = mqtt.New(&mqtt.Options{InlineClient: true})
-	x.stopFeeds = make(chan (struct{}))
-	x.connectedGizmo = make(map[int]time.Time)
-	x.connectedGizmoMutex = new(sync.RWMutex)
-	x.connectedDS = make(map[int]time.Time)
-	x.connectedDSMutex = new(sync.RWMutex)
+	x := Server{
+		l:                   hclog.NewNullLogger(),
+		s:                   mqtt.New(&mqtt.Options{InlineClient: true}),
+		stopFeeds:           make(chan (struct{})),
+		connectedGizmo:      make(map[int]time.Time),
+		connectedGizmoMutex: new(sync.RWMutex),
+		connectedDS:         make(map[int]time.Time),
+		connectedDSMutex:    new(sync.RWMutex),
+		gizmoMeta:           make(map[int]config.GizmoMeta),
+		dsMeta:              make(map[int]config.DSMeta),
+		metaMutex:           new(sync.RWMutex),
+	}
 
 	for _, o := range opts {
-		if err := o(x); err != nil {
+		if err := o(&x); err != nil {
 			return nil, err
 		}
 	}
 	x.s.AddHook(newHook(x.l), nil)
 	x.s.Subscribe("robot/+/gamepad", 0, x.lastSeenUpdater)
 	x.s.Subscribe("robot/+/stats", 0, x.lastSeenUpdater)
-	return x, nil
+	x.s.Subscribe("robot/+/ds-meta", 0, x.metadataUpdater)
+	x.s.Subscribe("robot/+/gizmo-meta", 0, x.metadataUpdater)
+	return &x, nil
 }
 
 // Serve binds and serves mqtt on the bound socket.  An error will be
@@ -110,6 +123,24 @@ func (s *Server) Clients() map[string]ClientInfo {
 	return out
 }
 
+// GizmoMeta returns the most recent metadata received for a gizmo, or
+// a nil struct and a bool that it hasn't been seen yet.
+func (s *Server) GizmoMeta(team int) (bool, config.GizmoMeta) {
+	s.metaMutex.RLock()
+	defer s.metaMutex.RUnlock()
+	meta, ok := s.gizmoMeta[team]
+	return ok, meta
+}
+
+// DSMeta returns the most recent metadata received for a driver's
+// station, or a nil struct and a bool that it hasn't been seen yet.
+func (s *Server) DSMeta(team int) (bool, config.DSMeta) {
+	s.metaMutex.RLock()
+	defer s.metaMutex.RUnlock()
+	meta, ok := s.dsMeta[team]
+	return ok, meta
+}
+
 func (s *Server) lastSeenUpdater(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
 	parts := strings.Split(pk.TopicName, "/")
 	if len(parts) != 3 {
@@ -128,6 +159,37 @@ func (s *Server) lastSeenUpdater(cl *mqtt.Client, sub packets.Subscription, pk p
 		s.connectedGizmoMutex.Lock()
 		s.connectedGizmo[num] = time.Now()
 		s.connectedGizmoMutex.Unlock()
+	}
+}
+
+func (s *Server) metadataUpdater(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
+	parts := strings.Split(pk.TopicName, "/")
+	if len(parts) != 3 {
+		s.l.Warn("meta updater proc'd for non 3-part topic", "topic", pk.TopicName)
+	}
+	num, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return
+	}
+	switch parts[2] {
+	case "ds-meta":
+		d := config.DSMeta{}
+		if err := json.Unmarshal(pk.Payload, &d); err != nil {
+			s.l.Warn("Error parsing ds-meta", "team", num, "error", err)
+			return
+		}
+		s.metaMutex.Lock()
+		s.dsMeta[num] = d
+		s.metaMutex.Unlock()
+	case "gizmo-meta":
+		d := config.GizmoMeta{}
+		if err := json.Unmarshal(pk.Payload, &d); err != nil {
+			s.l.Warn("Error parsing gizmo-meta", "team", num, "error", err)
+			return
+		}
+		s.metaMutex.Lock()
+		s.gizmoMeta[num] = d
+		s.metaMutex.Unlock()
 	}
 }
 

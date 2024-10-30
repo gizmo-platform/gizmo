@@ -45,6 +45,11 @@ table {
     background-color: #222222bb;
 }
 
+.icon-row-small {
+    font-size: large;
+    justify-content: space-evenly;
+}
+
 .flex-container {
     display: flex;
 }
