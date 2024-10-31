@@ -181,8 +181,12 @@ func (w *ws) setInfraNetwork() error {
 			},
 		},
 		{
-			Name:     "InfrastructurePSK",
-			Validate: survey.Required,
+			Name: "InfrastructurePSK",
+			Validate: survey.ComposeValidators(
+				survey.MinLength(8),
+				survey.MaxLength(63),
+				survey.Required,
+			),
 			Prompt: &survey.Input{
 				Message: "Infrastructure network PSK",
 				Default: xkcd.GeneratePasswordString(),
