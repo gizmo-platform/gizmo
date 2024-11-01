@@ -94,8 +94,9 @@ resource "routeros_capsman_datapath" "team" {
   vlan_id = each.value.VLAN
   bridge  = routeros_interface_bridge.br0.name
 
-  local_forwarding = true
-  vlan_mode        = "use-tag"
+  local_forwarding            = true
+  client_to_client_forwarding = true
+  vlan_mode                   = "use-tag"
 }
 
 resource "routeros_capsman_configuration" "team" {
