@@ -35,6 +35,10 @@ func WizardSurvey(wouldOverwrite bool) (*Config, error) {
 		return nil, err
 	}
 
+	if err := w.setRadioMode(); err != nil {
+		return nil, err
+	}
+
 	if err := w.setFields(); err != nil {
 		return nil, err
 	}
@@ -111,6 +115,19 @@ func WizardChangeChannels(c *Config) (*Config, error) {
 	return c, nil
 }
 
+// WizardChangeRadioMode is used to reconfigure the radio mode after
+// it has been initially setup.
+func WizardChangeRadioMode(c *Config) (*Config, error) {
+	w := new(ws)
+	w.c = c
+
+	if err := w.setRadioMode(); err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
 func (w *ws) initCfg() {
 	w.c.Teams = make(map[int]*Team)
 	w.c.Fields = make(map[int]*Field)
@@ -155,6 +172,21 @@ func (w *ws) setFMSMac() error {
 	}
 
 	return survey.AskOne(prompt, &w.c.FMSMac)
+}
+
+func (w *ws) setRadioMode() error {
+	prompt := &survey.Select{
+		Message: "Select Radio Mode",
+		Default: func() string {
+			if w.c.RadioMode == "" {
+				return "FIELD"
+			}
+			return w.c.RadioMode
+		}(),
+		Options: []string{"NONE", "FIELD", "DS"},
+	}
+
+	return survey.AskOne(prompt, &w.c.RadioMode)
 }
 
 func (w *ws) setInfraNetwork() error {

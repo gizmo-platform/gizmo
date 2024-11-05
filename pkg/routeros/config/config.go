@@ -146,8 +146,114 @@ func (c *Configurator) Converge(refresh bool, target string) error {
 	return cmd.Wait()
 }
 
+// ReprovisionCAP removes all CAP interfaces and then triggers a
+// provisioning cycle.
+func (c *Configurator) ReprovisionCAP() error {
+	cl := &http.Client{
+		Timeout: time.Second * 10,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	for _, field := range c.fc.Fields {
+		req := &http.Request{
+			Method: http.MethodGet,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   field.IP,
+				Path:   "/rest/caps-man/interface",
+				User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+			},
+		}
+		resp, err := cl.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		capList := []*rosCapInterface{}
+		if err := json.NewDecoder(resp.Body).Decode(&capList); err != nil {
+			return err
+		}
+
+		for _, capInterface := range capList {
+			if capInterface.Master != "true" {
+				continue
+			}
+			c.l.Debug("Removing cap", "field", field.ID, "cap", capInterface.ID)
+
+			req = &http.Request{
+				Method: http.MethodDelete,
+				URL: &url.URL{
+					Scheme:  "https",
+					Host:    field.IP,
+					Path:    "/rest/caps-man/interface/" + capInterface.ID,
+					RawPath: "/rest/caps-man/interface/" + capInterface.ID,
+					User:    url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+				},
+			}
+			c.l.Debug("Proposed delete URL", "url", req.URL.String())
+			resp, err := cl.Do(req)
+			if err != nil {
+				c.l.Error("Error removing cap interface", "field", field.ID, "cap", capInterface.ID)
+				return err
+			}
+			if resp.StatusCode != 204 {
+				c.l.Error("CAP was not removed!", "code", resp.StatusCode)
+			}
+			defer resp.Body.Close()
+		}
+
+		req = &http.Request{
+			Method: http.MethodGet,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   field.IP,
+				Path:   "/rest/caps-man/remote-cap",
+				User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+			},
+		}
+
+		resp, err = cl.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		rCapList := []*rosRemoteCap{}
+		if err := json.NewDecoder(resp.Body).Decode(&rCapList); err != nil {
+			return err
+		}
+
+		for _, rCap := range rCapList {
+			data, err := json.Marshal(rCap)
+			if err != nil {
+				return err
+			}
+
+			req.URL.Path = "/rest/caps-man/remote-cap/provision"
+			req, _ := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
+			req.Header.Set("Content-Type", "application/json")
+			resp, err := cl.Do(req)
+			if err != nil {
+				c.l.Error("Error triggering provisioning", "field", field.ID)
+				return err
+			}
+			defer resp.Body.Close()
+		}
+	}
+	return nil
+}
+
 // CycleRadio forces a provisioning cycle on the given band.
 func (c *Configurator) CycleRadio(band string) error {
+	// This only needs to happen if the field radio is the one
+	// that is in use.  If its not, other mechanisms are in play.
+	if c.fc.RadioMode != "FIELD" {
+		return nil
+	}
+
 	cl := &http.Client{
 		Timeout: time.Second * 10,
 		Transport: &http.Transport{
@@ -193,6 +299,7 @@ func (c *Configurator) CycleRadio(band string) error {
 					if capInterface.MAC == rosInterface.MAC {
 						c.l.Debug("Found matching CAP", "id", capInterface.ID, "mac", capInterface.MAC)
 						capInterface.MAC = "" // Zero out so it doesn't get sent back
+						capInterface.Master = ""
 						data, err := json.Marshal(capInterface)
 						if err != nil {
 							return err

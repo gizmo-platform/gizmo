@@ -34,6 +34,11 @@ type rosInterface struct {
 }
 
 type rosCapInterface struct {
-	ID  string `json:".id"`
-	MAC string `json:"radio-mac,omitempty"`
+	ID     string `json:".id"`
+	MAC    string `json:"radio-mac,omitempty"`
+	Master string `json:"master,omitempty"`
+}
+
+type rosRemoteCap struct {
+	ID string `json:".id"`
 }

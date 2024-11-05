@@ -135,6 +135,7 @@ resource "routeros_capsman_provisioning" "gizmo_5ghz" {
 resource "routeros_capsman_provisioning" "gizmo_2ghz" {
   comment = "gizmo-2ghz"
 
+  disabled             = (local.fms.RadioMode != "FIELD")
   master_configuration = routeros_capsman_configuration.gizmo["gizmo-2ghz"].name
   slave_configurations = join(",", [for cfg in routeros_capsman_configuration.team :
     cfg.name if contains(values(local.fmap), routeros_capsman_datapath.team[replace(cfg.name, "team", "")].vlan_id)

@@ -50,6 +50,16 @@ type Config struct {
 	// have a pinned address
 	FMSMac string
 
+	// RadioMode is used to determine which radios are active for
+	// the field.  This can be 'NONE', 'FIELD', or 'DS'.  'NONE'
+	// predicably disables all radios and is really only useful in
+	// games where there is a field tether.  'FIELD' operates
+	// using the high-power field radio and causes driver's
+	// station radios to be disabled, whereas 'DS' is the inverse
+	// causing the field radio to be disabled and remotely
+	// controlling the DS radios.
+	RadioMode string
+
 	AutoUser string
 	AutoPass string
 	ViewUser string
