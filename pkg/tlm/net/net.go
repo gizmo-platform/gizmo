@@ -12,6 +12,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
+	"github.com/gizmo-platform/gizmo/pkg/ds"
 	"github.com/gizmo-platform/gizmo/pkg/metrics"
 	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
 )
@@ -166,6 +167,19 @@ func (tlm *TLM) Start() error {
 					}
 					if tok := tlm.m.Publish(fmt.Sprintf("robot/%d/location", team), 1, false, bytes); tok.Wait() && tok.Error() != nil {
 						tlm.l.Warn("Error publishing new mapping to broker", "error", tok.Error())
+					}
+
+					// Also publish some DS configuration data at the same cadence.
+					dsVals := ds.FieldConfig{
+						RadioMode:    tlm.controller.RadioMode(),
+						RadioChannel: tlm.controller.RadioChannelForField(fnum),
+					}
+					bytes, err = json.Marshal(dsVals)
+					if err != nil {
+						tlm.l.Warn("Error marshalling DS values", "error", err, "team", team)
+					}
+					if tok := tlm.m.Publish(fmt.Sprintf("robot/%d/dsconf", team), 1, false, bytes); tok.Wait() && tok.Error() != nil {
+						tlm.l.Warn("Error publishing new dsconf to broker", "error", tok.Error())
 					}
 				}
 				tlm.mutex.RUnlock()

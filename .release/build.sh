@@ -96,6 +96,7 @@ install() {
     inst /usr/libexec/dhcpcd-run-hooks
     inst /usr/local/bin/gizmo
     inst /var/log/socklog/everything/config
+    inst /usr/bin/mqttcli
 
     inst_libdir_file /usr/lib/dhcpcd/dev/udev.so
 

@@ -82,12 +82,6 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 					go delayRestart("dhcpcd")
 
 				}
-				switch l.Attrs().OperState {
-				case netlink.OperUp:
-					r.Stop("hostapd")
-				case netlink.OperDown:
-					r.Start("hostapd")
-				}
 				prevState = l.Attrs().OperState
 			}
 		case a := <-addrChanges:

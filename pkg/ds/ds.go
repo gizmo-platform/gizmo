@@ -33,6 +33,10 @@ func New(opts ...Option) *DriverStation {
 	d := new(DriverStation)
 	d.l = hclog.NewNullLogger()
 	d.stop = make(chan struct{})
+	d.fCfg = FieldConfig{
+		RadioMode:    "DS",
+		RadioChannel: "1",
+	}
 
 	for _, o := range opts {
 		o(d)
@@ -60,6 +64,22 @@ func (ds *DriverStation) Run() error {
 				ds.l.Error("Error starting meta publisher", "error", err)
 			}
 		}()
+
+		subFunc := func() error {
+			topic := fmt.Sprintf("robot/%d/dsconf", ds.cfg.Team)
+			ds.l.Debug("Subscribing to config topic", "topic", topic)
+			if tok := ds.m.Subscribe(topic, 1, ds.cfgCallback); tok.Wait() && tok.Error() != nil {
+				ds.l.Warn("Error subscribing to topic", "error", tok.Error())
+				return tok.Error()
+			}
+			return nil
+		}
+
+		if err := backoff.Retry(subFunc, backoff.NewExponentialBackOff()); err != nil {
+			ds.l.Error("Permanent error encountered while subscribing dsconf", "error", err)
+			return err
+		}
+
 	} else {
 		// FMS not available, start local services.
 		go ds.doLocalBroker()
@@ -293,6 +313,47 @@ func (ds *DriverStation) doMetaPublish() error {
 				ds.l.Warn("Error publishing message for team", "error", tok.Error())
 			}
 		}
+	}
+
+	return nil
+}
+
+func (ds *DriverStation) cfgCallback(c mqtt.Client, msg mqtt.Message) {
+	fCfg := FieldConfig{}
+
+	ds.l.Debug("Config Callback Called")
+
+	if err := json.Unmarshal(msg.Payload(), &fCfg); err != nil {
+		ds.l.Warn("Bad config payload", "error", err)
+		return
+	}
+
+	if ds.fCfg.RadioChannel != fCfg.RadioChannel || ds.fCfg.RadioMode != fCfg.RadioMode {
+		ds.fCfg = fCfg
+		if err := ds.reconfigureRadio(); err != nil {
+			ds.l.Error("Error reconfiguring radio", "error", err)
+		}
+	}
+}
+
+func (ds *DriverStation) reconfigureRadio() error {
+	ds.l.Info("Reconfiguring DS Radio", "mode", ds.fCfg.RadioMode, "channel", ds.fCfg.RadioChannel)
+	ctx := map[string]string{
+		"NetSSID": ds.cfg.NetSSID,
+		"NetPSK":  ds.cfg.NetPSK,
+		"Channel": ds.fCfg.RadioChannel,
+	}
+	if err := ds.sc.Template(hostAPdConf, "tpl/hostapd.conf.tpl", 0644, ctx); err != nil {
+		return err
+	}
+
+	switch ds.fCfg.RadioMode {
+	case "DS":
+		ds.sc.Restart("hostapd")
+	case "FIELD":
+		ds.sc.Stop("hostapd")
+	case "NONE":
+		ds.sc.Stop("hostapd")
 	}
 
 	return nil

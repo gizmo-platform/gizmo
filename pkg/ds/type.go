@@ -18,7 +18,8 @@ type DriverStation struct {
 	l hclog.Logger
 	m mqtt.Client
 
-	cfg config.Config
+	cfg  config.Config
+	fCfg FieldConfig
 
 	sc *sysconf.SysConf
 
@@ -37,3 +38,11 @@ type ConfigureStep func() error
 
 //go:embed tpl/*.tpl
 var efs embed.FS
+
+// FieldConfig contains information obtained from the field and is
+// used to determine whether or not the driver's station needs to
+// adjust its mode of operation.
+type FieldConfig struct {
+	RadioMode    string
+	RadioChannel string
+}

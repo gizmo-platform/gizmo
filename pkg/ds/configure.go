@@ -128,7 +128,13 @@ func (ds *DriverStation) configureHostname() error {
 }
 
 func (ds *DriverStation) configureHostAPd() error {
-	if err := ds.sc.Template(hostAPdConf, "tpl/hostapd.conf.tpl", 0644, ds.cfg); err != nil {
+	ctx := map[string]string{
+		"NetSSID": ds.cfg.NetSSID,
+		"NetPSK":  ds.cfg.NetPSK,
+		"Channel": "1",
+	}
+
+	if err := ds.sc.Template(hostAPdConf, "tpl/hostapd.conf.tpl", 0644, ctx); err != nil {
 		return err
 	}
 	return nil

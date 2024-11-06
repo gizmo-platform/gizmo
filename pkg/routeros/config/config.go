@@ -35,6 +35,24 @@ func New(opts ...Option) *Configurator {
 	return c
 }
 
+// RadioMode returns the configured radio mode.  This is useful for
+// passing to other systems to determine what mode they should be in
+// based on what mode the FMS radio is in.
+func (c *Configurator) RadioMode() string {
+	return c.fc.RadioMode
+}
+
+// RadioChannelForField returns the currently configured radio channel
+// for a given field.
+func (c *Configurator) RadioChannelForField(id int) string {
+	for _, f := range c.fc.Fields {
+		if f.ID == id {
+			return f.Channel
+		}
+	}
+	return "AUTO"
+}
+
 // SyncState pushes the in-memory state down to the disk.
 func (c *Configurator) SyncState(bootstrap bool) error {
 	if err := os.MkdirAll(c.stateDir, 0755); err != nil {
