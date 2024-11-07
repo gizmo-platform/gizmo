@@ -75,16 +75,18 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	pkgs := []string{netinstall.RouterPkg}
-	if fDev != "Scoring Table Box" {
-		pkgs = append(pkgs, netinstall.WifiPkg)
-	}
-
-	installer := netinstall.New(
+	opts := []netinstall.InstallerOpt{
 		netinstall.WithLogger(appLogger),
-		netinstall.WithPackages(pkgs),
 		netinstall.WithFMS(cfg),
-	)
+		netinstall.WithPackages([]string{netinstall.RouterPkg, netinstall.WifiPkg}),
+	}
+	switch fDev {
+	case "Scoring Table Box":
+		opts = append(opts, netinstall.WithBootstrapNet(netinstall.BootstrapNetScoring))
+	case "Field Box":
+		opts = append(opts, netinstall.WithBootstrapNet(netinstall.BootstrapNetField))
+	}
+	installer := netinstall.New(opts...)
 
 	if templateTo != "" {
 		if err := installer.TemplateConfig(templateTo); err != nil {

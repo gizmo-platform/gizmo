@@ -47,10 +47,6 @@ module "field{{.ID}}" {
 
   bootstrap     = {{$top.Bootstrap}}
   field_id      = {{.ID}}
-  infra_visible = {{$top.FMS.InfrastructureVisible}}
-  infra_ssid    = "{{$top.FMS.InfrastructureSSID}}"
-  infra_psk     = "{{$top.FMS.InfrastructurePSK}}"
-  gizmo_channel = "{{.Channel}}"
 }
 {{- end }}
 {{- end }}

@@ -48,6 +48,17 @@ const (
 
 	// ImagePath is a location to store routerOS images into.
 	ImagePath = "/usr/share/routeros"
+
+	// BootstrapNetScoring is what the scoring box uses to bring
+	// up the initial net which involves a special bootstrap VLAN.
+	// This is necessary to bring up the network in a
+	// non-conflicting way.
+	BootstrapNetScoring = `/interface/vlan/add comment="Bootstrap Interface" interface=ether2 name=bootstrap0 vlan-id=2
+/ip/address/add address=100.64.1.1/24 interface=bootstrap0`
+
+	// BootstrapNetField contains the bootstrap of the network for
+	// devices that are not the scoring box.
+	BootstrapNetField = "/ip/dhcp-client/add interface=ether1 disabled=no add-default-route=no use-peer-dns=no use-peer-ntp=no"
 )
 
 // Installer wraps functionality associated with installation.
@@ -77,18 +88,14 @@ func WithLogger(l hclog.Logger) InstallerOpt {
 func WithPackages(p []string) InstallerOpt {
 	return func(i *Installer) {
 		i.pkgs = p
-		switch len(p) {
-		case 1:
-			i.bootstrapCtx["network"] = `/interface/vlan/add comment="Bootstrap Interface" interface=ether2 name=bootstrap0 vlan-id=2
-/ip/address/add address=100.64.1.1/24 interface=bootstrap0`
-		case 2:
-			// If there are two packages, the second one
-			// will be for wifi.  This is an assumption
-			// that is going to prove wrong at some point
-			// in the future, but it works now.  Feel free
-			// to PR something less dumb.
-			i.bootstrapCtx["network"] = "/ip/dhcp-client/add interface=ether1 disabled=no add-default-route=no use-peer-dns=no use-peer-ntp=no"
-		}
+	}
+}
+
+// WithBootstrapNet configures the bootstrap configuration for the
+// network device.
+func WithBootstrapNet(s string) InstallerOpt {
+	return func(i *Installer) {
+		i.bootstrapCtx["network"] = s
 	}
 }
 

@@ -174,93 +174,91 @@ func (c *Configurator) ReprovisionCAP() error {
 		},
 	}
 
-	for _, field := range c.fc.Fields {
-		req := &http.Request{
-			Method: http.MethodGet,
-			URL: &url.URL{
-				Scheme: "https",
-				Host:   field.IP,
-				Path:   "/rest/caps-man/interface",
-				User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
-			},
-		}
-		resp, err := cl.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
+	req := &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   c.routerAddr,
+			Path:   "/rest/caps-man/interface",
+			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+		},
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-		capList := []*rosCapInterface{}
-		if err := json.NewDecoder(resp.Body).Decode(&capList); err != nil {
-			return err
-		}
+	capList := []*rosCapInterface{}
+	if err := json.NewDecoder(resp.Body).Decode(&capList); err != nil {
+		return err
+	}
 
-		for _, capInterface := range capList {
-			if capInterface.Master != "true" {
-				continue
-			}
-			c.l.Debug("Removing cap", "field", field.ID, "cap", capInterface.ID)
-
-			req = &http.Request{
-				Method: http.MethodDelete,
-				URL: &url.URL{
-					Scheme:  "https",
-					Host:    field.IP,
-					Path:    "/rest/caps-man/interface/" + capInterface.ID,
-					RawPath: "/rest/caps-man/interface/" + capInterface.ID,
-					User:    url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
-				},
-			}
-			c.l.Debug("Proposed delete URL", "url", req.URL.String())
-			resp, err := cl.Do(req)
-			if err != nil {
-				c.l.Error("Error removing cap interface", "field", field.ID, "cap", capInterface.ID)
-				return err
-			}
-			if resp.StatusCode != 204 {
-				c.l.Error("CAP was not removed!", "code", resp.StatusCode)
-			}
-			defer resp.Body.Close()
+	for _, capInterface := range capList {
+		if capInterface.Master != "true" {
+			continue
 		}
 
 		req = &http.Request{
-			Method: http.MethodGet,
+			Method: http.MethodDelete,
 			URL: &url.URL{
-				Scheme: "https",
-				Host:   field.IP,
-				Path:   "/rest/caps-man/remote-cap",
-				User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+				Scheme:  "https",
+				Host:    c.routerAddr,
+				Path:    "/rest/caps-man/interface/" + capInterface.ID,
+				RawPath: "/rest/caps-man/interface/" + capInterface.ID,
+				User:    url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
 			},
 		}
+		c.l.Debug("Proposed delete URL", "url", req.URL.String())
+		resp, err := cl.Do(req)
+		if err != nil {
+			c.l.Error("Error removing cap interface", "cap", capInterface.ID, "error", err)
+			return err
+		}
+		if resp.StatusCode != 204 {
+			c.l.Error("CAP was not removed!", "code", resp.StatusCode)
+		}
+		defer resp.Body.Close()
+	}
 
-		resp, err = cl.Do(req)
+	req = &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   c.routerAddr,
+			Path:   "/rest/caps-man/remote-cap",
+			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+		},
+	}
+
+	resp, err = cl.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	rCapList := []*rosRemoteCap{}
+	if err := json.NewDecoder(resp.Body).Decode(&rCapList); err != nil {
+		return err
+	}
+
+	for _, rCap := range rCapList {
+		data, err := json.Marshal(rCap)
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
 
-		rCapList := []*rosRemoteCap{}
-		if err := json.NewDecoder(resp.Body).Decode(&rCapList); err != nil {
+		req.URL.Path = "/rest/caps-man/remote-cap/provision"
+		req, _ := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := cl.Do(req)
+		if err != nil {
+			c.l.Error("Error triggering provisioning", "error", err)
 			return err
 		}
-
-		for _, rCap := range rCapList {
-			data, err := json.Marshal(rCap)
-			if err != nil {
-				return err
-			}
-
-			req.URL.Path = "/rest/caps-man/remote-cap/provision"
-			req, _ := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
-			req.Header.Set("Content-Type", "application/json")
-			resp, err := cl.Do(req)
-			if err != nil {
-				c.l.Error("Error triggering provisioning", "field", field.ID)
-				return err
-			}
-			defer resp.Body.Close()
-		}
+		defer resp.Body.Close()
 	}
+
 	return nil
 }
 
@@ -279,65 +277,68 @@ func (c *Configurator) CycleRadio(band string) error {
 		},
 	}
 
-	for _, field := range c.fc.Fields {
-		req := &http.Request{
-			Method: http.MethodGet,
-			URL: &url.URL{
-				Scheme: "https",
-				Host:   field.IP,
-				Path:   "/rest/interface/wireless",
-				User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
-			},
-		}
+	req := &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Scheme: "https",
+			Path:   "/rest/interface/wireless",
+			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+		},
+	}
 
+	ifList := []*rosInterface{}
+	for _, field := range c.fc.Fields {
+		req.URL.Host = field.IP
 		resp, err := cl.Do(req)
 		if err != nil {
 			return err
 		}
 		defer resp.Body.Close()
-		ifList := []*rosInterface{}
-		if err := json.NewDecoder(resp.Body).Decode(&ifList); err != nil {
+		ifListTmp := []*rosInterface{}
+		if err := json.NewDecoder(resp.Body).Decode(&ifListTmp); err != nil {
 			return err
 		}
+		ifList = append(ifList, ifListTmp...)
+	}
+	c.l.Debug("Identified interfaces", "interfaces", ifList)
 
-		req.URL.Path = "/rest/caps-man/radio"
-		resp, err = cl.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		capList := []*rosCapInterface{}
-		if err := json.NewDecoder(resp.Body).Decode(&capList); err != nil {
-			return err
-		}
+	req.URL.Host = c.routerAddr
+	req.URL.Path = "/rest/caps-man/radio"
+	resp, err := cl.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	capList := []*rosCapInterface{}
+	if err := json.NewDecoder(resp.Body).Decode(&capList); err != nil {
+		return err
+	}
 
-		for _, rosInterface := range ifList {
-			if strings.HasPrefix(rosInterface.Band, band) {
-				for _, capInterface := range capList {
-					if capInterface.MAC == rosInterface.MAC {
-						c.l.Debug("Found matching CAP", "id", capInterface.ID, "mac", capInterface.MAC)
-						capInterface.MAC = "" // Zero out so it doesn't get sent back
-						capInterface.Master = ""
-						data, err := json.Marshal(capInterface)
-						if err != nil {
-							return err
-						}
-						c.l.Debug("JSON Message", "msg", string(data))
-
-						req.URL.Path = "/rest/caps-man/radio/provision"
-						req, err := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
-						req.Header.Set("Content-Type", "application/json")
-						resp, err = cl.Do(req)
-						if err != nil {
-							c.l.Error("Error cycling radio", "field", field.ID, "radio", capInterface.MAC, "band", band, "error", err)
-							return err
-						}
-						defer resp.Body.Close()
-
-						msg, _ := io.ReadAll(resp.Body)
-						c.l.Debug("Cycle response", "resp", string(msg))
-						c.l.Debug("Radio cycled", "band", band, "field", field.ID, "mac", rosInterface.MAC, "id", capInterface.ID)
+	for _, rosInterface := range ifList {
+		if strings.HasPrefix(rosInterface.Band, band) {
+			for _, capInterface := range capList {
+				if capInterface.MAC == rosInterface.MAC {
+					c.l.Debug("Found matching CAP", "id", capInterface.ID, "mac", capInterface.MAC)
+					capInterface.MAC = "" // Zero out so it doesn't get sent back
+					capInterface.Master = ""
+					data, err := json.Marshal(capInterface)
+					if err != nil {
+						return err
 					}
+					c.l.Debug("JSON Message", "msg", string(data))
+
+					req.URL.Path = "/rest/caps-man/radio/provision"
+					req, err := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
+					req.Header.Set("Content-Type", "application/json")
+					resp, err = cl.Do(req)
+					if err != nil {
+						c.l.Error("Error cycling radio", "radio", capInterface.MAC, "band", band, "error", err)
+						return err
+					}
+					defer resp.Body.Close()
+
+					msg, _ := io.ReadAll(resp.Body)
+					c.l.Debug("Cycle response", "resp", string(msg))
 				}
 			}
 		}
