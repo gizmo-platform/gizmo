@@ -36,6 +36,8 @@ var (
 func init() {
 	fmsNetCmd.AddCommand(fmsBootstrapNetCmd)
 	fmsBootstrapNetCmd.Flags().Bool("skip-apply", false, "Skip applying changes")
+	fmsBootstrapNetCmd.Flags().Bool("skip-init", false, "Skip terraform initialization")
+	fmsBootstrapNetCmd.Flags().Bool("init-only", false, "Only perform terraform initialization and exit")
 }
 
 const (
@@ -146,6 +148,8 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 	initLogger("bootstrap-net")
 
 	skipApply, _ := c.Flags().GetBool("skip-apply")
+	skipInit, _ := c.Flags().GetBool("skip-init")
+	initOnly, _ := c.Flags().GetBool("init-only")
 
 	fmsConf, err := fms.LoadConfig("fms.json")
 	if err != nil {
@@ -184,16 +188,24 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		"programmed.  You will receive more instructions on when to connect",
 		"field boxes after the main scoring box provisioning completes.",
 	}
-	for _, line := range instructions {
-		fmt.Println(line)
-	}
-	if !confirm() {
-		fmt.Println("Bootstrap process aborted!")
-		return
+	if !initOnly {
+		for _, line := range instructions {
+			fmt.Println(line)
+		}
+		if !confirm() {
+			fmt.Println("Bootstrap process aborted!")
+			return
+		}
 	}
 
-	if err := controller.Init(); err != nil {
-		appLogger.Error("Fatal error initializing controller", "error", err)
+	if !skipInit {
+		if err := controller.Init(); err != nil {
+			appLogger.Error("Fatal error initializing controller", "error", err)
+			return
+		}
+	}
+
+	if initOnly {
 		return
 	}
 
