@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -195,6 +197,12 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-quit
+		unbootstrapNet()
+	}()
 	if err := bootstrapNet(); err != nil {
 		appLogger.Error("Fatal error with bootstrap network", "error", err)
 		if err := unbootstrapNet(); err != nil {
