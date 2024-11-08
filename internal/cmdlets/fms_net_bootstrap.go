@@ -134,7 +134,7 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 			return err
 		}
 
-		if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff(backoff.WithMaxInterval(300))); err != nil {
+		if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff(backoff.WithMaxInterval(time.Second*30))); err != nil {
 			appLogger.Error("Permanent error encountered while waiting for RouterOS", "error", err)
 			appLogger.Error("You need to reboot network boxes and try again")
 			return
