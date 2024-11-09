@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"path"
@@ -337,11 +338,20 @@ func (ds *DriverStation) cfgCallback(c mqtt.Client, msg mqtt.Message) {
 }
 
 func (ds *DriverStation) reconfigureRadio() error {
-	ds.l.Info("Reconfiguring DS Radio", "mode", ds.fCfg.RadioMode, "channel", ds.fCfg.RadioChannel)
+	channel := ds.fCfg.RadioChannel
+
+	if channel == "Auto" {
+		rand.Seed(time.Now().UnixNano())
+		chans := []string{"1", "6", "11"}
+		chanIdx := rand.Intn(len(chans))
+		channel = chans[chanIdx]
+	}
+
+	ds.l.Info("Reconfiguring DS Radio", "mode", ds.fCfg.RadioMode, "channel", channel)
 	ctx := map[string]string{
 		"NetSSID": ds.cfg.NetSSID,
 		"NetPSK":  ds.cfg.NetPSK,
-		"Channel": ds.fCfg.RadioChannel,
+		"Channel": channel,
 	}
 	if err := ds.sc.Template(hostAPdConf, "tpl/hostapd.conf.tpl", 0644, ctx); err != nil {
 		return err
