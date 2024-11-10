@@ -6,8 +6,6 @@ package config
 // station and gizmo pair.
 type Config struct {
 	Team             int
-	UseDriverStation bool
-	UseExtNet        bool
 	NetSSID          string
 	NetPSK           string
 	ServerIP         string

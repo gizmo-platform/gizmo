@@ -41,8 +41,6 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 	for id, team := range fmsConf.Teams {
 		t := config.Config{
 			Team:             id,
-			UseDriverStation: true,
-			UseExtNet:        false,
 			NetSSID:          team.SSID,
 			NetPSK:           team.PSK,
 		}

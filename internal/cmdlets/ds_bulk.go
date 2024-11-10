@@ -65,11 +65,9 @@ func dsBulkCmdRun(c *cobra.Command, args []string) {
 	for i := answers.Base; i <= answers.Base+answers.Count; i++ {
 		cfg := config.Config{
 			Team:             i,
-			UseDriverStation: true,
-			UseExtNet:        false,
 			NetSSID:          strings.ReplaceAll(uuid.New().String(), "-", ""),
 			NetPSK:           strings.ReplaceAll(uuid.New().String(), "-", ""),
-			ServerIP:         "gizmo-ds",
+			ServerIP:         "ds.gizmo",
 		}
 		td := filepath.Join("configs", fmt.Sprintf("team%d", i))
 		if err := os.MkdirAll(td, 0755); err != nil {

@@ -85,9 +85,7 @@ func dsGSSAutoConfCmdRun(c *cobra.Command, args []string) {
 
 		cfg := config.Config{
 			Team:             num,
-			UseDriverStation: true,
-			UseExtNet:        false,
-			ServerIP:         "gizmo-ds",
+			ServerIP:         "ds.gizmo",
 			NetSSID:          strings.ReplaceAll(uuid.New().String(), "-", ""),
 			NetPSK:           strings.ReplaceAll(uuid.New().String(), "-", ""),
 		}

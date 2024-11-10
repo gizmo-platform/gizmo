@@ -14,7 +14,6 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-hclog v1.6.3
-	github.com/hashicorp/go-sockaddr v1.0.6
 	github.com/martinhoefling/goxkcdpwgen v0.1.1
 	github.com/mdp/qrterminal/v3 v3.2.0
 	github.com/mochi-mqtt/server/v2 v2.6.5
