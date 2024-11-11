@@ -17,8 +17,6 @@ const (
 	sysctlConf     = "/etc/sysctl.conf"
 	hostAPdConf    = "/etc/hostapd/hostapd.conf"
 	dnsmasqConf    = "/etc/dnsmasq.conf"
-	dhcpcdConf     = "/etc/dhcpcd.conf"
-	dhcpcdSvc      = "/etc/sv/dhcpcd/run"
 	dnsmasqSvc     = "/etc/sv/dnsmasq/run"
 	hostapdSvc     = "/etc/sv/hostapd/run"
 	gizmoDSSvc     = "/etc/sv/gizmo-ds/run"
@@ -56,7 +54,6 @@ func (ds *DriverStation) Configure() error {
 		ds.configureNetwork,
 		ds.configureHostname,
 		ds.configureHostAPd,
-		ds.configureDHCPCD,
 		ds.configureDNSMasq,
 		ds.configureGizmo,
 		ds.configureLogmon,
@@ -67,7 +64,6 @@ func (ds *DriverStation) Configure() error {
 		"network",
 		"hostname",
 		"hostapd",
-		"dhcpcd",
 		"dnsmasq",
 		"gizmo",
 		"logmon",
@@ -120,6 +116,17 @@ func (ds *DriverStation) configureNetwork() error {
 		return err
 	}
 
+	if err := netlink.LinkSetUp(br0); err != nil {
+		ds.l.Error("Error enabling br0", "error", err)
+		return err
+	}
+
+	addr, _ := netlink.ParseAddr(fmt.Sprintf("10.%d.%d.2/24", int(ds.cfg.Team/100), ds.cfg.Team%100))
+	if err := netlink.AddrAdd(br0, addr); err != nil {
+		ds.l.Error("Error adding address to br0", "error", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -140,10 +147,6 @@ func (ds *DriverStation) configureHostAPd() error {
 	return nil
 }
 
-func (ds *DriverStation) configureDHCPCD() error {
-	return ds.sc.Template(dhcpcdConf, "tpl/dhcpcd.conf.tpl", 0644, ds.cfg)
-}
-
 func (ds *DriverStation) configureDNSMasq() error {
 	return ds.sc.Template(dnsmasqConf, "tpl/dnsmasq.conf.tpl", 0644, ds.cfg)
 }
@@ -159,7 +162,7 @@ func (ds *DriverStation) configureGizmo() error {
 		return err
 	}
 
-	svcs := []string{gizmoDSSvc, gizmoLinkSvc, gizmoConfigSvc, dnsmasqSvc, hostapdSvc, dhcpcdSvc}
+	svcs := []string{gizmoDSSvc, gizmoLinkSvc, gizmoConfigSvc, dnsmasqSvc, hostapdSvc}
 	for _, svc := range svcs {
 		if err := os.MkdirAll(filepath.Join(filepath.Dir(svc), "log"), 0755); err != nil {
 			return err
@@ -178,12 +181,11 @@ func (ds *DriverStation) configureLogmon() error {
 }
 
 func (ds *DriverStation) enableServices() error {
-	ds.sc.Enable("dhcpcd")
 	ds.sc.Enable("dnsmasq")
 	ds.sc.Enable("gizmo-config")
 	ds.sc.Enable("gizmo-ds")
-	ds.sc.Enable("gizmo-link")
 	ds.sc.Enable("gizmo-logmon")
+	ds.sc.Enable("gizmo-link")
 	ds.sc.Enable("hostapd")
 	ds.sc.Enable("socklog-unix")
 	ds.sc.Enable("nanoklogd")

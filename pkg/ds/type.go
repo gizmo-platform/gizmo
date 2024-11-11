@@ -45,4 +45,6 @@ var efs embed.FS
 type FieldConfig struct {
 	RadioMode    string
 	RadioChannel string
+	Field        int
+	Location     string
 }

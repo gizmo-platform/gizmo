@@ -70,7 +70,6 @@ install() {
     inst /etc/group
     inst /etc/passwd
     inst /etc/sv/console/run
-    inst /etc/sv/dhcpcd/run
     inst /etc/sv/dnsmasq/run
     inst /etc/sv/hostapd/run
     inst /etc/sv/nanoklogd/run
@@ -79,7 +78,6 @@ install() {
     inst /etc/sv/socklog-unix/run
     inst /etc/sv/udevd/run
     inst /usr/bin/agetty
-    inst /usr/bin/dhcpcd
     inst /usr/bin/dnsmasq
     inst /usr/bin/hostapd
     inst /usr/bin/nanoklogd
@@ -92,13 +90,9 @@ install() {
     inst /usr/bin/tryto
     inst /usr/bin/uncat
     inst /usr/bin/vlogger
-    inst /usr/libexec/dhcpcd-hooks/20-resolv.conf
-    inst /usr/libexec/dhcpcd-run-hooks
     inst /usr/local/bin/gizmo
     inst /var/log/socklog/everything/config
     inst /usr/bin/mqttcli
-
-    inst_libdir_file /usr/lib/dhcpcd/dev/udev.so
 
     inst_hook pre-mount 01 "$moddir/gizmo.sh"
     inst_hook cmdline 99 "$moddir/parse-gizmo-root.sh"
@@ -116,7 +110,6 @@ EOF
 #!/bin/sh
 export GIZMO_BOOTMODE=RAMDISK
 /usr/bin/mkdir -p /etc/runit/runsvdir/default
-/usr/bin/mkdir -p /var/db/dhcpcd
 /usr/bin/ln -s /etc/sv/console /etc/runit/runsvdir/default/
 /usr/bin/ln -s /etc/sv/udevd /etc/runit/runsvdir/default/
 /usr/bin/ln -s /etc/runit/runsvdir/default /var/service
