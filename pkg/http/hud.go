@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,14 +26,8 @@ type hudQuad struct {
 	DSMeta            config.DSMeta
 }
 
-type clientInfo struct {
-	Number int
-	CorrectLocation bool
-}
-
 func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	ctx := pongo2.Context{}
-	clients := make(map[string]clientInfo)
 	mapping, _ := s.tlm.GetCurrentMapping()
 
 	fields := make(map[int]*hudField)
@@ -49,14 +42,15 @@ func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fTmp := hudQuad{Team: team}
-		_, fTmp.GizmoConnected = clients[fmt.Sprintf("gizmo-%d", team)]
-		_, fTmp.DSConnected = clients[fmt.Sprintf("gizmo-ds%d", team)]
-		if fTmp.DSConnected {
-			fTmp.DSCorrectLocation = clients[fmt.Sprintf("gizmo-ds%d", team)].CorrectLocation
-		}
+		s.connectedMutex.RLock()
+		_, fTmp.GizmoConnected = s.connectedGizmo[team]
+		_, fTmp.DSConnected = s.connectedDS[team]
+		s.connectedMutex.RUnlock()
 
-		fTmp.GizmoMeta = config.GizmoMeta{}
-		fTmp.DSMeta = config.DSMeta{}
+		s.metaMutex.RLock()
+		fTmp.GizmoMeta = s.gizmoMeta[team]
+		fTmp.DSMeta = s.dsMeta[team]
+		s.metaMutex.RUnlock()
 
 		switch color {
 		case "RED":

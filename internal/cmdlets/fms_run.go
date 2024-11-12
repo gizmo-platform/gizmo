@@ -59,7 +59,6 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	tlm := net.New(
 		net.WithLogger(appLogger),
 		net.WithController(controller),
-		net.WithStartupWG(wg),
 	)
 	appLogger.Debug("TLM Init")
 

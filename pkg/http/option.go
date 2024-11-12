@@ -42,6 +42,7 @@ func WithFMSConf(c fms.Config) Option {
 			}
 		}
 		s.quads = quads
+		s.fmsConf = c
 		return nil
 	}
 }

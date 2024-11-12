@@ -9,10 +9,14 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/flosch/pongo2/v5"
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/fms"
 )
 
 // TeamLocationMapper looks at all teams trying to fetch a value and
@@ -33,14 +37,23 @@ type hudVersions struct {
 
 // Server manages the HTTP serving components
 type Server struct {
-	r   chi.Router
-	n   *http.Server
-	l   hclog.Logger
-	tlm TeamLocationMapper
-	swg *sync.WaitGroup
-	tpl *pongo2.TemplateSet
+	r       chi.Router
+	n       *http.Server
+	l       hclog.Logger
+	tlm     TeamLocationMapper
+	swg     *sync.WaitGroup
+	tpl     *pongo2.TemplateSet
+	fmsConf fms.Config
 
 	quads []string
+
+	stop           chan struct{}
+	connectedDS    map[int]time.Time
+	connectedGizmo map[int]time.Time
+	connectedMutex *sync.RWMutex
+	gizmoMeta      map[int]config.GizmoMeta
+	dsMeta         map[int]config.DSMeta
+	metaMutex      *sync.RWMutex
 
 	hudVersions hudVersions
 }
@@ -58,11 +71,18 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.n = &http.Server{}
 	x.l = hclog.NewNullLogger()
 	x.tpl = pongo2.NewSet("html", ldr)
+	x.connectedDS = make(map[int]time.Time)
+	x.connectedGizmo = make(map[int]time.Time)
+	x.gizmoMeta = make(map[int]config.GizmoMeta)
+	x.dsMeta = make(map[int]config.DSMeta)
+	x.connectedMutex = new(sync.RWMutex)
+	x.metaMutex = new(sync.RWMutex)
+	x.stop = make(chan struct{})
 	x.hudVersions = hudVersions{
 		HardwareVersions: "GIZMO_V00_R6E,GIZMO_V1_0_R00",
-		FirmwareVersions: "0.1.3",
+		FirmwareVersions: "0.1.5",
 		Bootmodes:        "RAMDISK",
-		DSVersions:       "0.1.4",
+		DSVersions:       "0.1.6",
 	}
 	x.populateHUDVersions()
 
@@ -76,10 +96,21 @@ func NewServer(opts ...Option) (*Server, error) {
 
 	x.r.Handle("/static/*", http.FileServer(http.FS(sub)))
 
-	x.r.Get("/admin/cfg/quads", x.configuredQuads)
-	x.r.Post("/admin/map/immediate", x.remapTeams)
-	x.r.Get("/admin/map/current", x.currentTeamMap)
-	x.r.Get("/admin/hud", x.fieldHUD)
+	x.r.Route("/gizmo/ds", func(r chi.Router) {
+		r.Get("/{id}/config", x.gizmoConfig)
+		r.Post("/{id}/meta", x.gizmoDSMetaReport)
+	})
+
+	x.r.Route("/gizmo/robot", func(r chi.Router) {
+		r.Post("/{id}/meta", x.gizmoMetaReport)
+	})
+
+	x.r.Route("/admin", func(r chi.Router) {
+		r.Get("/cfg/quads", x.configuredQuads)
+		r.Post("/map/immediate", x.remapTeams)
+		r.Get("/map/current", x.currentTeamMap)
+		r.Get("/hud", x.fieldHUD)
+	})
 
 	return x, nil
 }
@@ -88,6 +119,7 @@ func NewServer(opts ...Option) (*Server, error) {
 // returned if the server cannot initialize.
 func (s *Server) Serve(bind string) error {
 	s.l.Info("HTTP is starting")
+	go s.doConnectedUpkeep()
 	s.n.Addr = bind
 	s.n.Handler = s.r
 	s.swg.Done()
@@ -97,6 +129,7 @@ func (s *Server) Serve(bind string) error {
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.l.Info("Stopping...")
+	s.stop <- struct{}{}
 	return s.n.Shutdown(ctx)
 }
 

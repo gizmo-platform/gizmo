@@ -52,10 +52,8 @@ func dsLinkMonitorCmdRun(c *cobra.Command, args []string) {
 			if l.Attrs().Name == "eth0" {
 				appLogger.Info("Operational state change", "state", l.Attrs().OperState)
 				switch l.Attrs().OperState {
-				case netlink.OperUp:
-					r.Stop("hostapd")
 				case netlink.OperDown:
-					r.Start("hostapd")
+					r.Restart("gizmo-ds")
 				}
 			}
 		case <-done:

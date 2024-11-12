@@ -40,9 +40,9 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 	names := []string{}
 	for id, team := range fmsConf.Teams {
 		t := config.Config{
-			Team:             id,
-			NetSSID:          team.SSID,
-			NetPSK:           team.PSK,
+			Team:    id,
+			NetSSID: team.SSID,
+			NetPSK:  team.PSK,
 		}
 		teams[team.Name] = t
 		names = append(names, team.Name)

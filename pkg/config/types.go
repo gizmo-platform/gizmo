@@ -5,10 +5,11 @@ package config
 // Config holds a number of settings that are unique to each driver
 // station and gizmo pair.
 type Config struct {
-	Team             int
-	NetSSID          string
-	NetPSK           string
-	ServerIP         string
+	Team     int
+	NetSSID  string
+	NetPSK   string
+	ServerIP string
+	FieldIP  string
 }
 
 // DSMeta stores information reported by the Driver's Station metadata

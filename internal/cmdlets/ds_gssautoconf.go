@@ -84,10 +84,11 @@ func dsGSSAutoConfCmdRun(c *cobra.Command, args []string) {
 		uuid.SetRand(r)
 
 		cfg := config.Config{
-			Team:             num,
-			ServerIP:         "ds.gizmo",
-			NetSSID:          strings.ReplaceAll(uuid.New().String(), "-", ""),
-			NetPSK:           strings.ReplaceAll(uuid.New().String(), "-", ""),
+			Team:     num,
+			NetSSID:  strings.ReplaceAll(uuid.New().String(), "-", ""),
+			NetPSK:   strings.ReplaceAll(uuid.New().String(), "-", ""),
+			ServerIP: "ds.gizmo",
+			FieldIP:  "100.64.0.2",
 		}
 
 		f, err := os.Create("/boot/gsscfg.json")

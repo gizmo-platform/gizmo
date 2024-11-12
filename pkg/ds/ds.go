@@ -1,9 +1,13 @@
 package ds
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -25,6 +29,7 @@ const (
 	ctrlRate = time.Millisecond * 20
 	locRate  = time.Second * 3
 	metaRate = time.Second * 5
+	cfgRate  = time.Second * 5
 )
 
 // New returns a configured driverstation.
@@ -32,12 +37,7 @@ func New(opts ...Option) *DriverStation {
 	d := new(DriverStation)
 	d.l = hclog.NewNullLogger()
 	d.stop = make(chan struct{})
-	d.fCfg = FieldConfig{
-		RadioMode:    "DS",
-		RadioChannel: "1",
-		Field:        1,
-		Location:     "PRACTICE",
-	}
+	d.localFieldConfig()
 
 	for _, o := range opts {
 		o(d)
@@ -53,8 +53,11 @@ func New(opts ...Option) *DriverStation {
 // startup, because every time the network link is cycled the DS
 // process gets restarted.
 func (ds *DriverStation) Run() error {
+	ds.reconfigureRadio()
+
 	go ds.doLocalBroker()
 	go ds.doLocation()
+	go ds.doFMSLifecycle()
 
 	if err := ds.connectMQTT("mqtt://127.0.0.1:1883"); err != nil {
 		ds.l.Error("Error linking MQTT", "error", err)
@@ -78,6 +81,15 @@ func (ds *DriverStation) Stop() {
 func (ds *DriverStation) DieNow() {
 	ds.l.Error("Told to Die!")
 	os.Exit(2)
+}
+
+func (ds *DriverStation) localFieldConfig() {
+	ds.fCfg = FieldConfig{
+		RadioMode:    "DS",
+		RadioChannel: "1",
+		Field:        1,
+		Location:     "PRACTICE",
+	}
 }
 
 func (ds *DriverStation) connectMQTT(address string) error {
@@ -222,59 +234,110 @@ func (ds *DriverStation) doGamepad() error {
 	return nil
 }
 
-func (ds *DriverStation) doMetaPublish() error {
-	ticker := time.NewTicker(metaRate)
+func (ds *DriverStation) doFMSLifecycle() error {
+	cl := &http.Client{Timeout: time.Second}
 
-	vals := &config.DSMeta{
-		Version:  buildinfo.Version,
-		Bootmode: os.Getenv("GIZMO_BOOTMODE"),
+	req := &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   fmt.Sprintf("%s:8080", ds.cfg.FieldIP),
+			Path:   fmt.Sprintf("/gizmo/ds/%d/config", ds.cfg.Team),
+		},
 	}
 
-	if vals.Bootmode == "" {
-		vals.Bootmode = "UNKNOWN"
-	}
-
-	bytes, err := json.Marshal(vals)
-	if err != nil {
-		ds.l.Warn("Error marshalling controller state", "error", err)
-		return err
-	}
-
-	ds.l.Info("Starting metadata pusher")
+	ticker := time.NewTicker(cfgRate)
+	ds.l.Info("Starting FMS lifecycle watcher")
 	for {
 		select {
 		case <-ds.stop:
 			ticker.Stop()
-			ds.l.Info("Stopped publishing metadata")
+			ds.l.Info("Stopped config lifecycle watcher")
+			return nil
+
+		case <-ticker.C:
+			resp, err := cl.Do(req)
+			if err != nil {
+				ds.l.Trace("Error calling FMS config endpoint", "error", err)
+				continue
+			}
+			if resp.StatusCode != 200 {
+				ds.l.Trace("Wrong code from FMS config endpoint", "code", resp.StatusCode)
+				continue
+			}
+			if err := ds.cfgCallback(resp.Body); err != nil {
+				ds.l.Error("Error parsing config from FMS", "error", err)
+				continue
+			}
+			ticker.Stop()
+			go ds.doMetaReport()
+		}
+	}
+}
+
+func (ds *DriverStation) doMetaReport() error {
+	cl := &http.Client{Timeout: time.Second}
+	reportURL := &url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%s:8080", ds.cfg.FieldIP),
+		Path:   fmt.Sprintf("/gizmo/ds/%d/meta", ds.cfg.Team),
+	}
+
+	ticker := time.NewTicker(metaRate)
+	ds.l.Info("Starting Metadata Reporter")
+	for {
+		select {
+		case <-ds.stop:
+			ticker.Stop()
+			ds.l.Info("Stopped metareport reporter")
 			return nil
 		case <-ticker.C:
+			vals := &config.DSMeta{
+				Version:  buildinfo.Version,
+				Bootmode: os.Getenv("GIZMO_BOOTMODE"),
+			}
 
-			topic := path.Join("robot", strconv.Itoa(ds.cfg.Team), "ds-meta")
-			if tok := ds.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
-				ds.l.Warn("Error publishing message for team", "error", tok.Error())
+			if vals.Bootmode == "" {
+				vals.Bootmode = "UNKNOWN"
+			}
+
+			data, err := json.Marshal(vals)
+			if err != nil {
+				ds.l.Debug("Error marshalling controller state", "error", err)
+				continue
+			}
+
+			req, _ := http.NewRequest(http.MethodPost, reportURL.String(), bytes.NewBuffer(data))
+			req.Header.Set("Content-Type", "application/json")
+			_, err = cl.Do(req)
+			if err != nil {
+				ds.l.Debug("Could not report meta information", "error", err)
+				continue
 			}
 		}
 	}
-
-	return nil
 }
 
-func (ds *DriverStation) cfgCallback(c mqtt.Client, msg mqtt.Message) {
+func (ds *DriverStation) cfgCallback(cfgSrc io.ReadCloser) error {
+	defer cfgSrc.Close()
 	fCfg := FieldConfig{}
 
 	ds.l.Debug("Config Callback Called")
 
-	if err := json.Unmarshal(msg.Payload(), &fCfg); err != nil {
+	if err := json.NewDecoder(cfgSrc).Decode(&fCfg); err != nil {
 		ds.l.Warn("Bad config payload", "error", err)
-		return
+		return err
 	}
+	ds.l.Info("FMS Config", "radio-mode", fCfg.RadioMode, "radio-channel", fCfg.RadioChannel, "field", fCfg.Field, "quadrant", fCfg.Location)
 
 	if ds.fCfg.RadioChannel != fCfg.RadioChannel || ds.fCfg.RadioMode != fCfg.RadioMode {
 		ds.fCfg = fCfg
 		if err := ds.reconfigureRadio(); err != nil {
 			ds.l.Error("Error reconfiguring radio", "error", err)
+			return err
 		}
 	}
+	return nil
 }
 
 func (ds *DriverStation) reconfigureRadio() error {

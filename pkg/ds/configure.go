@@ -4,9 +4,9 @@ package ds
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
-	"net"
 
 	"github.com/vishvananda/netlink"
 )
