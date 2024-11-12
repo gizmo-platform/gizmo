@@ -15,8 +15,6 @@ import (
 
 	"github.com/gizmo-platform/gizmo/pkg/fms"
 	"github.com/gizmo-platform/gizmo/pkg/http"
-	"github.com/gizmo-platform/gizmo/pkg/metrics"
-	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
 	"github.com/gizmo-platform/gizmo/pkg/tlm/net"
 )
@@ -50,49 +48,33 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	stats := metrics.New(metrics.WithLogger(appLogger))
-	appLogger.Debug("Stats listeners created")
-
 	routerAddr := "100.64.0.1"
 	controller := config.New(
 		config.WithFMS(*fmsConf),
 		config.WithLogger(appLogger),
 		config.WithRouter(routerAddr),
 	)
+	appLogger.Debug("Controller Init")
 
 	tlm := net.New(
 		net.WithLogger(appLogger),
-		net.WithMetrics(stats),
 		net.WithController(controller),
 		net.WithStartupWG(wg),
 	)
-
-	m, err := mqttserver.NewServer(mqttserver.WithLogger(appLogger), mqttserver.WithStartupWG(wg))
-	if err != nil {
-		appLogger.Error("Error during mqtt initialization", "error", err)
-		os.Exit(1)
-	}
+	appLogger.Debug("TLM Init")
 
 	w, err := http.NewServer(
 		http.WithLogger(appLogger),
 		http.WithTeamLocationMapper(tlm),
-		http.WithPrometheusRegistry(stats.Registry()),
 		http.WithFMSConf(*fmsConf),
-		http.WithMQTTServer(m),
 		http.WithStartupWG(wg),
 	)
+	appLogger.Debug("HTTP Init")
 
 	if err != nil {
 		appLogger.Error("Error during webserver initialization", "error", err)
 		os.Exit(1)
 	}
-
-	go func() {
-		if err := m.Serve(":1883"); err != nil {
-			appLogger.Error("Error initializing", "error", err)
-			quit <- syscall.SIGINT
-		}
-	}()
 
 	go func() {
 		if err := w.Serve(":8080"); err != nil && err != nhttp.ErrServerClosed {
@@ -101,32 +83,14 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		}
 	}()
 
-	go func() {
-		if err := stats.MQTTInit(wg); err != nil {
-			appLogger.Error("Error initializing", "error", err)
-			quit <- syscall.SIGINT
-		}
-	}()
-
-	stats.StartFlusher()
-	tlm.Start()
-
 	wg.Wait()
 	appLogger.Info("Startup Complete!")
 
 	<-quit
 	appLogger.Info("Shutting down...")
-	stats.Shutdown()
-	appLogger.Info("Stats Stopped")
-	tlm.Stop()
-	appLogger.Info("TLM Stopped")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := w.Shutdown(ctx); err != nil {
-		appLogger.Error("Error during shutdown", "error", err)
-		os.Exit(2)
-	}
-	if err := m.Shutdown(); err != nil {
 		appLogger.Error("Error during shutdown", "error", err)
 		os.Exit(2)
 	}

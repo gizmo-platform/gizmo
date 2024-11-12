@@ -21,36 +21,6 @@ resource "routeros_ip_dhcp_server_network" "network_infra" {
   dns_server = ["100.64.0.1"]
 }
 
-# Team DHCP Pools
-
-resource "routeros_ip_pool" "pool_team" {
-  for_each = local.fms.Teams
-
-  name    = format("team%d", each.key)
-  ranges  = ["${cidrhost(each.value.CIDR, 2)}-${cidrhost(each.value.CIDR, 10)}"]
-  comment = each.value.Name
-}
-
-resource "routeros_ip_dhcp_server" "server_team" {
-  for_each = local.fms.Teams
-
-  interface          = routeros_interface_vlan.vlan_team[each.key].name
-  name               = format("team%d", each.key)
-  address_pool       = routeros_ip_pool.pool_team[each.key].name
-  comment            = each.value.Name
-  conflict_detection = true
-  lease_time         = "1h"
-}
-
-resource "routeros_ip_dhcp_server_network" "network_team" {
-  for_each = local.fms.Teams
-
-  address    = each.value.CIDR
-  gateway    = cidrhost(each.value.CIDR, 1)
-  dns_server = [cidrhost(each.value.CIDR, 1)]
-  comment    = each.value.Name
-}
-
 resource "routeros_ip_dhcp_server_lease" "field" {
   for_each = local.fms.Fields
 
@@ -67,19 +37,8 @@ resource "routeros_ip_dhcp_server_lease" "fms" {
   server      = routeros_ip_dhcp_server.server_infra.name
 }
 
-resource "routeros_ip_dhcp_server_lease" "driver_station" {
-  for_each = local.fms.Teams
-
-  address     = cidrhost(each.value.CIDR, 3)
-  mac_address = each.value.DSMAC
-  comment     = format("DS %d", each.key)
-  server      = routeros_ip_dhcp_server.server_team[each.key].name
-}
-
 resource "routeros_ip_dns_record" "fms" {
-  for_each = toset(["fms.gizmo", "gizmo-fms.comp"])
-
-  name    = each.value
+  name    = "fms.gizmo"
   address = "100.64.0.2"
   type    = "A"
 }

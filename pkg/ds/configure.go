@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"net"
 
 	"github.com/vishvananda/netlink"
 )
@@ -124,6 +125,13 @@ func (ds *DriverStation) configureNetwork() error {
 	addr, _ := netlink.ParseAddr(fmt.Sprintf("10.%d.%d.2/24", int(ds.cfg.Team/100), ds.cfg.Team%100))
 	if err := netlink.AddrAdd(br0, addr); err != nil {
 		ds.l.Error("Error adding address to br0", "error", err)
+		return err
+	}
+
+	_, subnet, _ := net.ParseCIDR("100.64.0.0/24")
+	gw := net.IPv4(10, byte(ds.cfg.Team/100), byte(ds.cfg.Team%100), 1)
+	if err := netlink.RouteAdd(&netlink.Route{Dst: subnet, Gw: gw}); err != nil {
+		ds.l.Error("Error adding FMS route", "error", err)
 		return err
 	}
 

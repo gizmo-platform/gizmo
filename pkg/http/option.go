@@ -5,21 +5,12 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gizmo-platform/gizmo/pkg/fms"
 )
 
 // Option enables variadic option passing to the server on startup.
 type Option func(*Server) error
-
-// WithPrometheusRegistry sets the Prometheus registry for the server
-func WithPrometheusRegistry(reg *prometheus.Registry) Option {
-	return func(s *Server) error {
-		s.reg = reg
-		return nil
-	}
-}
 
 // WithLogger sets the logger for the server.
 func WithLogger(l hclog.Logger) Option {
@@ -71,15 +62,6 @@ func WithStartupWG(wg *sync.WaitGroup) Option {
 	return func(s *Server) error {
 		wg.Add(1)
 		s.swg = wg
-		return nil
-	}
-}
-
-// WithMQTTServer provides the specific MQTTServer that's fronted by
-// this webserver.
-func WithMQTTServer(mq MQTTServer) Option {
-	return func(s *Server) error {
-		s.mq = mq
 		return nil
 	}
 }

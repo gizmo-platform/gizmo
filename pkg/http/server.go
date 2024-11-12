@@ -13,11 +13,6 @@ import (
 	"github.com/flosch/pongo2/v5"
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/gizmo-platform/gizmo/pkg/config"
-	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 )
 
 // TeamLocationMapper looks at all teams trying to fetch a value and
@@ -27,14 +22,6 @@ type TeamLocationMapper interface {
 	GetFieldForTeam(int) (string, error)
 	GetCurrentMapping() (map[int]string, error)
 	InsertOnDemandMap(map[int]string) error
-}
-
-// MQTTServer contains the specific limited interface that needs to be
-// made available for the HUD
-type MQTTServer interface {
-	Clients() map[string]mqttserver.ClientInfo
-	GizmoMeta(int) (bool, config.GizmoMeta)
-	DSMeta(int) (bool, config.DSMeta)
 }
 
 type hudVersions struct {
@@ -50,8 +37,6 @@ type Server struct {
 	n   *http.Server
 	l   hclog.Logger
 	tlm TeamLocationMapper
-	mq  MQTTServer
-	reg *prometheus.Registry
 	swg *sync.WaitGroup
 	tpl *pongo2.TemplateSet
 
@@ -89,7 +74,6 @@ func NewServer(opts ...Option) (*Server, error) {
 		}
 	}
 
-	x.r.Handle("/metrics", promhttp.HandlerFor(x.reg, promhttp.HandlerOpts{Registry: x.reg}))
 	x.r.Handle("/static/*", http.FileServer(http.FS(sub)))
 
 	x.r.Get("/admin/cfg/quads", x.configuredQuads)

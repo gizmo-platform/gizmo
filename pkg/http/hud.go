@@ -27,9 +27,14 @@ type hudQuad struct {
 	DSMeta            config.DSMeta
 }
 
+type clientInfo struct {
+	Number int
+	CorrectLocation bool
+}
+
 func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	ctx := pongo2.Context{}
-	clients := s.mq.Clients()
+	clients := make(map[string]clientInfo)
 	mapping, _ := s.tlm.GetCurrentMapping()
 
 	fields := make(map[int]*hudField)
@@ -49,8 +54,9 @@ func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 		if fTmp.DSConnected {
 			fTmp.DSCorrectLocation = clients[fmt.Sprintf("gizmo-ds%d", team)].CorrectLocation
 		}
-		_, fTmp.GizmoMeta = s.mq.GizmoMeta(team)
-		_, fTmp.DSMeta = s.mq.DSMeta(team)
+
+		fTmp.GizmoMeta = config.GizmoMeta{}
+		fTmp.DSMeta = config.DSMeta{}
 
 		switch color {
 		case "RED":

@@ -5,7 +5,6 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/gizmo-platform/gizmo/pkg/metrics"
 	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
 )
 
@@ -16,14 +15,6 @@ type Option func(t *TLM)
 func WithLogger(l hclog.Logger) Option {
 	return func(t *TLM) {
 		t.l = l.Named("tlm")
-	}
-}
-
-// WithMetrics pushes a metrics instance to the TLM subsystem so that
-// metrics can know what match is up.
-func WithMetrics(m *metrics.Metrics) Option {
-	return func(t *TLM) {
-		t.metrics = m
 	}
 }
 
