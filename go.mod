@@ -9,7 +9,6 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/diskfs/go-diskfs v1.4.2
-	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/flosch/pongo2/v5 v5.0.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/google/uuid v1.6.0
@@ -48,8 +47,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/term v0.23.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
