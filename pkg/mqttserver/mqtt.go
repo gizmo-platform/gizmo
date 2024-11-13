@@ -74,6 +74,16 @@ func (s *Server) Shutdown() error {
 	return s.s.Close()
 }
 
+// Publish is a passthrough to the underlying server's publish function.
+func (s *Server) Publish(topic string, payload []byte, retain bool, qos byte) error {
+	return s.s.Publish(topic, payload, retain, qos)
+}
+
+// Subscribe is a passthrough to the underlying server's subscribe function.
+func (s *Server) Subscribe(filter string, ID int, handler mqtt.InlineSubFn) error {
+	return s.s.Subscribe(filter, ID, handler)
+}
+
 func (s *Server) metadataUpdater(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
 	parts := strings.Split(pk.TopicName, "/")
 	if len(parts) != 3 {

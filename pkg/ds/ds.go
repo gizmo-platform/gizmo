@@ -14,8 +14,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
+	"github.com/mochi-mqtt/server/v2"
+	"github.com/mochi-mqtt/server/v2/packets"
 
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
@@ -56,14 +57,9 @@ func New(opts ...Option) *DriverStation {
 func (ds *DriverStation) Run() error {
 	ds.reconfigureRadio()
 
-	go ds.doLocalBroker()
+	go ds.doBroker()
 	go ds.doLocation()
 	go ds.doFMSLifecycle()
-
-	if err := ds.connectMQTT("mqtt://127.0.0.1:1883"); err != nil {
-		ds.l.Error("Error linking MQTT", "error", err)
-		ds.stop <- struct{}{}
-	}
 
 	ds.doGamepad()
 	return nil
@@ -93,32 +89,15 @@ func (ds *DriverStation) localFieldConfig() {
 	}
 }
 
-func (ds *DriverStation) connectMQTT(address string) error {
-	copts := mqtt.NewClientOptions().
-		AddBroker(address).
-		SetAutoReconnect(true).
-		SetClientID(fmt.Sprintf("gizmo-ds%d", ds.cfg.Team)).
-		SetConnectRetry(true).
-		SetConnectTimeout(time.Second).
-		SetConnectRetryInterval(time.Second)
-	ds.m = mqtt.NewClient(copts)
-
-	if tok := ds.m.Connect(); tok.Wait() && tok.Error() != nil {
-		ds.l.Error("Error connecting to broker", "error", tok.Error())
-		return tok.Error()
-	}
-	ds.l.Info("Connected to broker", "broker", address)
-	return nil
-}
-
-func (ds *DriverStation) doLocalBroker() error {
+func (ds *DriverStation) doBroker() error {
 	stats := metrics.New(
 		metrics.WithLogger(ds.l),
 	)
 
 	go stats.BuiltinWebserver(":8080")
 
-	m, err := mqttserver.NewServer(
+	var err error
+	ds.m, err = mqttserver.NewServer(
 		mqttserver.WithLogger(ds.l),
 		mqttserver.WithStats(stats),
 	)
@@ -128,7 +107,7 @@ func (ds *DriverStation) doLocalBroker() error {
 	}
 
 	go func() {
-		if err := m.Serve(":1883"); err != nil {
+		if err := ds.m.Serve(":1883"); err != nil {
 			ds.l.Error("Error setting up local broker", "error", err)
 			ds.stop <- struct{}{}
 			return
@@ -136,7 +115,7 @@ func (ds *DriverStation) doLocalBroker() error {
 	}()
 
 	<-ds.stop
-	m.Shutdown()
+	ds.m.Shutdown()
 	return nil
 }
 
@@ -172,8 +151,8 @@ func (ds *DriverStation) doLocation() error {
 			}
 
 			topic := path.Join("robot", strconv.Itoa(ds.cfg.Team), "location")
-			if tok := ds.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
-				ds.l.Warn("Error publishing message for team", "error", tok.Error())
+			if err := ds.m.Publish(topic, bytes, false, 0); err != nil {
+				ds.l.Warn("Error publishing message for team", "error", err)
 			}
 		}
 	}
@@ -233,8 +212,8 @@ func (ds *DriverStation) doGamepad() error {
 			}
 
 			topic := path.Join("robot", strconv.Itoa(ds.cfg.Team), "gamepad")
-			if tok := ds.m.Publish(topic, 0, false, bytes); tok.Wait() && tok.Error() != nil {
-				ds.l.Warn("Error publishing message for team", "error", tok.Error())
+			if err := ds.m.Publish(topic, bytes, false, 0); err != nil {
+				ds.l.Warn("Error publishing message for team", "error", err)
 			}
 		}
 	}
@@ -279,6 +258,7 @@ func (ds *DriverStation) doFMSLifecycle() error {
 			}
 			ticker.Stop()
 			go ds.doMetaReport()
+			ds.m.Subscribe(fmt.Sprintf("robot/%d/gizmo-meta", ds.cfg.Team), 1, ds.gizmoMetaCallback)
 		}
 	}
 }
@@ -323,6 +303,19 @@ func (ds *DriverStation) doMetaReport() error {
 				continue
 			}
 		}
+	}
+}
+
+func (ds *DriverStation) gizmoMetaCallback(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
+	c := &http.Client{Timeout: time.Second}
+	reportURL := &url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%s:8080", ds.cfg.FieldIP),
+		Path:   fmt.Sprintf("/gizmo/robot/%d/meta", ds.cfg.Team),
+	}
+	req, _ := http.NewRequest(http.MethodPost, reportURL.String(), bytes.NewBuffer(pk.Payload))
+	if _, err := c.Do(req); err != nil {
+		ds.l.Warn("Could not report gizmo metadata", "error", err)
 	}
 }
 

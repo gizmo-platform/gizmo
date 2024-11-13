@@ -3,11 +3,11 @@ package ds
 import (
 	"embed"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
+	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 )
 
 // DriverStation binds all methods related to the driver station task,
@@ -16,7 +16,7 @@ import (
 // server.
 type DriverStation struct {
 	l hclog.Logger
-	m mqtt.Client
+	m *mqttserver.Server
 
 	cfg  config.Config
 	fCfg FieldConfig
