@@ -20,6 +20,7 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
+	"github.com/gizmo-platform/gizmo/pkg/metrics"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 	"github.com/gizmo-platform/gizmo/pkg/watchdog"
@@ -111,8 +112,15 @@ func (ds *DriverStation) connectMQTT(address string) error {
 }
 
 func (ds *DriverStation) doLocalBroker() error {
+	stats := metrics.New(
+		metrics.WithLogger(ds.l),
+	)
+
+	go stats.BuiltinWebserver(":8080")
+
 	m, err := mqttserver.NewServer(
 		mqttserver.WithLogger(ds.l),
+		mqttserver.WithStats(stats),
 	)
 	if err != nil {
 		ds.l.Error("Error during broker initialization", "error", err)

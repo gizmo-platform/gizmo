@@ -1,15 +1,18 @@
 package metrics
 
 import (
+	"context"
 	"encoding/json"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hashicorp/go-hclog"
+	"github.com/mochi-mqtt/server/v2"
+	"github.com/mochi-mqtt/server/v2/packets"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // New returns an initialized instance of the metrics system.
@@ -125,12 +128,6 @@ func New(opts ...Option) *Metrics {
 			Name:      "last_interaction",
 			Help:      "Timestamp of the last mqtt metrics push",
 		}, []string{"team"}),
-
-		robotOnField: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "gizmo",
-			Subsystem: "field",
-			Name:      "robot",
-		}, []string{"field", "quad"}),
 	}
 
 	x.r.MustRegister(x.robotRSSI)
@@ -148,13 +145,28 @@ func New(opts ...Option) *Metrics {
 	x.r.MustRegister(x.robotControlFrames)
 	x.r.MustRegister(x.robotControlFrameAge)
 	x.r.MustRegister(x.robotLastInteraction)
-	x.r.MustRegister(x.robotOnField)
+
+	x.s = &http.Server{}
 
 	for _, o := range opts {
 		o(x)
 	}
 
 	return x
+}
+
+// BuiltinWebserver runs the metrics webserver when nothing else does.
+func (m *Metrics) BuiltinWebserver(bind string) error {
+	m.s.Addr = bind
+	mux := &http.ServeMux{}
+	mux.Handle("/metrics", promhttp.HandlerFor(m.r, promhttp.HandlerOpts{Registry: m.r}))
+	m.s.Handler = mux
+	go func() {
+		<-m.stopStatFlusher
+		m.s.Shutdown(context.Background())
+	}()
+
+	return m.s.ListenAndServe()
 }
 
 // Registry provides access to the registry that this instance
@@ -184,33 +196,12 @@ func (m *Metrics) DeleteZombieRobot(team string) {
 	m.robotControlFrames.Delete(l)
 }
 
-// ClearSchedule resets the status of what teams are on what fields.
-func (m *Metrics) ClearSchedule() {
-	m.robotOnField.Reset()
-}
-
-// ExportCurrentMatch unpacks a mapping into something exportable by
-// labelling the field and quadrant on an exported metric that has the
-// team number as its value.
-func (m *Metrics) ExportCurrentMatch(match map[int]string) {
-	for team, quad := range match {
-		m.l.Debug("Exporting match", "team", team, "quad", quad)
-		parts := strings.Split(quad, ":")
-		field := strings.Replace(parts[0], "field", "", 1)
-		quad := parts[1]
-
-		m.robotOnField.With(prometheus.Labels{
-			"field": field,
-			"quad":  quad,
-		}).Set(float64(team))
-	}
-}
-
-func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
-	teamNum := strings.Split(msg.Topic(), "/")[1]
+// MQTTCallback is called by external callers to process packets.
+func (m *Metrics) MQTTCallback(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
+	teamNum := strings.Split(pk.TopicName, "/")[1]
 	m.l.Trace("Called back", "team", teamNum)
 	var stats report
-	if err := json.Unmarshal(msg.Payload(), &stats); err != nil {
+	if err := json.Unmarshal(pk.Payload, &stats); err != nil {
 		m.l.Warn("Bad stats report", "team", teamNum, "error", err)
 	}
 
@@ -237,40 +228,6 @@ func (m *Metrics) mqttCallback(c mqtt.Client, msg mqtt.Message) {
 
 	m.robotLastInteraction.With(prometheus.Labels{"team": teamNum}).SetToCurrentTime()
 	m.lastSeen.Store(teamNum, time.Now())
-}
-
-// MQTTInit connects to the mqtt server and listens for metrics.
-func (m *Metrics) MQTTInit(wg *sync.WaitGroup) error {
-	wg.Add(1)
-	opts := mqtt.NewClientOptions().
-		AddBroker(m.broker).
-		SetAutoReconnect(true).
-		SetClientID("self-metrics").
-		SetConnectRetry(true).
-		SetConnectTimeout(time.Second).
-		SetConnectRetryInterval(time.Second)
-	client := mqtt.NewClient(opts)
-	if tok := client.Connect(); tok.Wait() && tok.Error() != nil {
-		m.l.Error("Error connecting to broker", "error", tok.Error())
-		return tok.Error()
-	}
-	m.l.Info("Connected to broker")
-
-	subFunc := func() error {
-		if tok := client.Subscribe("robot/+/stats", 1, m.mqttCallback); tok.Wait() && tok.Error() != nil {
-			m.l.Warn("Error subscribing to topic", "error", tok.Error())
-			return tok.Error()
-		}
-		return nil
-	}
-	if err := backoff.Retry(subFunc, backoff.NewExponentialBackOff()); err != nil {
-		m.l.Error("Permanent error encountered while subscribing", "error", err)
-		return err
-	}
-	m.l.Info("Subscribed to topics")
-	wg.Done()
-	return nil
-
 }
 
 // StartFlusher clears the stats for robots every 10 seconds

@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"net/http"
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
@@ -13,6 +14,7 @@ type Metrics struct {
 	broker string
 
 	r *prometheus.Registry
+	s *http.Server
 
 	robotRSSI             *prometheus.GaugeVec
 	robotWifiReconnects   *prometheus.GaugeVec

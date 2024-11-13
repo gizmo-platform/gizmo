@@ -4,6 +4,8 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/gizmo-platform/gizmo/pkg/metrics"
 )
 
 // Option enables variadic option passing to the server on startup.
@@ -24,6 +26,19 @@ func WithStartupWG(wg *sync.WaitGroup) Option {
 	return func(s *Server) error {
 		wg.Add(1)
 		s.swg = wg
+		return nil
+	}
+}
+
+// WithStats provides a registry for statistics to be retained and
+// kept up with.
+func WithStats(m *metrics.Metrics) Option {
+	return func(s *Server) error {
+		s.s.Subscribe("robot/+/stats", 0, m.MQTTCallback)
+
+		s.stopHooks = append(s.stopHooks, func() {
+			m.Shutdown()
+		})
 		return nil
 	}
 }
