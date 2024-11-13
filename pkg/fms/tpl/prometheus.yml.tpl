@@ -7,5 +7,5 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
   - job_name: gizmo
-    static_configs:
-      - targets: ["localhost:8080"]
+    http_sd_configs:
+      - url: http://localhost:8080/metrics-sd

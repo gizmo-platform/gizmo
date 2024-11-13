@@ -112,6 +112,8 @@ func NewServer(opts ...Option) (*Server, error) {
 		r.Get("/hud", x.fieldHUD)
 	})
 
+	x.r.Get("/metrics-sd", x.promSD)
+
 	return x, nil
 }
 

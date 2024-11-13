@@ -32,3 +32,22 @@ func (s *Server) currentTeamMap(w http.ResponseWriter, r *http.Request) {
 	m, _ := s.tlm.GetCurrentMapping()
 	enc.Encode(m)
 }
+
+func (s *Server) promSD(w http.ResponseWriter, r *http.Request) {
+	type promTarget struct {
+		Targets []string `json:"targets"`
+	}
+
+	m, _ := s.tlm.GetCurrentMapping()
+	tgt := []string{}
+
+	for id := range m {
+		tgt = append(tgt, fmt.Sprintf("10.%d.%d.2:8080", int(id/100), id%100))
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode([]promTarget{{Targets: tgt}}); err != nil {
+		s.l.Warn("Error writing prom sd", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
