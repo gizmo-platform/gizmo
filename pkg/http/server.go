@@ -17,6 +17,7 @@ import (
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 )
 
 // TeamLocationMapper looks at all teams trying to fetch a value and
@@ -82,7 +83,7 @@ func NewServer(opts ...Option) (*Server, error) {
 		HardwareVersions: "GIZMO_V00_R6E,GIZMO_V1_0_R00",
 		FirmwareVersions: "0.1.5",
 		Bootmodes:        "RAMDISK",
-		DSVersions:       "0.1.6",
+		DSVersions:       buildinfo.Version, // Always accept own version.
 	}
 	x.populateHUDVersions()
 
