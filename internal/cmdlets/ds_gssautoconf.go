@@ -52,11 +52,11 @@ func dsGSSAutoConfCmdRun(c *cobra.Command, args []string) {
 		}
 
 		label := strings.TrimSpace(fs.Label())
-		if !strings.HasPrefix(label, "GIZMO") {
+		if !strings.HasPrefix(label, "GIZMO") && !strings.HasPrefix(label, "GZMO") {
 			appLogger.Warn("Volume label does not start with 'GIZMO'", "label", label)
 			return 2
 		}
-		num, err := strconv.Atoi(strings.TrimPrefix(label, "GIZMO"))
+		num, err := strconv.Atoi(strings.TrimPrefix(strings.TrimPrefix(label, "GZMO"), "GIZMO"))
 		if err != nil {
 			appLogger.Error("Couldn't parse number from label")
 			return 2
