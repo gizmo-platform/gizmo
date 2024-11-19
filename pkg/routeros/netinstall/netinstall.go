@@ -28,17 +28,23 @@ const (
 	// of the suite to be installed.
 	RouterOSVersion = "7.15.3"
 
-	// RouterPkg is the most recent qualified firmware package for
+	// RouterPkgMIPSBE is the most recent qualified firmware package for
 	// a root router to be installed to.  In general its safe to
 	// use the most recent version, but this is what we tested.
-	RouterPkg = "routeros-" + RouterOSVersion + "-mipsbe.npk"
+	RouterPkgMIPSBE = "routeros-" + RouterOSVersion + "-mipsbe.npk"
 
-	// WifiPkg contains the wireless drivers qualified with the
+	// RouterPkgARM is same as above, but for arm64.
+	RouterPkgARM = "routeros-" + RouterOSVersion + "-arm.npk"
+
+	// WifiPkgMIPSBE contains the wireless drivers qualified with the
 	// matched version to the RouterPkg above.  These must
 	// generally be updated in sync unless a specific assurance
 	// has been obtained from Mikrotik that it is safe to split
 	// the versions.
-	WifiPkg = "wireless-" + RouterOSVersion + "-mipsbe.npk"
+	WifiPkgMIPSBE = "wireless-" + RouterOSVersion + "-mipsbe.npk"
+
+	// WifiPkgARM is same as above, but for arm64.
+	WifiPkgARM = "wireless-" + RouterOSVersion + "-arm.npk"
 
 	netinstallPkg  = "netinstall-" + RouterOSVersion + ".tar.gz"
 	netinstallPath = "/usr/local/bin/netinstall-cli"

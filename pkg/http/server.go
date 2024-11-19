@@ -15,9 +15,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
 
+	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/fms"
-	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 )
 
 // TeamLocationMapper looks at all teams trying to fetch a value and

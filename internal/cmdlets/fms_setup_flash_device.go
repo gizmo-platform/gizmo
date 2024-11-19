@@ -66,7 +66,7 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 
 	qDevice := &survey.Select{
 		Message: "Select the type of device you are flashing",
-		Options: []string{"Field Box", "Scoring Table Box"},
+		Options: []string{"Field Box", "Field Box (External Antenna)", "Scoring Table Box"},
 		Default: "Scoring Table Box",
 	}
 	fDev := ""
@@ -78,13 +78,28 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 	opts := []netinstall.InstallerOpt{
 		netinstall.WithLogger(appLogger),
 		netinstall.WithFMS(cfg),
-		netinstall.WithPackages([]string{netinstall.RouterPkg, netinstall.WifiPkg}),
 	}
 	switch fDev {
 	case "Scoring Table Box":
 		opts = append(opts, netinstall.WithBootstrapNet(netinstall.BootstrapNetScoring))
+		opts = append(opts, netinstall.WithPackages([]string{
+			netinstall.RouterPkgMIPSBE,
+			netinstall.WifiPkgMIPSBE,
+		}))
+
 	case "Field Box":
 		opts = append(opts, netinstall.WithBootstrapNet(netinstall.BootstrapNetField))
+		opts = append(opts, netinstall.WithPackages([]string{
+			netinstall.RouterPkgMIPSBE,
+			netinstall.WifiPkgMIPSBE,
+		}))
+	case "Field Box (External Antenna)":
+		opts = append(opts, netinstall.WithBootstrapNet(netinstall.BootstrapNetField))
+		opts = append(opts, netinstall.WithPackages([]string{
+			netinstall.RouterPkgARM,
+			netinstall.WifiPkgARM,
+		}))
+
 	}
 	installer := netinstall.New(opts...)
 

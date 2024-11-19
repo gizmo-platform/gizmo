@@ -21,8 +21,10 @@ const (
 // and unpacks them into ImagePath.
 func FetchPackages(l hclog.Logger) error {
 	pkgs := []string{
-		RouterPkg,
-		WifiPkg,
+		RouterPkgARM,
+		RouterPkgMIPSBE,
+		WifiPkgARM,
+		WifiPkgMIPSBE,
 	}
 
 	if err := os.MkdirAll(ImagePath, 0755); err != nil {

@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
-	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
+	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 )
 
 // DriverStation binds all methods related to the driver station task,
