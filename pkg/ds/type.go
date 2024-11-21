@@ -2,11 +2,11 @@ package ds
 
 import (
 	"embed"
+	"net"
 
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
-	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 )
 
@@ -16,7 +16,7 @@ import (
 // server.
 type DriverStation struct {
 	l hclog.Logger
-	m *mqttserver.Server
+	c net.Conn
 
 	cfg  config.Config
 	fCfg FieldConfig

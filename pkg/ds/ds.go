@@ -9,9 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
-	"strconv"
 	"time"
+	"net"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-hclog"
@@ -21,14 +20,12 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
-	"github.com/gizmo-platform/gizmo/pkg/metrics"
-	"github.com/gizmo-platform/gizmo/pkg/mqttserver"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 	"github.com/gizmo-platform/gizmo/pkg/watchdog"
 )
 
 const (
-	ctrlRate = time.Millisecond * 20
+	ctrlRate = time.Millisecond * 25
 	locRate  = time.Second * 3
 	metaRate = time.Second * 5
 	cfgRate  = time.Second * 5
@@ -57,7 +54,13 @@ func New(opts ...Option) *DriverStation {
 func (ds *DriverStation) Run() error {
 	ds.reconfigureRadio()
 
-	go ds.doBroker()
+	var err error
+	ds.c, err = net.Dial("udp", fmt.Sprintf("10.%d.%d.3:1729", int(ds.cfg.Team/100), int(ds.cfg.Team%100)))
+	if err != nil {
+		ds.l.Error("Error opening UDP socket", "error", err)
+		return err
+	}
+
 	go ds.doLocation()
 	go ds.doFMSLifecycle()
 
@@ -89,36 +92,6 @@ func (ds *DriverStation) localFieldConfig() {
 	}
 }
 
-func (ds *DriverStation) doBroker() error {
-	stats := metrics.New(
-		metrics.WithLogger(ds.l),
-	)
-
-	go stats.BuiltinWebserver(":8080")
-
-	var err error
-	ds.m, err = mqttserver.NewServer(
-		mqttserver.WithLogger(ds.l),
-		mqttserver.WithStats(stats),
-	)
-	if err != nil {
-		ds.l.Error("Error during broker initialization", "error", err)
-		return err
-	}
-
-	go func() {
-		if err := ds.m.Serve(":1883"); err != nil {
-			ds.l.Error("Error setting up local broker", "error", err)
-			ds.stop <- struct{}{}
-			return
-		}
-	}()
-
-	<-ds.stop
-	ds.m.Shutdown()
-	return nil
-}
-
 func (ds *DriverStation) doLocation() error {
 	dog := watchdog.New(
 		watchdog.WithName("location"),
@@ -128,6 +101,7 @@ func (ds *DriverStation) doLocation() error {
 	)
 
 	ticker := time.NewTicker(locRate)
+	buf := new(bytes.Buffer)
 	for {
 		select {
 		case <-ds.stop:
@@ -136,6 +110,7 @@ func (ds *DriverStation) doLocation() error {
 			return nil
 		case <-ticker.C:
 			dog.Feed()
+			ds.l.Trace("Location Tick")
 			vals := struct {
 				Field    int
 				Quadrant string
@@ -144,16 +119,12 @@ func (ds *DriverStation) doLocation() error {
 				Quadrant: ds.fCfg.Location,
 			}
 
-			bytes, err := json.Marshal(vals)
-			if err != nil {
-				ds.l.Warn("Error marshalling controller state", "error", err)
-				return err
+			buf.WriteRune('L')
+			if err := json.NewEncoder(buf).Encode(vals); err != nil {
+				ds.l.Debug("Error pushing location", "error", err)
 			}
-
-			topic := path.Join("robot", strconv.Itoa(ds.cfg.Team), "location")
-			if err := ds.m.Publish(topic, bytes, false, 0); err != nil {
-				ds.l.Warn("Error publishing message for team", "error", err)
-			}
+			buf.WriteTo(ds.c)
+			buf.Reset()
 		}
 	}
 	return nil
@@ -187,6 +158,7 @@ func (ds *DriverStation) doGamepad() error {
 
 	ticker := time.NewTicker(ctrlRate)
 	ds.l.Info("Starting gamepad pusher")
+	buf := new(bytes.Buffer)
 	for {
 		select {
 		case <-ds.stop:
@@ -205,16 +177,12 @@ func (ds *DriverStation) doGamepad() error {
 				}
 			}
 
-			bytes, err := json.Marshal(vals)
-			if err != nil {
-				ds.l.Warn("Error marshalling controller state", "error", err)
-				return err
+			buf.WriteRune('C')
+			if err := json.NewEncoder(buf).Encode(vals); err != nil {
+				ds.l.Debug("Error publishing message for team", "error", err)
 			}
-
-			topic := path.Join("robot", strconv.Itoa(ds.cfg.Team), "gamepad")
-			if err := ds.m.Publish(topic, bytes, false, 0); err != nil {
-				ds.l.Warn("Error publishing message for team", "error", err)
-			}
+			buf.WriteTo(ds.c)
+			buf.Reset()
 		}
 	}
 
@@ -258,7 +226,7 @@ func (ds *DriverStation) doFMSLifecycle() error {
 			}
 			ticker.Stop()
 			go ds.doMetaReport()
-			ds.m.Subscribe(fmt.Sprintf("robot/%d/gizmo-meta", ds.cfg.Team), 1, ds.gizmoMetaCallback)
+			//ds.m.Subscribe(fmt.Sprintf("robot/%d/gizmo-meta", ds.cfg.Team), 1, ds.gizmoMetaCallback)
 		}
 	}
 }
