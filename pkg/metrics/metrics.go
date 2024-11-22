@@ -200,34 +200,7 @@ func (m *Metrics) DeleteZombieRobot(team string) {
 func (m *Metrics) MQTTCallback(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
 	teamNum := strings.Split(pk.TopicName, "/")[1]
 	m.l.Trace("Called back", "team", teamNum)
-	var stats report
-	if err := json.Unmarshal(pk.Payload, &stats); err != nil {
-		m.l.Warn("Bad stats report", "team", teamNum, "error", err)
-	}
-
-	// This uses the same conversion that's used on the Gizmo to
-	// drive the battery status LED, which is why it has to have
-	// access to the values from the Gizmo itself.
-	voltage := (float64(stats.VBatM)/100000)*float64(stats.VBat) + (float64(stats.VBatM) / 100000)
-
-	m.robotRSSI.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
-	m.robotWifiReconnects.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WifiReconnects))
-	m.robotVBat.With(prometheus.Labels{"team": teamNum}).Set(voltage)
-	m.robotWatchdogLifetime.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining) / 1000)
-	m.robotControlFrameAge.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.ControlFrameAge) / 1000)
-	m.robotControlFrames.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.ControlFramesReceived))
-
-	m.robotPowerBoard.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrBoard))
-	m.robotPowerPico.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPico))
-	m.robotPowerGPIO.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrGPIO))
-	m.robotPowerServo.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrServo))
-	m.robotPowerBusA.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainA))
-	m.robotPowerBusB.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainB))
-	m.robotPowerPixels.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPixels))
-	m.robotWatchdogOK.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.WatchdogOK))
-
-	m.robotLastInteraction.With(prometheus.Labels{"team": teamNum}).SetToCurrentTime()
-	m.lastSeen.Store(teamNum, time.Now())
+	m.ParseReport(teamNum, pk.Payload)
 }
 
 // StartFlusher clears the stats for robots every 10 seconds
@@ -258,6 +231,40 @@ func (m *Metrics) StartFlusher() {
 // Shutdown signals the flusher that we wish to cease operations.
 func (m *Metrics) Shutdown() {
 	m.stopStatFlusher <- struct{}{}
+}
+
+// ParseReport directly parses a report from a buffer.
+func (m *Metrics) ParseReport(teamNum string, data []byte) error {
+	var stats report
+	if err := json.Unmarshal(data, &stats); err != nil {
+		m.l.Warn("Bad stats report", "team", teamNum, "error", err)
+		return err
+	}
+
+	// This uses the same conversion that's used on the Gizmo to
+	// drive the battery status LED, which is why it has to have
+	// access to the values from the Gizmo itself.
+	voltage := (float64(stats.VBatM)/100000)*float64(stats.VBat) + (float64(stats.VBatM) / 100000)
+
+	m.robotRSSI.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.RSSI))
+	m.robotWifiReconnects.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WifiReconnects))
+	m.robotVBat.With(prometheus.Labels{"team": teamNum}).Set(voltage)
+	m.robotWatchdogLifetime.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.WatchdogRemaining) / 1000)
+	m.robotControlFrameAge.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.ControlFrameAge) / 1000)
+	m.robotControlFrames.With(prometheus.Labels{"team": teamNum}).Set(float64(stats.ControlFramesReceived))
+
+	m.robotPowerBoard.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrBoard))
+	m.robotPowerPico.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPico))
+	m.robotPowerGPIO.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrGPIO))
+	m.robotPowerServo.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrServo))
+	m.robotPowerBusA.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainA))
+	m.robotPowerBusB.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrMainB))
+	m.robotPowerPixels.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.PwrPixels))
+	m.robotWatchdogOK.With(prometheus.Labels{"team": teamNum}).Set(fCast(stats.WatchdogOK))
+
+	m.robotLastInteraction.With(prometheus.Labels{"team": teamNum}).SetToCurrentTime()
+	m.lastSeen.Store(teamNum, time.Now())
+	return nil
 }
 
 func fCast(b bool) float64 {

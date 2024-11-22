@@ -14,14 +14,13 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-hclog"
-	"github.com/mochi-mqtt/server/v2"
-	"github.com/mochi-mqtt/server/v2/packets"
 
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 	"github.com/gizmo-platform/gizmo/pkg/watchdog"
+	"github.com/gizmo-platform/gizmo/pkg/metrics"
 )
 
 const (
@@ -62,6 +61,7 @@ func (ds *DriverStation) Run() error {
 	}
 
 	go ds.doLocation()
+	go ds.udpServlet()
 	go ds.doFMSLifecycle()
 
 	ds.doGamepad()
@@ -90,6 +90,48 @@ func (ds *DriverStation) localFieldConfig() {
 		Field:        1,
 		Location:     "PRACTICE",
 	}
+}
+
+func (ds *DriverStation) udpServlet() error {
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{
+		IP: net.IPv4(10, byte(ds.cfg.Team/100), byte(ds.cfg.Team%100), 2),
+		Port: 1729,
+	})
+	if err != nil {
+		ds.l.Error("Error binding UDP socket", "error", err)
+		return err
+	}
+
+	metrics := metrics.New(metrics.WithLogger(ds.l))
+
+	go metrics.BuiltinWebserver(":8080")
+	go metrics.StartFlusher()
+	go func() {
+		<-ds.stop
+		metrics.Shutdown()
+		conn.Close()
+	}()
+
+	buf := make([]byte, 1024)
+	ds.l.Info("Starting UDP Servlet")
+	for {
+		n, _, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			ds.l.Warn("Error reading packet from UDP", "error", err)
+			continue
+		}
+
+		switch(rune(buf[0])) {
+		case 'S':
+			// Status Report
+			metrics.ParseReport(fmt.Sprintf("%d", ds.cfg.Team), buf[1:n])
+		case 'M':
+			// BuildInfo Report
+			ds.gizmoMetaCallback(buf[1:n])
+		}
+	}
+
+	return nil
 }
 
 func (ds *DriverStation) doLocation() error {
@@ -226,7 +268,6 @@ func (ds *DriverStation) doFMSLifecycle() error {
 			}
 			ticker.Stop()
 			go ds.doMetaReport()
-			//ds.m.Subscribe(fmt.Sprintf("robot/%d/gizmo-meta", ds.cfg.Team), 1, ds.gizmoMetaCallback)
 		}
 	}
 }
@@ -274,14 +315,14 @@ func (ds *DriverStation) doMetaReport() error {
 	}
 }
 
-func (ds *DriverStation) gizmoMetaCallback(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
+func (ds *DriverStation) gizmoMetaCallback(buf []byte) {
 	c := &http.Client{Timeout: time.Second}
 	reportURL := &url.URL{
 		Scheme: "http",
 		Host:   fmt.Sprintf("%s:8080", ds.cfg.FieldIP),
 		Path:   fmt.Sprintf("/gizmo/robot/%d/meta", ds.cfg.Team),
 	}
-	req, _ := http.NewRequest(http.MethodPost, reportURL.String(), bytes.NewBuffer(pk.Payload))
+	req, _ := http.NewRequest(http.MethodPost, reportURL.String(), bytes.NewBuffer(buf))
 	if _, err := c.Do(req); err != nil {
 		ds.l.Warn("Could not report gizmo metadata", "error", err)
 	}
