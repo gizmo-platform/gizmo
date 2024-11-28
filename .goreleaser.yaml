@@ -5,7 +5,7 @@ before:
   hooks:
     - go mod tidy
     - go generate -tags docs {{ .Env.GENERATE_EXTRA_ARGS }} ./...
-    - wget https://use.fontawesome.com/releases/v6.6.0/fontawesome-free-6.6.0-web.zip
+    - wget -N https://use.fontawesome.com/releases/v6.6.0/fontawesome-free-6.6.0-web.zip
     - mkdir -p pkg/http/tpl/static/fa/
     - bsdtar -xvf fontawesome-free-6.6.0-web.zip --strip-components=1 -C pkg/http/tpl/static/fa/
 builds:
