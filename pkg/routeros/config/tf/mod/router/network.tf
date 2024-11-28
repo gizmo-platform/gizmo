@@ -31,8 +31,8 @@ resource "routeros_interface_vlan" "vlan_team" {
 
 resource "routeros_interface_vlan" "vlan_infra" {
   for_each = {
-    fms0 = { id = 10, description = "FMS Network" }
-    wan0 = { id = 20, description = "Upstream Networks" }
+    fms0 = { id = 400, description = "FMS Network" }
+    wan0 = { id = 405, description = "Upstream Networks" }
   }
 
   interface = routeros_interface_bridge.br0.name

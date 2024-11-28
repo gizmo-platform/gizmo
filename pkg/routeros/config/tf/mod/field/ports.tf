@@ -6,7 +6,7 @@ locals {
 resource "routeros_interface_bridge_port" "trunk" {
   bridge    = routeros_interface_bridge.br0.name
   interface = "ether1"
-  pvid      = 10
+  pvid      = 400
   disabled  = var.bootstrap
 }
 

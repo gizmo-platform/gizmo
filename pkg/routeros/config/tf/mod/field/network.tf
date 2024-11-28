@@ -20,7 +20,7 @@ resource "routeros_interface_bridge" "br0" {
 resource "routeros_interface_vlan" "fms" {
   name      = "fms0"
   interface = routeros_interface_bridge.br0.name
-  vlan_id   = 10
+  vlan_id   = 400
   comment   = "FMS Network"
 }
 
