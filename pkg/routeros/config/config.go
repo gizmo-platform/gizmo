@@ -177,7 +177,7 @@ func (c *Configurator) ReprovisionCAP() error {
 	req := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
-			Scheme: "https",
+			Scheme: "http",
 			Host:   c.routerAddr,
 			Path:   "/rest/caps-man/interface",
 			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
@@ -202,7 +202,7 @@ func (c *Configurator) ReprovisionCAP() error {
 		req = &http.Request{
 			Method: http.MethodDelete,
 			URL: &url.URL{
-				Scheme:  "https",
+				Scheme:  "http",
 				Host:    c.routerAddr,
 				Path:    "/rest/caps-man/interface/" + capInterface.ID,
 				RawPath: "/rest/caps-man/interface/" + capInterface.ID,
@@ -224,7 +224,7 @@ func (c *Configurator) ReprovisionCAP() error {
 	req = &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
-			Scheme: "https",
+			Scheme: "http",
 			Host:   c.routerAddr,
 			Path:   "/rest/caps-man/remote-cap",
 			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
@@ -280,7 +280,7 @@ func (c *Configurator) CycleRadio(band string) error {
 	req := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
-			Scheme: "https",
+			Scheme: "http",
 			Path:   "/rest/interface/wireless",
 			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
 		},

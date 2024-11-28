@@ -8,7 +8,7 @@ terraform {
 
 // Main FMS Router
 provider "routeros" {
-  hosturl  = "https://{{.RouterAddr}}"
+  hosturl  = "http://{{.RouterAddr}}"
   alias    = "router"
   insecure = true
   username = "{{.FMS.AutoUser}}"
@@ -31,7 +31,7 @@ module "router" {
 
 // Field {{.ID}}
 provider "routeros" {
-  hosturl  = "https://{{.IP}}"
+  hosturl  = "http://{{.IP}}"
   alias    = "field{{.ID}}"
   insecure = true
   username = "{{$top.FMS.AutoUser}}"

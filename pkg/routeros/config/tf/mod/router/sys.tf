@@ -9,7 +9,7 @@ resource "routeros_ip_service" "disabled" {
     ftp     = 21
     telnet  = 21
     winbox  = 8291
-    www     = 80
+    www-ssl = 443
   }
 
   numbers  = each.key

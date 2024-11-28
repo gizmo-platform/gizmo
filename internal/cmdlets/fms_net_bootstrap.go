@@ -123,7 +123,7 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		req := &http.Request{
 			Method: http.MethodGet,
 			URL: &url.URL{
-				Scheme: "https",
+				Scheme: "http",
 				Host:   addr,
 				Path:   "/rest/system/identity",
 				User:   url.UserPassword(user, pass),
