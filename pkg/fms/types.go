@@ -73,4 +73,8 @@ type Config struct {
 	InfrastructureVisible bool
 	InfrastructureSSID    string
 	InfrastructurePSK     string
+
+	AdvancedBGPAS   int
+	AdvancedBGPIP   string
+	AdvancedBGPVLAN int
 }
