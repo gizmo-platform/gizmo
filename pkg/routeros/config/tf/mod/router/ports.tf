@@ -9,7 +9,7 @@ resource "routeros_interface_bridge_port" "internal" {
 resource "routeros_interface_bridge_vlan" "fms" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = [tostring(routeros_interface_vlan.vlan_infra["fms0"].vlan_id)]
-  tagged   = [routeros_interface_bridge.br0.name]
+  tagged   = flatten([routeros_interface_bridge.br0.name, data.routeros_interfaces.sfp1.interfaces[*].name])
   untagged = formatlist("ether%d", [2, 3, 4, 5])
 }
 
@@ -31,7 +31,7 @@ resource "routeros_interface_bridge_port" "wan" {
 resource "routeros_interface_bridge_vlan" "wan" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = [tostring(routeros_interface_vlan.vlan_infra["wan0"].vlan_id)]
-  tagged   = [routeros_interface_bridge.br0.name]
+  tagged   = flatten([routeros_interface_bridge.br0.name, data.routeros_interfaces.sfp1.interfaces[*].name])
   untagged = ["ether1"]
 }
 
@@ -41,4 +41,21 @@ resource "routeros_interface_ethernet" "poe_ports" {
   factory_name = each.key
   name         = each.key
   poe_out      = "auto-on"
+}
+
+# This is all related to fairly advanced usage where we want the FMS
+# network to be part of a much larger routed fabric.  This really only
+# makes sense at a handful of very large hubs and championships.
+data "routeros_interfaces" "sfp1" {
+  filter = {
+    name = "sfp1"
+  }
+}
+
+resource "routeros_interface_bridge_port" "sfp1" {
+  count = length(data.routeros_interfaces.sfp1.interfaces)
+
+  bridge    = routeros_interface_bridge.br0.name
+  interface = data.routeros_interfaces.sfp1.interfaces[count.index].name
+  pvid      = 1
 }
