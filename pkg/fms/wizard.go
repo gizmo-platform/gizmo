@@ -201,6 +201,14 @@ func (w *ws) advancedNetCfg() error {
 				Default: "101",
 			},
 		},
+		{
+			Name:     "AdvancedBGPPeerIP",
+			Validate: survey.Required,
+			Prompt: &survey.Input{
+				Message: "Peer IP (no subnet)",
+				Default: "169.254.255.8",
+			},
+		},
 	}
 
 	return survey.Ask(prompts, w.c)

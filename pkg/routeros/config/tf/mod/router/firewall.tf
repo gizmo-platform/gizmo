@@ -39,6 +39,13 @@ resource "routeros_ip_firewall_filter" "accept_dns" {
   place_before      = routeros_ip_firewall_filter.default_drop.id
 }
 
+resource "routeros_ip_firewall_filter" "accept_peer" {
+  chain        = "input"
+  action       = "accept"
+  in_interface = routeros_interface_vlan.vlan_infra["peer0"].name
+  place_before = routeros_ip_firewall_filter.default_drop.id
+}
+
 resource "routeros_ip_firewall_filter" "prevent_team_to_team" {
   chain              = "forward"
   action             = "drop"

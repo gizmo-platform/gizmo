@@ -74,7 +74,8 @@ type Config struct {
 	InfrastructureSSID    string
 	InfrastructurePSK     string
 
-	AdvancedBGPAS   int
-	AdvancedBGPIP   string
-	AdvancedBGPVLAN int
+	AdvancedBGPAS     int
+	AdvancedBGPIP     string
+	AdvancedBGPPeerIP string
+	AdvancedBGPVLAN   int
 }

@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
-	"net"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-hclog"
@@ -18,9 +18,9 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/gamepad"
+	"github.com/gizmo-platform/gizmo/pkg/metrics"
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 	"github.com/gizmo-platform/gizmo/pkg/watchdog"
-	"github.com/gizmo-platform/gizmo/pkg/metrics"
 )
 
 const (
@@ -94,7 +94,7 @@ func (ds *DriverStation) localFieldConfig() {
 
 func (ds *DriverStation) udpServlet() error {
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
-		IP: net.IPv4(10, byte(ds.cfg.Team/100), byte(ds.cfg.Team%100), 2),
+		IP:   net.IPv4(10, byte(ds.cfg.Team/100), byte(ds.cfg.Team%100), 2),
 		Port: 1729,
 	})
 	if err != nil {
@@ -121,7 +121,7 @@ func (ds *DriverStation) udpServlet() error {
 			continue
 		}
 
-		switch(rune(buf[0])) {
+		switch rune(buf[0]) {
 		case 'S':
 			// Status Report
 			metrics.ParseReport(fmt.Sprintf("%d", ds.cfg.Team), buf[1:n])
