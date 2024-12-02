@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"io"
 )
 
 func (s *Server) remapTeams(w http.ResponseWriter, r *http.Request) {
 	mapping := make(map[int]string)
 
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&mapping); err != nil {
-		s.l.Warn("Error decoding on-demand mapping", "error", err)
+	buf, _ := io.ReadAll(r.Body)
+
+	if err := json.Unmarshal(buf, &mapping); err != nil {
+		s.l.Warn("Error decoding on-demand mapping", "error", err, "body", string(buf))
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "Requests must be a map of team numbers for field locations")
 		return
