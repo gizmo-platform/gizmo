@@ -35,3 +35,11 @@ func WithController(c *config.Configurator) Option {
 		t.controller = c
 	}
 }
+
+// WithSaveState provides a path to save the tlm data to across
+// application reloads.
+func WithSaveState(p string) Option {
+	return func(t *TLM) {
+		t.savepath = p
+	}
+}

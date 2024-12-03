@@ -59,7 +59,11 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	tlm := net.New(
 		net.WithLogger(appLogger),
 		net.WithController(controller),
+		net.WithSaveState(".tlm.json"),
 	)
+	if err := tlm.RecoverState(); err != nil {
+		appLogger.Warn("Could not recover TLM state", "error", err)
+	}
 	appLogger.Debug("TLM Init")
 
 	w, err := http.NewServer(

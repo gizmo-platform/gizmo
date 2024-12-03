@@ -1,7 +1,9 @@
 package net
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
@@ -16,6 +18,8 @@ type TLM struct {
 	mapping    map[int]string
 	mutex      sync.RWMutex
 	controller *config.Configurator
+
+	savepath string
 
 	swg  *sync.WaitGroup
 	stop chan struct{}
@@ -74,6 +78,11 @@ func (tlm *TLM) InsertOnDemandMap(m map[int]string) error {
 		tlm.l.Error("Error cycling radios", "error", err)
 		return err
 	}
+
+	if err := tlm.SaveState(); err != nil {
+		tlm.l.Warn("Error persisting match state", "error", err)
+	}
+
 	return nil
 }
 
@@ -94,4 +103,24 @@ func (tlm *TLM) GetCurrentTeams() []int {
 	tlm.mutex.RUnlock()
 
 	return ret
+}
+
+// SaveState saves the TLM data to a file that can be recovered later.
+func (tlm *TLM) SaveState() error {
+	f, err := os.Create(tlm.savepath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return json.NewEncoder(f).Encode(tlm.mapping)
+}
+
+// RecoverState loads the TLM data from a file.
+func (tlm *TLM) RecoverState() error {
+	f, err := os.Open(tlm.savepath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return json.NewDecoder(f).Decode(&tlm.mapping)
 }
