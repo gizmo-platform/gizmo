@@ -7,141 +7,47 @@
 {% endblock %}
 
 {% block content %}
-  <div class="hud-container">
-    <div class="center white-text">
-      <h1>Status Information</h1>
-    </div>
-    <div>
-      <div class="flex-container flex-row center">
-        {% for _, field in fields %}
-
-
-          <div class="flex-item flex-max field-red">
-            <p class="quad-label">{{ field.Red.Team }}</p>
+<div class="hud-container">
+    {% for field in fields %}
+    <div class="flex-container flex-row center field">
+        {% for quad in quads %}
+        <div class="flex-item flex-max field-{{ quad|lower }}">
+            {% if field.Team(quad) %}
+            <p class="quad-label">{{ field.Team(quad).Team }}</slot></p>
             <div class="flex-container flex-row icon-row">
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Red.GizmoConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-robot"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{field.Red.GizmoMeta.HardwareVersion|valueok:hwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Hardware: {{ field.Red.GizmoMeta.HardwareVersion }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Red.GizmoMeta.FirmwareVersion|valueok:fwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Firmware: {{ field.Red.GizmoMeta.FirmwareVersion }}"></i>
-                  </span>
+                <div class="flex-item flex-container flex-column">
+                    <span class="hud-icon status-{{ field.Team(quad).GizmoConnected|yesno:'ok,error' }}">
+                        <i class="flex-item fa-solid fa-robot"></i>
+                    </span>
+                    <div class="flex-item flex-container flex-row icon-row-small">
+                        <span class="flex-item status-{{ field.Team(quad).GizmoMeta.HardwareVersion|valueok:hwversions|yesno:'ok,error'}}">
+                            <i class="fa-solid fa-circle-check" title="Hardware: {{ field.Team(quad).GizmoMeta.HardwareVersion }}"></i>
+                        </span>
+                        <span class="flex-item status-{{ field.Team(quad).GizmoMeta.FirmwareVersion|valueok:fwversions|yesno:'ok,error'}}">
+                            <i class="fa-solid fa-circle-check" title="Firmware: {{ field.Team(quad).GizmoMeta.FirmwareVersion }}"></i>
+                        </span>
+                    </div>
                 </div>
-              </div>
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Red.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-gamepad"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{ field.Red.DSMeta.Bootmode|valueok:bootmodes|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Bootmode: {{ field.Red.DSMeta.Bootmode }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Red.DSMeta.Version|valueok:dsversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Version: {{ field.Red.DSMeta.Version }}"></i>
-                  </span>
+                <div class="flex-item flex-container flex-column">
+                    <span class="hud-icon status-{{ field.Team(quad).DSConnected|yesno:'ok,error'}}">
+                        <i class="flex-item fa-solid fa-gamepad"></i>
+                    </span>
+                    <div class="flex-item flex-container flex-row icon-row-small">
+                        <span class="flex-item status-{{ field.Team(quad).DSMeta.Bootmode|valueok:bootmodes|yesno:'ok,error' }}">
+                            <i class="fa-solid fa-circle-check" title="Bootmode: {{ field.Team(quad).DSMeta.Bootmode }}"></i>
+                        </span>
+                        <span class="flex-item status-{{ field.Team(quad).DSMeta.Version|valueok:dsversions|yesno:'ok,error' }}">
+                            <i class="fa-solid fa-circle-check" title="Version: {{ field.Team(quad).DSMeta.Version }}"></i>
+                        </span>
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
-          <div class="flex-item flex-max field-green">
-            <p class="quad-label">{{ field.Green.Team }}</p>
-            <div class="flex-container flex-row icon-row">
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Green.GizmoConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-robot"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{field.Green.GizmoMeta.HardwareVersion|valueok:hwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Hardware: {{ field.Green.GizmoMeta.HardwareVersion }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Green.GizmoMeta.FirmwareVersion|valueok:fwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Firmware: {{ field.Green.GizmoMeta.FirmwareVersion }}"></i>
-                  </span>
-                </div>
-              </div>
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Green.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-gamepad"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{ field.Green.DSMeta.Bootmode|valueok:bootmodes|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Bootmode: {{ field.Green.DSMeta.Bootmode }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Green.DSMeta.Version|valueok:dsversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Version: {{ field.Green.DSMeta.Version }}"></i>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="flex-item flex-max field-yellow">
-            <p class="quad-label">{{ field.Yellow.Team }}</p>
-            <div class="flex-container flex-row icon-row">
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Yellow.GizmoConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-robot"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{field.Yellow.GizmoMeta.HardwareVersion|valueok:hwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Hardware: {{ field.Yellow.GizmoMeta.HardwareVersion }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Yellow.GizmoMeta.FirmwareVersion|valueok:fwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Firmware: {{ field.Yellow.GizmoMeta.FirmwareVersion }}"></i>
-                  </span>
-                </div>
-              </div>
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Yellow.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-gamepad"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{ field.Yellow.DSMeta.Bootmode|valueok:bootmodes|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Bootmode: {{ field.Yellow.DSMeta.Bootmode }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Yellow.DSMeta.Version|valueok:dsversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Version: {{ field.Yellow.DSMeta.Version }}"></i>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="flex-item flex-max field-blue">
-            <p class="quad-label">{{ field.Blue.Team }}</p>
-            <div class="flex-container flex-row icon-row">
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Blue.GizmoConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-robot"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{field.Blue.GizmoMeta.HardwareVersion|valueok:hwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Hardware: {{ field.Blue.GizmoMeta.HardwareVersion }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Blue.GizmoMeta.FirmwareVersion|valueok:fwversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Firmware: {{ field.Blue.GizmoMeta.FirmwareVersion }}"></i>
-                  </span>
-                </div>
-              </div>
-              <div class="flex-item flex-container flex-column">
-                <span class="{{ field.Blue.DSConnected|yesno:'status-ok,status-error' }} hud-icon">
-                  <i class="flex-item fa-solid fa-gamepad"></i>
-                </span>
-                <div class="flex-item flex-container flex-row icon-row-small">
-                  <span class="flex-item {{ field.Blue.DSMeta.Bootmode|valueok:bootmodes|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Bootmode: {{ field.Blue.DSMeta.Bootmode }}"></i>
-                  </span>
-                  <span class="flex-item {{ field.Blue.DSMeta.Version|valueok:dsversions|yesno:'status-ok,status-error' }}">
-                    <i class="fa-solid fa-circle-check" title="Version: {{ field.Blue.DSMeta.Version }}"></i>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+            {% else %}
+            Quadrant Empty
+            {% endif %}
+        </div>
         {% endfor %}
-      </div>
     </div>
-  </div>
+    {% endfor %}
+</div>
 {% endblock %}

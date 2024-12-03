@@ -35,7 +35,7 @@ table {
 
 .hud-container {
     background: black;
-    padding: 5%;
+    padding: 2%;
     height: 100%;
 }
 
@@ -72,6 +72,10 @@ table {
 
 .flex-less {
     flex-shrink: 3;
+}
+
+.field {
+    margin: 1em;
 }
 
 .center {

@@ -17,6 +17,20 @@ type hudField struct {
 	Yellow hudQuad
 }
 
+func (hf hudField) Team(quad string) hudQuad {
+	switch quad {
+	case "red":
+		return hf.Red
+	case "blue":
+		return hf.Blue
+	case "green":
+		return hf.Green
+	case "yellow":
+		return hf.Yellow
+	}
+	return hudQuad{}
+}
+
 type hudQuad struct {
 	Team              int
 	GizmoConnected    bool
@@ -28,43 +42,43 @@ type hudQuad struct {
 
 func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	ctx := pongo2.Context{}
-	mapping, _ := s.tlm.GetCurrentMapping()
 
-	fields := make(map[int]*hudField)
+	m, _ := s.tlm.GetCurrentMapping()
 
-	for team, quad := range mapping {
-		parts := strings.Split(quad, ":")
-		fID, _ := strconv.Atoi(strings.Split(parts[0], ":")[0])
-		color := strings.ToUpper(parts[1])
-
-		if _, ok := fields[fID]; !ok {
-			fields[fID] = &hudField{}
+	out := make([]hudField, len(s.fmsConf.Fields))
+	for t, f := range m {
+		parts := strings.Split(f, ":")
+		n, err := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
+		if err != nil {
+			s.l.Error("Error decoding field number", "error", err)
+			continue
 		}
+		n = n - 1
 
-		fTmp := hudQuad{Team: team}
+		fTmp := hudQuad{Team: t}
 		s.connectedMutex.RLock()
-		_, fTmp.GizmoConnected = s.connectedGizmo[team]
-		_, fTmp.DSConnected = s.connectedDS[team]
+		_, fTmp.GizmoConnected = s.connectedGizmo[t]
+		_, fTmp.DSConnected = s.connectedDS[t]
 		s.connectedMutex.RUnlock()
 
 		s.metaMutex.RLock()
-		fTmp.GizmoMeta = s.gizmoMeta[team]
-		fTmp.DSMeta = s.dsMeta[team]
+		fTmp.GizmoMeta = s.gizmoMeta[t]
+		fTmp.DSMeta = s.dsMeta[t]
 		s.metaMutex.RUnlock()
 
-		switch color {
-		case "RED":
-			fields[fID].Red = fTmp
-		case "BLUE":
-			fields[fID].Blue = fTmp
-		case "GREEN":
-			fields[fID].Green = fTmp
-		case "YELLOW":
-			fields[fID].Yellow = fTmp
+		switch parts[1] {
+		case "red":
+			out[n].Red = fTmp
+		case "blue":
+			out[n].Blue = fTmp
+		case "green":
+			out[n].Green = fTmp
+		case "yellow":
+			out[n].Yellow = fTmp
 		}
-
 	}
-	ctx["fields"] = fields
+	ctx["fields"] = out
+	ctx["quads"] = []string{"red", "blue", "green", "yellow"}
 	ctx["hwversions"] = s.hudVersions.HardwareVersions
 	ctx["fwversions"] = s.hudVersions.FirmwareVersions
 	ctx["bootmodes"] = s.hudVersions.Bootmodes

@@ -111,7 +111,9 @@ func NewServer(opts ...Option) (*Server, error) {
 		r.Post("/map/immediate", x.remapTeams)
 		r.Post("/map/pcsm", x.remapTeamsPCSM)
 		r.Get("/map/current", x.currentTeamMap)
-		r.Get("/hud", x.fieldHUD)
+		r.Route("/hud", func(hr chi.Router) {
+			hr.Get("/", x.fieldHUD)
+		})
 	})
 
 	x.r.Get("/metrics-sd", x.promSD)
