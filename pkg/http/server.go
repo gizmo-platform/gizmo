@@ -109,6 +109,7 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.r.Route("/admin", func(r chi.Router) {
 		r.Get("/cfg/quads", x.configuredQuads)
 		r.Post("/map/immediate", x.remapTeams)
+		r.Post("/map/pcsm", x.remapTeamsPCSM)
 		r.Get("/map/current", x.currentTeamMap)
 		r.Get("/hud", x.fieldHUD)
 	})

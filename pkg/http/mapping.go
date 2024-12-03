@@ -3,8 +3,8 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"io"
+	"net/http"
 )
 
 func (s *Server) remapTeams(w http.ResponseWriter, r *http.Request) {
