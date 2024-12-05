@@ -276,9 +276,11 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		go waitForROS(&swg, field.IP, fmsConf.AutoUser, fmsConf.AutoPass)
 		swg.Wait()
 		provisionFunc := func() error {
-			err := controller.Converge(false, fmt.Sprintf("module.field%d", field.ID))
-			appLogger.Error("Error configuring field", "field", field.ID, "error", err)
-			return err
+			if err := controller.Converge(false, fmt.Sprintf("module.field%d", field.ID)); err != nil {
+				appLogger.Error("Error configuring field", "field", field.ID, "error", err)
+				return err
+			}
+			return nil
 		}
 
 		bo := backoff.NewExponentialBackOff(backoff.WithMaxElapsedTime(time.Minute * 5))
