@@ -74,6 +74,9 @@ type Config struct {
 	InfrastructureSSID    string
 	InfrastructurePSK     string
 
+	// There are cases where fixed DNS servers are desirable.
+	FixedDNS []string
+
 	AdvancedBGPAS     int
 	AdvancedBGPIP     string
 	AdvancedBGPPeerIP string

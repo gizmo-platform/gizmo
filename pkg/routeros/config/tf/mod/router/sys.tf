@@ -19,4 +19,5 @@ resource "routeros_ip_service" "disabled" {
 
 resource "routeros_dns" "dns" {
   allow_remote_requests = true
+  servers               = lookup(local.fms, "FixedDNS", [])
 }
