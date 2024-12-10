@@ -12,8 +12,7 @@
     <div class="flex-container flex-row center field">
         {% for quad in quads %}
         <div class="flex-item flex-max field-{{ quad|lower }}">
-            {% if field.Team(quad) %}
-            <p class="quad-label">{{ field.Team(quad).Team }}</slot></p>
+        <p class="quad-label">{% if field.Team(quad).Team != 0 %}{{ field.Team(quad).Team }}{% else %}NO TEAM{% endif %}</slot></p>
             <div class="flex-container flex-row icon-row">
                 <div class="flex-item flex-container flex-column">
                     <span class="hud-icon status-{{ field.Team(quad).GizmoConnected|yesno:'ok,error' }}">
@@ -42,9 +41,6 @@
                     </div>
                 </div>
             </div>
-            {% else %}
-            Quadrant Empty
-            {% endif %}
         </div>
         {% endfor %}
     </div>
