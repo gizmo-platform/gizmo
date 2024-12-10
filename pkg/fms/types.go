@@ -12,7 +12,19 @@ const (
 	// debugging and generally make it possible to get into
 	// systems.
 	ViewOnlyUser = "gizmo-ro"
+
+	// IntegrationPCSM provides API endpoints for the BEST
+	// Robotics PCSM to control the match mapping.
+	IntegrationPCSM Integration = iota
 )
+
+// Integration is an enum type for things that can talk to the Gizmo
+// FMS that may need to be switched on or off.
+type Integration int
+
+// IntegrationSlice is used to shadow []int to construct some methods
+// that work on the various integrations.
+type IntegrationSlice []Integration
 
 // Team maintains information about a team from the perspective of the
 // FMS
@@ -69,6 +81,8 @@ type Config struct {
 	// nobody should be logged in as this, but its here anyway so
 	// its a known value.
 	AdminPass string
+
+	Integrations IntegrationSlice
 
 	InfrastructureVisible bool
 	InfrastructureSSID    string

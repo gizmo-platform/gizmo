@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/gizmo-platform/gizmo/pkg/fms"
 )
 
 // This file includes integration code to make the Gizmo work well
@@ -45,6 +47,12 @@ func (p *pcsmMatch) toTLM() map[int]string {
 }
 
 func (s *Server) remapTeamsPCSM(w http.ResponseWriter, r *http.Request) {
+	if !s.fmsConf.Integrations.Enabled(fms.IntegrationPCSM) {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		w.Write([]byte("Integration is not enabled!"))
+		return
+	}
+
 	match := pcsmMatch{}
 
 	buf, _ := io.ReadAll(r.Body)

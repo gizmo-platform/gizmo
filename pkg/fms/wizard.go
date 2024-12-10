@@ -51,6 +51,10 @@ func WizardSurvey(wouldOverwrite bool) (*Config, error) {
 		return nil, err
 	}
 
+	if err := w.setIntegrations(); err != nil {
+		return nil, err
+	}
+
 	advanced := false
 	qAdvanced := &survey.Confirm{
 		Message: "Configure really advanced network features?",
@@ -140,6 +144,18 @@ func WizardChangeRadioMode(c *Config) (*Config, error) {
 		return nil, err
 	}
 
+	return c, nil
+}
+
+// WizardChangeIntegrations can be used to reconfigure what
+// integrations are enabled.
+func WizardChangeIntegrations(c *Config) (*Config, error) {
+	w := new(ws)
+	w.c = c
+
+	if err := w.setIntegrations(); err != nil {
+		return nil, err
+	}
 	return c, nil
 }
 
@@ -336,6 +352,22 @@ func (w *ws) setFields() error {
 	}
 	w.c.ViewUser = ViewOnlyUser
 	return survey.AskOne(pPrompt, &w.c.ViewPass)
+}
+
+func (w *ws) setIntegrations() error {
+	prompt := &survey.MultiSelect{
+		Message: "Select Integrations",
+		Options: allIntegrations.ToStrings(),
+		Default: w.c.Integrations.ToStrings(),
+	}
+
+	integrations := []string{}
+	if err := survey.AskOne(prompt, &integrations); err != nil {
+		return nil
+	}
+
+	w.c.Integrations = IntegrationsFromStrings(integrations)
+	return nil
 }
 
 func (w *ws) loadTeams() error {
