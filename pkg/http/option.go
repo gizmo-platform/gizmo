@@ -47,15 +47,6 @@ func WithFMSConf(c fms.Config) Option {
 	}
 }
 
-// WithQuads tells the server what quadrants are available to
-// configure.
-func WithQuads(q []string) Option {
-	return func(s *Server) error {
-		s.quads = q
-		return nil
-	}
-}
-
 // WithStartupWG allows a waitgroup to be passed in so the server can
 // notify when its finished with startup tasks to allow a nice message
 // to be printed to the console.

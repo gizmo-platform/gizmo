@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -48,6 +49,7 @@ func fmsRemapCmdRun(c *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "Error getting quads: %s\n", err)
 		os.Exit(2)
 	}
+	sort.Strings(quads)
 	r.Body.Close()
 
 	r, err = http.Get("http://" + fAddr + "/admin/map/current")
