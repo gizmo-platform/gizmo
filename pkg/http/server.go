@@ -81,7 +81,7 @@ func NewServer(opts ...Option) (*Server, error) {
 	x.stop = make(chan struct{})
 	x.hudVersions = hudVersions{
 		HardwareVersions: "GIZMO_V00_R6E,GIZMO_V1_0_R00",
-		FirmwareVersions: "0.1.6",
+		FirmwareVersions: "0.1.7",
 		Bootmodes:        "RAMDISK",
 		DSVersions:       buildinfo.Version, // Always accept own version.
 	}
