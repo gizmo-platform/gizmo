@@ -75,7 +75,6 @@ jobs:
     strategy:
       matrix:
         image:
-          - driver-station
           - ds-ramdisk
           - fms
     steps:
@@ -118,8 +117,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/driver-station.zip
-            dist/fms.zip
             dist/ds-ramdisk.zip
+            dist/fms.zip
           generate_release_notes: false
           fail_on_unmatched_files: true
