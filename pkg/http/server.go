@@ -132,6 +132,12 @@ func (s *Server) Serve(bind string) error {
 	return s.n.ListenAndServe()
 }
 
+// Mount attaches a set of routes to the subpath specified by the path
+// argument.
+func (s *Server) Mount(path string, router chi.Router) {
+	s.r.Mount(path, router)
+}
+
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.l.Info("Stopping...")
