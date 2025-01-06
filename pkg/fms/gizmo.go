@@ -1,4 +1,4 @@
-package http
+package fms
 
 import (
 	"encoding/json"
@@ -13,37 +13,37 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/ds"
 )
 
-func (s *Server) doConnectedUpkeep() {
+func (f *FMS) doConnectedUpkeep() {
 	ticker := time.NewTicker(time.Second)
 
 	for {
 		select {
-		case <-s.stop:
+		case <-f.stop:
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			s.connectedMutex.Lock()
-			s.metaMutex.Lock()
-			for id, expiry := range s.connectedDS {
+			f.connectedMutex.Lock()
+			f.metaMutex.Lock()
+			for id, expiry := range f.connectedDS {
 				if time.Now().After(expiry) {
 
-					delete(s.connectedDS, id)
-					delete(s.dsMeta, id)
+					delete(f.connectedDS, id)
+					delete(f.dsMeta, id)
 				}
 			}
-			for id, expiry := range s.connectedGizmo {
+			for id, expiry := range f.connectedGizmo {
 				if time.Now().After(expiry) {
-					delete(s.connectedGizmo, id)
-					delete(s.gizmoMeta, id)
+					delete(f.connectedGizmo, id)
+					delete(f.gizmoMeta, id)
 				}
 			}
-			s.metaMutex.Unlock()
-			s.connectedMutex.Unlock()
+			f.metaMutex.Unlock()
+			f.connectedMutex.Unlock()
 		}
 	}
 }
 
-func (s *Server) gizmoConfig(w http.ResponseWriter, r *http.Request) {
+func (f *FMS) gizmoConfig(w http.ResponseWriter, r *http.Request) {
 	tStr := chi.URLParam(r, "id")
 	team, err := strconv.Atoi(tStr)
 	if err != nil {
@@ -51,7 +51,7 @@ func (s *Server) gizmoConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location, err := s.tlm.GetFieldForTeam(team)
+	location, err := f.tlm.GetFieldForTeam(team)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -61,8 +61,8 @@ func (s *Server) gizmoConfig(w http.ResponseWriter, r *http.Request) {
 	fnum, _ := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
 
 	d := ds.FieldConfig{
-		RadioMode:    s.fmsConf.RadioMode,
-		RadioChannel: s.fmsConf.Fields[fnum-1].Channel,
+		RadioMode:    f.c.RadioMode,
+		RadioChannel: f.c.Fields[fnum-1].Channel,
 		Field:        fnum,
 		Location:     strings.ToUpper(parts[1]),
 	}
@@ -72,52 +72,52 @@ func (s *Server) gizmoConfig(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) gizmoDSMetaReport(w http.ResponseWriter, r *http.Request) {
+func (f *FMS) gizmoDSMetaReport(w http.ResponseWriter, r *http.Request) {
 	tStr := chi.URLParam(r, "id")
 	team, err := strconv.Atoi(tStr)
 	if err != nil {
-		s.l.Warn("Bad DS Meta report", "error", err)
+		f.l.Warn("Bad DS Meta report", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	d := config.DSMeta{}
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
-		s.l.Warn("Error deserializing DS Meta report", "error", err)
+		f.l.Warn("Error deserializing DS Meta report", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	s.connectedMutex.Lock()
-	s.connectedDS[team] = time.Now().Add(time.Second * 5)
-	s.connectedMutex.Unlock()
+	f.connectedMutex.Lock()
+	f.connectedDS[team] = time.Now().Add(time.Second * 5)
+	f.connectedMutex.Unlock()
 
-	s.metaMutex.Lock()
-	s.dsMeta[team] = d
-	s.metaMutex.Unlock()
+	f.metaMutex.Lock()
+	f.dsMeta[team] = d
+	f.metaMutex.Unlock()
 }
 
-func (s *Server) gizmoMetaReport(w http.ResponseWriter, r *http.Request) {
+func (f *FMS) gizmoMetaReport(w http.ResponseWriter, r *http.Request) {
 	tStr := chi.URLParam(r, "id")
 	team, err := strconv.Atoi(tStr)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		s.l.Warn("Bad Gizmo Meta Report", "error", err)
+		f.l.Warn("Bad Gizmo Meta Report", "error", err)
 		return
 	}
 
 	d := config.GizmoMeta{}
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		s.l.Warn("Error deserializing Gizmo Meta report", "error", err)
+		f.l.Warn("Error deserializing Gizmo Meta report", "error", err)
 		return
 	}
 
-	s.connectedMutex.Lock()
-	s.connectedGizmo[team] = time.Now().Add(time.Second * 5)
-	s.connectedMutex.Unlock()
+	f.connectedMutex.Lock()
+	f.connectedGizmo[team] = time.Now().Add(time.Second * 5)
+	f.connectedMutex.Unlock()
 
-	s.metaMutex.Lock()
-	s.gizmoMeta[team] = d
-	s.metaMutex.Unlock()
+	f.metaMutex.Lock()
+	f.gizmoMeta[team] = d
+	f.metaMutex.Unlock()
 }

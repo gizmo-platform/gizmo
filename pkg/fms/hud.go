@@ -1,4 +1,4 @@
-package http
+package fms
 
 import (
 	"net/http"
@@ -40,31 +40,31 @@ type hudQuad struct {
 	DSMeta            config.DSMeta
 }
 
-func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
+func (f *FMS) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	ctx := pongo2.Context{}
 
-	m, _ := s.tlm.GetCurrentMapping()
+	m, _ := f.tlm.GetCurrentMapping()
 
-	out := make([]hudField, len(s.fmsConf.Fields))
-	for t, f := range m {
-		parts := strings.Split(f, ":")
+	out := make([]hudField, len(f.c.Fields))
+	for team, field := range m {
+		parts := strings.Split(field, ":")
 		n, err := strconv.Atoi(strings.ReplaceAll(parts[0], "field", ""))
 		if err != nil {
-			s.l.Error("Error decoding field number", "error", err)
+			f.l.Error("Error decoding field number", "error", err)
 			continue
 		}
 		n = n - 1
 
-		fTmp := hudQuad{Team: t}
-		s.connectedMutex.RLock()
-		_, fTmp.GizmoConnected = s.connectedGizmo[t]
-		_, fTmp.DSConnected = s.connectedDS[t]
-		s.connectedMutex.RUnlock()
+		fTmp := hudQuad{Team: team}
+		f.connectedMutex.RLock()
+		_, fTmp.GizmoConnected = f.connectedGizmo[team]
+		_, fTmp.DSConnected = f.connectedDS[team]
+		f.connectedMutex.RUnlock()
 
-		s.metaMutex.RLock()
-		fTmp.GizmoMeta = s.gizmoMeta[t]
-		fTmp.DSMeta = s.dsMeta[t]
-		s.metaMutex.RUnlock()
+		f.metaMutex.RLock()
+		fTmp.GizmoMeta = f.gizmoMeta[team]
+		fTmp.DSMeta = f.dsMeta[team]
+		f.metaMutex.RUnlock()
 
 		switch parts[1] {
 		case "red":
@@ -79,10 +79,10 @@ func (s *Server) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx["fields"] = out
 	ctx["quads"] = []string{"red", "blue", "green", "yellow"}
-	ctx["hwversions"] = s.hudVersions.HardwareVersions
-	ctx["fwversions"] = s.hudVersions.FirmwareVersions
-	ctx["bootmodes"] = s.hudVersions.Bootmodes
-	ctx["dsversions"] = s.hudVersions.DSVersions
+	ctx["hwversions"] = f.hudVersions.HardwareVersions
+	ctx["fwversions"] = f.hudVersions.FirmwareVersions
+	ctx["bootmodes"] = f.hudVersions.Bootmodes
+	ctx["dsversions"] = f.hudVersions.DSVersions
 
-	s.doTemplate(w, r, "p2/views/field.p2", ctx)
+	f.doTemplate(w, r, "p2/views/field.p2", ctx)
 }

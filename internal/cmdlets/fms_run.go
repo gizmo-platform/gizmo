@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/fms"
-	"github.com/gizmo-platform/gizmo/pkg/http"
 	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
 	"github.com/gizmo-platform/gizmo/pkg/tlm/net"
 )
@@ -66,11 +65,11 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	}
 	appLogger.Debug("TLM Init")
 
-	w, err := http.NewServer(
-		http.WithLogger(appLogger),
-		http.WithTeamLocationMapper(tlm),
-		http.WithFMSConf(*fmsConf),
-		http.WithStartupWG(wg),
+	f, err := fms.New(
+		fms.WithLogger(appLogger),
+		fms.WithTeamLocationMapper(tlm),
+		fms.WithFMSConf(*fmsConf),
+		fms.WithStartupWG(wg),
 	)
 	appLogger.Debug("HTTP Init")
 
@@ -80,7 +79,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	}
 
 	go func() {
-		if err := w.Serve(":8080"); err != nil && err != nhttp.ErrServerClosed {
+		if err := f.Serve(":8080"); err != nil && err != nhttp.ErrServerClosed {
 			appLogger.Error("Error initializing", "error", err)
 			quit <- syscall.SIGINT
 		}
@@ -93,7 +92,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	appLogger.Info("Shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := w.Shutdown(ctx); err != nil {
+	if err := f.Shutdown(ctx); err != nil {
 		appLogger.Error("Error during shutdown", "error", err)
 		os.Exit(2)
 	}

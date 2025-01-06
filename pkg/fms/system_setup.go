@@ -38,7 +38,7 @@ const (
 	adminIceWMStartup = "/home/admin/.icewm/startup"
 )
 
-//go:embed tpl/*.tpl
+//go:embed tpl/*
 var efs embed.FS
 
 // SetupTool does a lot of setup things for the FMS that are not

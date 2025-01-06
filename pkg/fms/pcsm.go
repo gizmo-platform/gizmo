@@ -1,4 +1,4 @@
-package http
+package fms
 
 import (
 	"encoding/json"
@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/gizmo-platform/gizmo/pkg/fms"
 )
 
 // This file includes integration code to make the Gizmo work well
@@ -34,20 +32,20 @@ type pcsmTeam struct {
 func (p *pcsmMatch) toTLM() map[int]string {
 	out := make(map[int]string, len(p.Fields)*4)
 
-	for _, f := range p.Fields {
-		for _, t := range f.Teams {
+	for _, field := range p.Fields {
+		for _, t := range field.Teams {
 			if t.Number == 0 {
 				continue
 			}
-			out[t.Number] = fmt.Sprintf("field%d:%s", f.Number, strings.ToLower(t.Quadrant))
+			out[t.Number] = fmt.Sprintf("field%d:%s", field.Number, strings.ToLower(t.Quadrant))
 		}
 	}
 
 	return out
 }
 
-func (s *Server) remapTeamsPCSM(w http.ResponseWriter, r *http.Request) {
-	if !s.fmsConf.Integrations.Enabled(fms.IntegrationPCSM) {
+func (f *FMS) remapTeamsPCSM(w http.ResponseWriter, r *http.Request) {
+	if !f.c.Integrations.Enabled(IntegrationPCSM) {
 		w.WriteHeader(http.StatusPreconditionFailed)
 		w.Write([]byte("Integration is not enabled!"))
 		return
@@ -56,24 +54,24 @@ func (s *Server) remapTeamsPCSM(w http.ResponseWriter, r *http.Request) {
 	match := pcsmMatch{}
 
 	buf, _ := io.ReadAll(r.Body)
-	s.l.Debug("Match from PCSM", "data", string(buf))
+	f.l.Debug("Match from PCSM", "data", string(buf))
 
 	if err := json.Unmarshal(buf, &match); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		s.l.Warn("Error decoding match from PCSM", "error", err, "data", string(buf))
+		f.l.Warn("Error decoding match from PCSM", "error", err, "data", string(buf))
 		return
 	}
 
-	if err := s.tlm.InsertOnDemandMap(match.toTLM()); err != nil {
+	if err := f.tlm.InsertOnDemandMap(match.toTLM()); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		s.l.Warn("Error inserting on-demand match", "error", err)
+		f.l.Warn("Error inserting on-demand match", "error", err)
 		return
 	}
 
-	s.l.Info("Remapped field from PCSM", "match", match.Number)
-	for _, f := range match.Fields {
-		for _, t := range f.Teams {
-			s.l.Info("Team Location Change", "field", f.Number, "quadrant", t.Quadrant, "number", t.Number, "team", t.Name)
+	f.l.Info("Remapped field from PCSM", "match", match.Number)
+	for _, field := range match.Fields {
+		for _, t := range field.Teams {
+			f.l.Info("Team Location Change", "field", field.Number, "quadrant", t.Quadrant, "number", t.Number, "team", t.Name)
 		}
 	}
 }

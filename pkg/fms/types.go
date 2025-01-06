@@ -3,6 +3,17 @@
 // that talk to other systems.
 package fms
 
+import (
+	"sync"
+	"time"
+
+	"github.com/flosch/pongo2/v5"
+	"github.com/hashicorp/go-hclog"
+
+	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/http"
+)
+
 const (
 	// AutomationUser is created on remote systems to allow the
 	// FMS to manage them programattically.
@@ -17,6 +28,46 @@ const (
 	// Robotics PCSM to control the match mapping.
 	IntegrationPCSM Integration = iota
 )
+
+// TeamLocationMapper looks at all teams trying to fetch a value and
+// tries to get them controller based on their current match and their
+// number.
+type TeamLocationMapper interface {
+	GetFieldForTeam(int) (string, error)
+	GetCurrentMapping() (map[int]string, error)
+	InsertOnDemandMap(map[int]string) error
+}
+
+type hudVersions struct {
+	HardwareVersions string
+	FirmwareVersions string
+	Bootmodes        string
+	DSVersions       string
+}
+
+// FMS encapsulates the FMS runnable.
+type FMS struct {
+	s *http.Server
+	c Config
+	l hclog.Logger
+
+	tlm TeamLocationMapper
+
+	swg *sync.WaitGroup
+	tpl *pongo2.TemplateSet
+
+	quads []string
+
+	stop           chan struct{}
+	connectedDS    map[int]time.Time
+	connectedGizmo map[int]time.Time
+	connectedMutex *sync.RWMutex
+	gizmoMeta      map[int]config.GizmoMeta
+	dsMeta         map[int]config.DSMeta
+	metaMutex      *sync.RWMutex
+
+	hudVersions hudVersions
+}
 
 // Integration is an enum type for things that can talk to the Gizmo
 // FMS that may need to be switched on or off.
