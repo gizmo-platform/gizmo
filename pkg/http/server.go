@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
@@ -13,6 +14,7 @@ type Server struct {
 	r chi.Router
 	n *http.Server
 	l hclog.Logger
+	swg *sync.WaitGroup
 
 	stop chan struct{}
 }
@@ -39,6 +41,7 @@ func (s *Server) Serve(bind string) error {
 	s.l.Info("HTTP is starting")
 	s.n.Addr = bind
 	s.n.Handler = s.r
+	s.swg.Done()
 	return s.n.ListenAndServe()
 }
 

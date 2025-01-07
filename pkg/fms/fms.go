@@ -51,9 +51,10 @@ func New(opts ...Option) (*FMS, error) {
 	}
 
 	var err error
-	x.s, err = http.NewServer(http.WithLogger(x.l))
+	x.s, err = http.NewServer(http.WithLogger(x.l), http.WithStartupWG(x.swg))
 	if err != nil {
-
+		x.l.Error("Could not create http server", "error", err)
+		return nil, err
 	}
 
 	pongo2.RegisterFilter("valueok", x.filterValueOK)
@@ -85,6 +86,7 @@ func New(opts ...Option) (*FMS, error) {
 // Serve commences serving of the FMS endpoints.
 func (f *FMS) Serve(bind string) error {
 	go f.doConnectedUpkeep()
+	f.swg.Done()
 
 	return f.s.Serve(bind)
 }
