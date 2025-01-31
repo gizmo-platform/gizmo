@@ -119,7 +119,7 @@ resource "routeros_capsman_provisioning" "gizmo_5ghz" {
 
   master_configuration = routeros_capsman_configuration.gizmo["gizmo-5ghz"].name
   action               = "create-dynamic-enabled"
-  hw_supported_modes   = "ac"
+  hw_supported_modes   = ["ac"]
 }
 
 resource "routeros_capsman_provisioning" "gizmo_2ghz" {
@@ -130,9 +130,9 @@ resource "routeros_capsman_provisioning" "gizmo_2ghz" {
 
   disabled             = (local.fms.RadioMode != "FIELD")
   master_configuration = routeros_capsman_configuration.gizmo["gizmo-2ghz"].name
-  slave_configurations = join(",", [for cfg in routeros_capsman_configuration.team :
+  slave_configurations = [for cfg in routeros_capsman_configuration.team :
     cfg.name if contains(values(lookup(local.tlm, each.value.ID, {})), routeros_capsman_datapath.team[replace(cfg.name, "team", "")].vlan_id)
-  ])
+  ]
   action             = "create-dynamic-enabled"
-  hw_supported_modes = "gn"
+  hw_supported_modes = ["gn"]
 }
