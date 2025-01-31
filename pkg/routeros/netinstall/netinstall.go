@@ -190,6 +190,7 @@ func (i *Installer) doInstall() error {
 	args := []string{
 		"-s", i.bootstrap,
 		"-r", "-a", targetAddr,
+		"-o",
 	}
 	args = append(args, i.pkgs...)
 	cmd := exec.Command(netinstallPath, args...)
