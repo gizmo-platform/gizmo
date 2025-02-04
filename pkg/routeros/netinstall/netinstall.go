@@ -194,6 +194,7 @@ func (i *Installer) doInstall() error {
 	}
 	args = append(args, i.pkgs...)
 	cmd := exec.Command(netinstallPath, args...)
+	i.l.Debug("netinstall-cli", "command", cmd)
 
 	rPipe, wPipe := io.Pipe()
 	cmd.Stdout = wPipe
