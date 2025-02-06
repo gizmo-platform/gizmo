@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"syscall"
 	"text/template"
 
 	// embed gets imported blank here because we want to do an
@@ -206,6 +208,9 @@ func (i *Installer) doInstall() error {
 	scanner.Split(bufio.ScanLines)
 	go func() {
 		for scanner.Scan() {
+			if strings.HasPrefix(scanner.Text(), "Successfully") {
+				cmd.Process.Signal(syscall.SIGINT)
+			}
 			i.l.Info(scanner.Text())
 		}
 	}()
