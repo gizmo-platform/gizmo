@@ -324,7 +324,7 @@ func (ds *DriverStation) gizmoMetaCallback(buf []byte) {
 	}
 	req, _ := http.NewRequest(http.MethodPost, reportURL.String(), bytes.NewBuffer(buf))
 	if _, err := c.Do(req); err != nil {
-		ds.l.Warn("Could not report gizmo metadata", "error", err)
+		ds.l.Debug("Could not report gizmo metadata", "error", err)
 	}
 }
 
