@@ -3,7 +3,7 @@
 
 init_image() {
     # Get a fresh void image
-    wget -qO void.img.xz http://repo-fastly.voidlinux.org/live/current/void-rpi-aarch64-musl-20240314.img.xz
+    wget -qO void.img.xz http://repo-fastly.voidlinux.org/live/current/void-rpi-aarch64-musl-20250202.img.xz
     xz -d void.img.xz
     dd if=/dev/zero bs=1M count=2000 >> void.img
     growpart void.img 2
