@@ -11,9 +11,9 @@ import (
 
 // Server manages the HTTP serving components
 type Server struct {
-	r chi.Router
-	n *http.Server
-	l hclog.Logger
+	r   chi.Router
+	n   *http.Server
+	l   hclog.Logger
 	swg *sync.WaitGroup
 
 	stop chan struct{}

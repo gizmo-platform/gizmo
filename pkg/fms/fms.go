@@ -86,6 +86,7 @@ func New(opts ...Option) (*FMS, error) {
 // Serve commences serving of the FMS endpoints.
 func (f *FMS) Serve(bind string) error {
 	go f.doConnectedUpkeep()
+	go f.gizmoUDPServelet()
 	f.swg.Done()
 
 	return f.s.Serve(bind)

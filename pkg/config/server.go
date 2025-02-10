@@ -3,9 +3,9 @@ package config
 import (
 	"bufio"
 	"encoding/json"
-	"time"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"go.bug.st/serial"

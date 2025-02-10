@@ -2,6 +2,7 @@ package fms
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -120,4 +121,50 @@ func (f *FMS) gizmoMetaReport(w http.ResponseWriter, r *http.Request) {
 	f.metaMutex.Lock()
 	f.gizmoMeta[team] = d
 	f.metaMutex.Unlock()
+}
+
+func (f *FMS) gizmoUDPServelet() error {
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{
+		IP:   net.IPv4(100, 64, 0, 2),
+		Port: 1729,
+	})
+	if err != nil {
+		f.l.Error("Error binding UDP socket", "error", err)
+		return err
+	}
+
+	go func() {
+		<-f.stop
+		conn.Close()
+	}()
+	buf := make([]byte, 1024)
+
+	f.l.Info("UDP Listener Starting")
+	for {
+		n, a, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			f.l.Warn("Error reading packet from UDP", "error", err)
+			continue
+		}
+
+		team := int(a.IP[1])*100 + int(a.IP[2])
+
+		switch rune(buf[0]) {
+		case 'M':
+			f.l.Trace("Gizmo Meta Buffer", "team", team, "buffer", string(buf))
+			d := config.GizmoMeta{}
+			if err := json.Unmarshal(buf[1:n], &d); err != nil {
+				f.l.Warn("Error deserializing Gizmo Meta report", "error", err)
+				continue
+			}
+
+			f.connectedMutex.Lock()
+			f.connectedGizmo[team] = time.Now().Add(time.Second * 5)
+			f.connectedMutex.Unlock()
+
+			f.metaMutex.Lock()
+			f.gizmoMeta[team] = d
+			f.metaMutex.Unlock()
+		}
+	}
 }
