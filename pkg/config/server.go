@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"encoding/json"
 	"time"
+	"strings"
+	"strconv"
 
 	"github.com/hashicorp/go-hclog"
 	"go.bug.st/serial"
@@ -27,7 +29,7 @@ type Option func(*Server)
 // Provider hands back the configuration for a given Gizmo.  This can
 // either be automatic, or with manual intervention, this WILL stall
 // the config server if it calls other resources!
-type Provider func() Config
+type Provider func(team int) Config
 
 // WithLogger sets the logging instance for this config server.
 func WithLogger(l hclog.Logger) Option { return func(s *Server) { s.l = l } }
@@ -91,13 +93,24 @@ func (s *Server) installConfig(name string) {
 	defer port.Close()
 
 	scanner := bufio.NewScanner(bufio.NewReader(port))
+	team := 0
 	for scanner.Scan() {
-		if scanner.Text() == "GIZMO_REQUEST_CONFIG" {
+		if strings.HasPrefix(scanner.Text(), "GIZMO_REQUEST_CONFIG") {
+			parts := strings.Fields(scanner.Text())
+			if len(parts) == 2 {
+				// The second field should be the team
+				// number, we need to cast it and set
+				// that as the current team number.
+				team, err = strconv.Atoi(parts[1])
+				if err != nil {
+					s.l.Warn("Could not parse team number", "error", err)
+				}
+			}
 			break
 		}
 	}
 
-	if err := json.NewEncoder(port).Encode(s.provider()); err != nil {
+	if err := json.NewEncoder(port).Encode(s.provider(team)); err != nil {
 		s.l.Error("Error serializing configuration", "error", err)
 		return
 	}

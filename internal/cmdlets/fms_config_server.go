@@ -38,6 +38,7 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 
 	teams := make(map[string]config.Config)
 	names := []string{}
+	numbers := make(map[int]string)
 	for id, team := range fmsConf.Teams {
 		t := config.Config{
 			Team:    id,
@@ -45,13 +46,15 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 			NetPSK:  team.PSK,
 		}
 		teams[team.Name] = t
+		numbers[t.Team] = team.Name
 		names = append(names, team.Name)
 	}
 
-	prvdr := func() config.Config {
+	prvdr := func(t int) config.Config {
 		prompt := &survey.Select{
 			Message: "Select configuration to bind to this Gizmo",
 			Options: names,
+			Default: numbers[t],
 		}
 		selected := ""
 		if err := survey.AskOne(prompt, &selected); err != nil {

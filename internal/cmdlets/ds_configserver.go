@@ -33,7 +33,7 @@ func dsConfigServerCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	prvdr := func() config.Config {
+	prvdr := func(_ int) config.Config {
 		return *cfg
 	}
 
