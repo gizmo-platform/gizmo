@@ -35,8 +35,11 @@ const (
 	// use the most recent version, but this is what we tested.
 	RouterPkgMIPSBE = "routeros-" + RouterOSVersion + "-mipsbe.npk"
 
-	// RouterPkgARM is same as above, but for arm64.
+	// RouterPkgARM is same as above, but for arm.
 	RouterPkgARM = "routeros-" + RouterOSVersion + "-arm.npk"
+
+	// RouterPkgARM64 is the same as above, but for arm64.
+	RouterPkgARM64 = "routeros-" + RouterOSVersion + "-arm64.npk"
 
 	// WifiPkgMIPSBE contains the wireless drivers qualified with the
 	// matched version to the RouterPkg above.  These must
@@ -45,8 +48,11 @@ const (
 	// the versions.
 	WifiPkgMIPSBE = "wireless-" + RouterOSVersion + "-mipsbe.npk"
 
-	// WifiPkgARM is same as above, but for arm64.
+	// WifiPkgARM is same as above, but for arm.
 	WifiPkgARM = "wireless-" + RouterOSVersion + "-arm.npk"
+
+	// WifiPkgARM64 is the same as above, but for arm64".
+	WifiPkgARM64 = "wireless-" + RouterOSVersion + "-arm64.npk"
 
 	netinstallPkg  = "netinstall-" + RouterOSVersion + ".tar.gz"
 	netinstallPath = "/usr/local/bin/netinstall-cli"

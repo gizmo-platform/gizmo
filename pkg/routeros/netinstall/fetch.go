@@ -22,8 +22,10 @@ const (
 func FetchPackages(l hclog.Logger) error {
 	pkgs := []string{
 		RouterPkgARM,
+		RouterPkgARM64,
 		RouterPkgMIPSBE,
 		WifiPkgARM,
+		WifiPkgARM64,
 		WifiPkgMIPSBE,
 	}
 
