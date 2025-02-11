@@ -3,6 +3,7 @@ package ds
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -116,6 +117,10 @@ func (ds *DriverStation) udpServlet() error {
 	ds.l.Info("Starting UDP Servlet")
 	for {
 		n, _, err := conn.ReadFromUDP(buf)
+		if errors.Is(err, net.ErrClosed) {
+			ds.l.Warn("UDP closing down")
+			return nil
+		}
 		if err != nil {
 			ds.l.Warn("Error reading packet from UDP", "error", err)
 			continue

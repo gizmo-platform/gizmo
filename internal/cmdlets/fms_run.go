@@ -96,4 +96,5 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Error during shutdown", "error", err)
 		os.Exit(2)
 	}
+	appLogger.Info("Goodbye!")
 }

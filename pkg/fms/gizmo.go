@@ -2,6 +2,7 @@ package fms
 
 import (
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"strconv"
@@ -124,12 +125,13 @@ func (f *FMS) gizmoMetaReport(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f *FMS) gizmoUDPServelet() error {
+	l := f.l.Named("udp")
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
 		IP:   net.IPv4(100, 64, 0, 2),
 		Port: 1729,
 	})
 	if err != nil {
-		f.l.Error("Error binding UDP socket", "error", err)
+		l.Error("Error binding UDP socket", "error", err)
 		return err
 	}
 
@@ -139,11 +141,15 @@ func (f *FMS) gizmoUDPServelet() error {
 	}()
 	buf := make([]byte, 1024)
 
-	f.l.Info("UDP Listener Starting")
+	l.Info("UDP Listener Starting")
 	for {
 		n, a, err := conn.ReadFromUDP(buf)
+		if errors.Is(err, net.ErrClosed) {
+			l.Info("UDP is shutting down")
+			return nil
+		}
 		if err != nil {
-			f.l.Warn("Error reading packet from UDP", "error", err)
+			l.Warn("Error reading packet", "error", err)
 			continue
 		}
 
@@ -151,10 +157,10 @@ func (f *FMS) gizmoUDPServelet() error {
 
 		switch rune(buf[0]) {
 		case 'M':
-			f.l.Trace("Gizmo Meta Buffer", "team", team, "buffer", string(buf))
+			l.Trace("Gizmo Meta Buffer", "team", team, "buffer", string(buf))
 			d := config.GizmoMeta{}
 			if err := json.Unmarshal(buf[1:n], &d); err != nil {
-				f.l.Warn("Error deserializing Gizmo Meta report", "error", err)
+				l.Warn("Error deserializing Gizmo Meta report", "error", err)
 				continue
 			}
 
@@ -167,4 +173,5 @@ func (f *FMS) gizmoUDPServelet() error {
 			f.metaMutex.Unlock()
 		}
 	}
+	return nil
 }

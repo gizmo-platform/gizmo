@@ -15,8 +15,6 @@ type Server struct {
 	n   *http.Server
 	l   hclog.Logger
 	swg *sync.WaitGroup
-
-	stop chan struct{}
 }
 
 // NewServer returns a running field controller.
@@ -54,6 +52,5 @@ func (s *Server) Mount(path string, router chi.Router) {
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.l.Info("Stopping...")
-	s.stop <- struct{}{}
 	return s.n.Shutdown(ctx)
 }
