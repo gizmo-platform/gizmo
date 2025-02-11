@@ -70,7 +70,7 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 			"Field Box",
 			"Field Box (External Antenna)",
 			"Scoring Table Box",
-			"Socring Table Box (Large)",
+			"Scoring Table Box (Large)",
 		},
 		Default: "Scoring Table Box",
 	}

@@ -303,7 +303,7 @@ func (w *ws) setFields() error {
 	numFields := 0
 	prompt := &survey.Select{
 		Message: "Select the number of fields present",
-		Options: []string{"1", "2", "3"},
+		Options: []string{"1", "2", "3", "4", "5", "6"},
 		Default: "1",
 	}
 
