@@ -1,16 +1,39 @@
+// This works out what internal interfaces exist, and allows this same
+// module to scale seamlessly between devices with different numbers of
+// ports.
+data "routeros_interfaces" "ether" {
+  filter = {
+    type = "ether"
+  }
+}
+
+locals {
+  reserved_ifaces = formatlist("ether%d", [1, 2])
+  internal_enet = [ for iface in data.routeros_interfaces.ether.interfaces : iface.name if !(contains(local.reserved_ifaces, iface.name) || startswith(iface.name, "sfp")) ]
+  trunk_sfp = [ for iface in data.routeros_interfaces.ether.interfaces : iface.name if startswith(iface.name, "sfp") ]
+}
+
+resource "routeros_interface_bridge_port" "fms" {
+  disabled = var.bootstrap
+
+  bridge    = routeros_interface_bridge.br0.name
+  interface = "ether2"
+  pvid      = routeros_interface_vlan.vlan_infra["fms0"].vlan_id
+}
+
 resource "routeros_interface_bridge_port" "internal" {
-  for_each = toset(formatlist("ether%d", [2, 3, 4, 5]))
+  for_each = toset(local.internal_enet)
 
   bridge    = routeros_interface_bridge.br0.name
   interface = each.key
   pvid      = routeros_interface_vlan.vlan_infra["fms0"].vlan_id
 }
 
-resource "routeros_interface_bridge_vlan" "fms" {
+resource "routeros_interface_bridge_vlan" "internal" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = [tostring(routeros_interface_vlan.vlan_infra["fms0"].vlan_id)]
-  tagged   = flatten([routeros_interface_bridge.br0.name, data.routeros_interfaces.sfp1.interfaces[*].name])
-  untagged = formatlist("ether%d", [2, 3, 4, 5])
+  tagged   = flatten([routeros_interface_bridge.br0.name, local.trunk_sfp])
+  untagged = flatten([routeros_interface_bridge_port.fms.interface, local.internal_enet])
 }
 
 resource "routeros_interface_bridge_vlan" "team" {
@@ -18,7 +41,7 @@ resource "routeros_interface_bridge_vlan" "team" {
   vlan_ids = sort([for vlan in routeros_interface_vlan.vlan_team : vlan.vlan_id])
   tagged = flatten([
     [routeros_interface_bridge.br0.name],
-    formatlist("ether%d", [3, 4, 5]),
+    local.internal_enet
   ])
 }
 
@@ -31,7 +54,7 @@ resource "routeros_interface_bridge_port" "wan" {
 resource "routeros_interface_bridge_vlan" "wan" {
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = [tostring(routeros_interface_vlan.vlan_infra["wan0"].vlan_id)]
-  tagged   = flatten([routeros_interface_bridge.br0.name, data.routeros_interfaces.sfp1.interfaces[*].name])
+  tagged   = flatten([routeros_interface_bridge.br0.name, local.trunk_sfp])
   untagged = ["ether1"]
 }
 
@@ -43,19 +66,10 @@ resource "routeros_interface_ethernet" "poe_ports" {
   poe_out      = "auto-on"
 }
 
-# This is all related to fairly advanced usage where we want the FMS
-# network to be part of a much larger routed fabric.  This really only
-# makes sense at a handful of very large hubs and championships.
-data "routeros_interfaces" "sfp1" {
-  filter = {
-    name = "sfp1"
-  }
-}
-
-resource "routeros_interface_bridge_port" "sfp1" {
-  count = length(data.routeros_interfaces.sfp1.interfaces)
+resource "routeros_interface_bridge_port" "trunk_sfp" {
+  for_each = toset(local.trunk_sfp)
 
   bridge    = routeros_interface_bridge.br0.name
-  interface = data.routeros_interfaces.sfp1.interfaces[count.index].name
+  interface = each.key
   pvid      = 1
 }

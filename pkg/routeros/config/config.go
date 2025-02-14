@@ -54,7 +54,7 @@ func (c *Configurator) RadioChannelForField(id int) string {
 }
 
 // SyncState pushes the in-memory state down to the disk.
-func (c *Configurator) SyncState(bootstrap bool) error {
+func (c *Configurator) SyncState(ctx map[string]interface{}) error {
 	if err := os.MkdirAll(c.stateDir, 0755); err != nil {
 		c.l.Warn("Couldn't make state directory", "error", err)
 		return err
@@ -65,7 +65,7 @@ func (c *Configurator) SyncState(bootstrap bool) error {
 		return err
 	}
 
-	if err := c.configureWorkspace(bootstrap); err != nil {
+	if err := c.configureWorkspace(ctx); err != nil {
 		c.l.Warn("Couldn't configure workspace", "error", err)
 		return err
 	}
@@ -388,11 +388,9 @@ func (c *Configurator) extractModules() error {
 	})
 }
 
-func (c *Configurator) configureWorkspace(bootstrap bool) error {
-	ctx := make(map[string]interface{})
+func (c *Configurator) configureWorkspace(ctx map[string]interface{}) error {
 	ctx["FMS"] = c.fc
 	ctx["RouterAddr"] = c.routerAddr
-	ctx["Bootstrap"] = bootstrap
 
 	tmpl, err := template.New(workspaceFile).ParseFS(efs, filepath.Join("tf", workspaceFile))
 	if err != nil {

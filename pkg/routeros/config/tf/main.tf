@@ -23,7 +23,7 @@ module "router" {
     routeros = routeros.router
   }
 
-  bootstrap = {{.Bootstrap}}
+  bootstrap = {{.RouterBootstrap}}
   fms_mac   = "{{.FMS.FMSMac}}"
 }
 
@@ -46,7 +46,7 @@ module "field{{.ID}}" {
     routeros = routeros.field{{.ID}}
   }
 
-  bootstrap     = {{$top.Bootstrap}}
+  bootstrap     = {{$top.FieldBootstrap}}
   field_id      = {{.ID}}
 }
 {{- end }}

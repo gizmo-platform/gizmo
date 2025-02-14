@@ -9,7 +9,7 @@ resource "routeros_interface_bridge_vlan" "peer" {
 
   bridge   = routeros_interface_bridge.br0.name
   vlan_ids = [tostring(routeros_interface_vlan.vlan_infra["peer0"].vlan_id)]
-  tagged   = flatten([routeros_interface_bridge.br0.name, data.routeros_interfaces.sfp1.interfaces[*].name])
+  tagged   = flatten([routeros_interface_bridge.br0.name, local.trunk_sfp])
 }
 
 resource "routeros_routing_bgp_connection" "peer" {
