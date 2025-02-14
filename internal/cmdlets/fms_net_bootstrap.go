@@ -4,13 +4,13 @@ package cmdlets
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
+	"os/exec"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -133,7 +133,7 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		retryFunc := func() error {
 			_, err := cl.Do(req)
 			if err != nil {
-				appLogger.Info("Waiting for device", "address", addr)
+				appLogger.Info("Waiting for device", "address", addr, "error", err)
 			}
 			return err
 		}
@@ -143,6 +143,42 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 			appLogger.Error("You need to reboot network boxes and try again")
 			return
 		}
+	}
+
+	waitForFMSIP := func() error {
+		appLogger.Debug("Aquiring eth0")
+		eth0, err := netlink.LinkByName("eth0")
+		if err != nil {
+			appLogger.Error("Could not retrieve ethernet link", "error", err)
+			return err
+		}
+
+		fmsIP, _ := netlink.ParseAddr("100.64.0.2/24")
+
+		retryFunc := func() error {
+			appLogger.Debug("Requesting addresses from eth0")
+			addrs, err := netlink.AddrList(eth0, netlink.FAMILY_V4)
+			if err != nil {
+				appLogger.Error("Error listing addresses", "error", err)
+				return err
+			}
+
+			for _, a := range addrs {
+				appLogger.Debug("Checking IP", "have", a.String(), "want", fmsIP.String())
+				if a.Equal(*fmsIP) {
+					return nil
+				}
+			}
+
+			return errors.New("No FMS IP")
+		}
+		appLogger.Debug("Link acquired, waiting for address")
+
+		if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff(backoff.WithMaxInterval(time.Second*30))); err != nil {
+			appLogger.Error("Permanent error encountered while waiting for dhcp address", "error", err)
+			appLogger.Error("You may be able to recover from this by restarting dhcpcd")
+		}
+		return nil
 	}
 
 	initLogger("bootstrap-net")
@@ -161,9 +197,12 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		config.WithLogger(appLogger),
 		config.WithRouter(bootstrapAddr),
 	)
+	ctx := make(map[string]interface{})
+	ctx["RouterBootstrap"] = true
+	ctx["FieldBootstrap"] = true
 
 	// Sync with bootstrap state enabled
-	if err := controller.SyncState(true); err != nil {
+	if err := controller.SyncState(ctx); err != nil {
 		appLogger.Error("Fatal error synchronizing state", "error", err)
 		return
 	}
@@ -209,12 +248,6 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-quit
-		unbootstrapNet()
-	}()
 	if err := bootstrapNet(); err != nil {
 		appLogger.Error("Fatal error with bootstrap network", "error", err)
 		if err := unbootstrapNet(); err != nil {
@@ -223,7 +256,6 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		}
 		return
 	}
-	defer unbootstrapNet()
 
 	// At this point we're ready to actually configure the root
 	// router.  This requires the TLM to sync even with empty
@@ -247,6 +279,26 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Fatal error converging state", "error", err)
 		return
 	}
+	ctx["RouterBootstrap"] = false
+	if err := controller.SyncState(ctx); err != nil {
+		appLogger.Error("Fatal error syncing state", "error", err)
+		return
+	}
+	if err := controller.Converge(false, "module.router"); err != nil {
+		appLogger.Error("Fatal error converging state", "error", err)
+		return
+	}
+	if err := unbootstrapNet(); err != nil {
+		appLogger.Warn("Could not unbootstrap the local network", "error", err)
+	}
+	if err := exec.Command("dhcpcd", "--rebind", "eth0").Run(); err != nil {
+		appLogger.Warn("Could not rebind dhcpcd, you probably don't have an address!", "error", err)
+	}
+	if err := waitForFMSIP(); err != nil {
+		appLogger.Error("Did not aquire FMS IP, cannot continue!", "error", err)
+		return
+	}
+
 	appLogger.Info("Core network initialization complete, initializing fields")
 
 	instructions = []string{
@@ -291,7 +343,8 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 	}
 
 	// Toggle out of bootstrap mode
-	if err := controller.SyncState(false); err != nil {
+	ctx["FieldBootstrap"] = false
+	if err := controller.SyncState(ctx); err != nil {
 		appLogger.Error("Fatal error synchronizing state", "error", err)
 		return
 	}

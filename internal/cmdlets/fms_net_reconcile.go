@@ -45,8 +45,11 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		config.WithRouter(routerAddr),
 	)
 
-	// Not in bootstrap mode, pass a "false" here.
-	if err := controller.SyncState(false); err != nil {
+	// Not in bootstrap mode, and make sure of that.
+	ctx := make(map[string]interface{})
+	ctx["RouterBootstrap"] = false
+	ctx["FieldBootstrap"] = false
+	if err := controller.SyncState(ctx); err != nil {
 		appLogger.Error("Fatal error synchronizing state", "error", err)
 		return
 	}

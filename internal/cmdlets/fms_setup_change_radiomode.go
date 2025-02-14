@@ -56,7 +56,10 @@ func fmsSetupChangeRadioModeCmdRun(c *cobra.Command, args []string) {
 
 		initLogger("change-radio")
 		controller := config.New(config.WithFMS(*fmsConf), config.WithLogger(appLogger))
-		if err := controller.SyncState(false); err != nil {
+		ctx := make(map[string]interface{})
+		ctx["RouterBootstrap"] = false
+		ctx["FieldBootstrap"] = false
+		if err := controller.SyncState(ctx); err != nil {
 			appLogger.Error("Fatal error synchronizing state", "error", err)
 			return 2
 		}
