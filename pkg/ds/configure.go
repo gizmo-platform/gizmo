@@ -32,7 +32,6 @@ func (ds *DriverStation) Install() error {
 		"dnsmasq",
 		"hostapd",
 		"jq",
-		"mqttcli",
 		"socklog-void",
 		"tmux",
 	}

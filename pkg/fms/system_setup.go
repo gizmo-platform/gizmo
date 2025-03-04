@@ -103,7 +103,6 @@ func (st *SetupTool) Install() error {
 		// Useful Tools
 		"htop",
 		"jq",
-		"mqttcli",
 		"sv-helper",
 		"tio",
 		"tmux",

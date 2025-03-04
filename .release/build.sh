@@ -92,7 +92,6 @@ install() {
     inst /usr/bin/vlogger
     inst /usr/local/bin/gizmo
     inst /var/log/socklog/everything/config
-    inst /usr/bin/mqttcli
 
     inst_hook pre-mount 01 "$moddir/gizmo.sh"
     inst_hook cmdline 99 "$moddir/parse-gizmo-root.sh"
