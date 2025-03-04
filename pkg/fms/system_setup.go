@@ -1,8 +1,10 @@
 package fms
 
 import (
+	"bytes"
 	"embed"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +23,7 @@ const (
 	sysctlConf = "/etc/sysctl.conf"
 	dhcpcdConf = "/etc/dhcpcd.conf"
 	sddmConf   = "/etc/sddm.conf.d/gizmo.conf"
+	xorgConf   = "/etc/X11/xorg.conf.d/99-vc4.conf"
 
 	grafanaPromSrc   = "/usr/share/grafana/conf/provisioning/datasources/default.yaml"
 	grafanaDashCfg   = "/usr/share/grafana/conf/provisioning/dashboards/default.yaml"
@@ -137,6 +140,7 @@ func (st *SetupTool) Configure() error {
 		"icewm-session": st.configureIceWM,
 		"prometheus":    st.configurePrometheus,
 		"grafana":       st.configureGrafana,
+		"xorg":          st.configureXorg,
 		"services":      st.enableServices,
 	}
 
@@ -255,6 +259,28 @@ func (st *SetupTool) configureGrafana() error {
 
 	if err := st.sc.Template(grafanaDashLand, "tpl/grafana_dash_home.json.tpl", 0644, nil); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (st *SetupTool) configureXorg() error {
+	f, err := os.Open("/sys/firmware/devicetree/base/model")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	if bytes.HasPrefix(b, []byte("Raspberry Pi 5")) {
+		st.l.Warn("RPi5: Patching Graphics configuration")
+		if err := st.sc.Template(xorgConf, "tpl/xorg.conf.tpl", 0644, nil); err != nil {
+			return err
+		}
 	}
 
 	return nil
