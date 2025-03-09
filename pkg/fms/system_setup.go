@@ -23,7 +23,13 @@ const (
 	sysctlConf = "/etc/sysctl.conf"
 	dhcpcdConf = "/etc/dhcpcd.conf"
 	sddmConf   = "/etc/sddm.conf.d/gizmo.conf"
-	xorgConf   = "/etc/X11/xorg.conf.d/99-vc4.conf"
+
+	// These are rpi5 specific and have to do with Void using
+	// newer versions of most software than Raspbian, so these
+	// will hopefully go away once Raspbian updates to a point
+	// that they get broken as well.
+	xorgConf         = "/etc/X11/xorg.conf.d/99-vc4.conf"
+	brcmfmacModprobe = "/etc/modprobe.d/99-brcmfmac.conf"
 
 	grafanaPromSrc   = "/usr/share/grafana/conf/provisioning/datasources/default.yaml"
 	grafanaDashCfg   = "/usr/share/grafana/conf/provisioning/dashboards/default.yaml"
@@ -50,6 +56,8 @@ type SetupTool struct {
 	l hclog.Logger
 
 	sc *sysconf.SysConf
+
+	hwType []byte
 }
 
 // A ConfigureStep performa various changes to the system to configure
@@ -59,8 +67,9 @@ type ConfigureStep func() error
 // NewSetupTool sets up a logger for the setup tool.
 func NewSetupTool(l hclog.Logger) *SetupTool {
 	return &SetupTool{
-		l:  l.Named("setup-tool"),
-		sc: sysconf.New(sysconf.WithLogger(l.Named("setup-tool")), sysconf.WithFS(efs)),
+		l:      l.Named("setup-tool"),
+		sc:     sysconf.New(sysconf.WithLogger(l.Named("setup-tool")), sysconf.WithFS(efs)),
+		hwType: []byte("UNKNOWN"),
 	}
 }
 
@@ -129,6 +138,8 @@ func (st *SetupTool) SetupBoot() error {
 
 // Configure calls all the configure steps to configure the FMS workstation.
 func (st *SetupTool) Configure() error {
+	st.detectPlatform()
+
 	steps := map[string]ConfigureStep{
 		"sysctl":        st.configureSysctl,
 		"hostname":      st.configureHostname,
@@ -140,8 +151,12 @@ func (st *SetupTool) Configure() error {
 		"icewm-session": st.configureIceWM,
 		"prometheus":    st.configurePrometheus,
 		"grafana":       st.configureGrafana,
-		"xorg":          st.configureXorg,
 		"services":      st.enableServices,
+	}
+
+	if bytes.HasPrefix(st.hwType, []byte("Raspberry Pi 5")) {
+		steps["rpi5-xorg"] = st.rpi5configureXorg
+		steps["rpi5-brcmfmac"] = st.rpi5configureBRCMFMAC
 	}
 
 	for id, step := range steps {
@@ -152,6 +167,22 @@ func (st *SetupTool) Configure() error {
 	}
 
 	return nil
+}
+
+func (st *SetupTool) detectPlatform() {
+	f, err := os.Open("/sys/firmware/devicetree/base/model")
+	if err != nil {
+		st.l.Warn("Could not check device tree for model")
+		return
+	}
+	defer f.Close()
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		st.l.Warn("Could not read device tree for model")
+	}
+
+	st.hwType = b
 }
 
 func (st *SetupTool) configureSysctl() error {
@@ -264,26 +295,22 @@ func (st *SetupTool) configureGrafana() error {
 	return nil
 }
 
-func (st *SetupTool) configureXorg() error {
-	f, err := os.Open("/sys/firmware/devicetree/base/model")
-	if err != nil {
+func (st *SetupTool) rpi5configureXorg() error {
+	st.l.Warn("RPi5: Patching Graphics configuration")
+	if err := st.sc.Template(xorgConf, "tpl/xorg.conf.tpl", 0644, nil); err != nil {
 		return err
 	}
-	defer f.Close()
-
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return err
-	}
-
-	if bytes.HasPrefix(b, []byte("Raspberry Pi 5")) {
-		st.l.Warn("RPi5: Patching Graphics configuration")
-		if err := st.sc.Template(xorgConf, "tpl/xorg.conf.tpl", 0644, nil); err != nil {
-			return err
-		}
-	}
-
 	return nil
+}
+
+func (st *SetupTool) rpi5configureBRCMFMAC() error {
+	// This is necessary because of this
+	// https://github.com/raspberrypi/linux/issues/6049#issuecomment-2485431104.
+	// It should be possible to remove this hack when either newer
+	// firmware, newer kernel, or both are available.  In the
+	// meantime though, the disabled feature is not significant.
+	st.l.Warn("RPi5: Patching brcmfmac config")
+	return st.sc.Template(brcmfmacModprobe, "tpl/brcmfmac.conf.tpl", 0644, nil)
 }
 
 func (st *SetupTool) enableServices() error {
