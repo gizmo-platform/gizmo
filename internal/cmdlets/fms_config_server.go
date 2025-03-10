@@ -30,7 +30,7 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 	oneshot, _ := c.Flags().GetBool("oneshot")
 	initLogger("config-server")
 
-	fmsConf, err := fms.LoadConfig("fms.json")
+	fmsConf, err := fms.NewConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return

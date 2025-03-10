@@ -20,7 +20,7 @@ type Option func(*Configurator)
 // validate that the configuration is as intended.
 type Configurator struct {
 	l  hclog.Logger
-	fc fms.Config
+	fc *fms.Config
 
 	stateDir string
 

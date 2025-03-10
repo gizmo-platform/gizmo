@@ -31,7 +31,7 @@ func WithTeamLocationMapper(t TeamLocationMapper) Option {
 // WithFMSConf generates all the quad data out of the config for the
 // FMS itself.  It provides a more convenient system than using the
 // direct Quad interface.
-func WithFMSConf(c Config) Option {
+func WithFMSConf(c *Config) Option {
 	return func(f *FMS) error {
 		quads := []string{}
 		for _, f := range c.Fields {

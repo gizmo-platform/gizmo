@@ -187,13 +187,13 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 	skipInit, _ := c.Flags().GetBool("skip-init")
 	initOnly, _ := c.Flags().GetBool("init-only")
 
-	fmsConf, err := fms.LoadConfig("fms.json")
+	fmsConf, err := fms.NewConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
 	}
 	controller := config.New(
-		config.WithFMS(*fmsConf),
+		config.WithFMS(fmsConf),
 		config.WithLogger(appLogger),
 		config.WithRouter(bootstrapAddr),
 	)

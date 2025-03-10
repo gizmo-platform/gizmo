@@ -13,7 +13,7 @@ func WithLogger(l hclog.Logger) Option {
 
 // WithFMS provides the current FMS configuration to the system, which
 // influences the components that are configured.
-func WithFMS(fms fms.Config) Option {
+func WithFMS(fms *fms.Config) Option {
 	return func(c *Configurator) { c.fc = fms }
 }
 

@@ -3,7 +3,6 @@
 package cmdlets
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -30,14 +29,13 @@ func fmsSetupChangeRadioModeCmdRun(c *cobra.Command, args []string) {
 	skipApply, _ := c.Flags().GetBool("skip-apply")
 
 	os.Exit(func() int {
-		fmsConf, err := fms.LoadConfig("fms.json")
+		fmsConf, err := fms.NewConfig(nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not load fms.json, have you run the wizard yet? (%s)\n", err)
 			return 1
 		}
 
-		fmsConf, err = fms.WizardChangeRadioMode(fmsConf)
-		if err != nil {
+		if err := fmsConf.WizardChangeRadioMode(); err != nil {
 			fmt.Fprintf(os.Stderr, "Could not change radio mode: %s\n", err)
 			return 1
 		}
@@ -49,13 +47,13 @@ func fmsSetupChangeRadioModeCmdRun(c *cobra.Command, args []string) {
 		}
 		defer f.Close()
 
-		if err := json.NewEncoder(f).Encode(fmsConf); err != nil {
+		if err := fmsConf.Save(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing config: %s\n", err)
 			return 2
 		}
 
 		initLogger("change-radio")
-		controller := config.New(config.WithFMS(*fmsConf), config.WithLogger(appLogger))
+		controller := config.New(config.WithFMS(fmsConf), config.WithLogger(appLogger))
 		ctx := make(map[string]interface{})
 		ctx["RouterBootstrap"] = false
 		ctx["FieldBootstrap"] = false

@@ -48,7 +48,7 @@ type hudVersions struct {
 // FMS encapsulates the FMS runnable.
 type FMS struct {
 	s *http.Server
-	c Config
+	c *Config
 	l hclog.Logger
 
 	tlm TeamLocationMapper
@@ -101,6 +101,11 @@ type Field struct {
 // Config contains all the data that's necessary to setup the FMS and
 // manage the network behind it.
 type Config struct {
+	l hclog.Logger
+
+	// path is where the config was loaded from.
+	path string
+
 	// Teams contains the information needed to generate
 	// configuration for all teams.
 	Teams map[int]*Team

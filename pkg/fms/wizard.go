@@ -15,44 +15,36 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// ws binds together all the steps required to configure the FMS
-type ws struct {
-	c *Config
-}
-
 // WizardSurvey runs a step by step config workflow to gather all the
 // information required to generate the software configuration for the
 // FMS.
-func WizardSurvey(wouldOverwrite bool) (*Config, error) {
-	w := new(ws)
-	w.c = new(Config)
-	w.initCfg()
-	if err := w.bigScaryOverwriteWarning(wouldOverwrite); err != nil {
-		return nil, err
+func (c *Config) WizardSurvey(wouldOverwrite bool) error {
+	if err := c.bigScaryOverwriteWarning(wouldOverwrite); err != nil {
+		return err
 	}
 
-	if err := w.loadTeams(); err != nil {
-		return nil, err
+	if err := c.loadTeams(); err != nil {
+		return err
 	}
 
-	if err := w.setRadioMode(); err != nil {
-		return nil, err
+	if err := c.setRadioMode(); err != nil {
+		return err
 	}
 
-	if err := w.setFields(); err != nil {
-		return nil, err
+	if err := c.setFields(); err != nil {
+		return err
 	}
 
-	if err := w.setInfraNetwork(); err != nil {
-		return nil, err
+	if err := c.setInfraNetwork(); err != nil {
+		return err
 	}
 
-	if err := w.setFMSMac(); err != nil {
-		return nil, err
+	if err := c.setFMSMac(); err != nil {
+		return err
 	}
 
-	if err := w.setIntegrations(); err != nil {
-		return nil, err
+	if err := c.setIntegrations(); err != nil {
+		return err
 	}
 
 	advanced := false
@@ -61,40 +53,37 @@ func WizardSurvey(wouldOverwrite bool) (*Config, error) {
 	}
 
 	if err := survey.AskOne(qAdvanced, &advanced); err != nil {
-		return nil, err
+		return err
 	}
 
 	if advanced {
-		if err := w.advancedNetCfg(); err != nil {
-			return nil, err
+		if err := c.advancedNetCfg(); err != nil {
+			return err
 		}
 	}
 
-	return w.c, nil
+	return nil
 }
 
 // WizardChangeRoster is used to change the roster in an FMS Config
 // that already exists.  Teams will be loaded then reconciled.
 // Existing teams can have name updated, but wireless parameters will
 // not be changed.
-func WizardChangeRoster(c *Config) (*Config, error) {
-	w := new(ws)
-	w.c = new(Config)
-	w.initCfg()
-	if err := w.loadTeams(); err != nil {
-		return nil, err
+func (c *Config) WizardChangeRoster() error {
+	if err := c.loadTeams(); err != nil {
+		return err
 	}
 
 	// Add any team that isn't in the existing import, and update
 	// the VLAN and name for any team that is present.
 	seen := make(map[int]struct{})
-	for num, team := range w.c.Teams {
+	for num, team := range c.Teams {
 		seen[num] = struct{}{}
 		if _, exists := c.Teams[num]; exists {
-			c.Teams[num].Name = w.c.Teams[num].Name
-			c.Teams[num].VLAN = w.c.Teams[num].VLAN
-			c.Teams[num].GizmoMAC = w.c.Teams[num].GizmoMAC
-			c.Teams[num].DSMAC = w.c.Teams[num].DSMAC
+			c.Teams[num].Name = c.Teams[num].Name
+			c.Teams[num].VLAN = c.Teams[num].VLAN
+			c.Teams[num].GizmoMAC = c.Teams[num].GizmoMAC
+			c.Teams[num].DSMAC = c.Teams[num].DSMAC
 		} else {
 			c.Teams[num] = team
 		}
@@ -107,14 +96,14 @@ func WizardChangeRoster(c *Config) (*Config, error) {
 		}
 	}
 
-	return c, nil
+	return nil
 }
 
 // WizardChangeChannels is used to reconfigure the channels each field
 // is assigned to.  This function duplicates some of the config in the
 // field configuration step, but this is to avoid any possibility of
 // creating or destroying a field.
-func WizardChangeChannels(c *Config) (*Config, error) {
+func (c *Config) WizardChangeChannels() error {
 	for i := range c.Fields {
 		channelPrompt := &survey.Select{
 			Message: "Select the channel to pin this field to.  You can change this later.",
@@ -127,44 +116,26 @@ func WizardChangeChannels(c *Config) (*Config, error) {
 			}(),
 		}
 		if err := survey.AskOne(channelPrompt, &c.Fields[i].Channel); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return c, nil
+	return nil
 }
 
 // WizardChangeRadioMode is used to reconfigure the radio mode after
 // it has been initially setup.
-func WizardChangeRadioMode(c *Config) (*Config, error) {
-	w := new(ws)
-	w.c = c
-
-	if err := w.setRadioMode(); err != nil {
-		return nil, err
-	}
-
-	return c, nil
+func (c *Config) WizardChangeRadioMode() error {
+	return c.setRadioMode()
 }
 
 // WizardChangeIntegrations can be used to reconfigure what
 // integrations are enabled.
-func WizardChangeIntegrations(c *Config) (*Config, error) {
-	w := new(ws)
-	w.c = c
-
-	if err := w.setIntegrations(); err != nil {
-		return nil, err
-	}
-	return c, nil
+func (c *Config) WizardChangeIntegrations() error {
+	return c.setIntegrations()
 }
 
-func (w *ws) initCfg() {
-	w.c.Teams = make(map[int]*Team)
-	w.c.Fields = make(map[int]*Field)
-}
-
-func (w *ws) bigScaryOverwriteWarning(wouldOverwrite bool) error {
+func (c *Config) bigScaryOverwriteWarning(wouldOverwrite bool) error {
 	if !wouldOverwrite {
 		return nil
 	}
@@ -191,7 +162,7 @@ func (w *ws) bigScaryOverwriteWarning(wouldOverwrite bool) error {
 	return nil
 }
 
-func (w *ws) advancedNetCfg() error {
+func (c *Config) advancedNetCfg() error {
 	prompts := []*survey.Question{
 		{
 			Name:     "AdvancedBGPAS",
@@ -227,10 +198,10 @@ func (w *ws) advancedNetCfg() error {
 		},
 	}
 
-	return survey.Ask(prompts, w.c)
+	return survey.Ask(prompts, c)
 }
 
-func (w *ws) setFMSMac() error {
+func (c *Config) setFMSMac() error {
 	eth0, err := netlink.LinkByName("eth0")
 	if err != nil {
 		return err
@@ -241,25 +212,25 @@ func (w *ws) setFMSMac() error {
 		Default: eth0.Attrs().HardwareAddr.String(),
 	}
 
-	return survey.AskOne(prompt, &w.c.FMSMac)
+	return survey.AskOne(prompt, &c.FMSMac)
 }
 
-func (w *ws) setRadioMode() error {
+func (c *Config) setRadioMode() error {
 	prompt := &survey.Select{
 		Message: "Select Radio Mode",
 		Default: func() string {
-			if w.c.RadioMode == "" {
+			if c.RadioMode == "" {
 				return "FIELD"
 			}
-			return w.c.RadioMode
+			return c.RadioMode
 		}(),
 		Options: []string{"NONE", "FIELD", "DS"},
 	}
 
-	return survey.AskOne(prompt, &w.c.RadioMode)
+	return survey.AskOne(prompt, &c.RadioMode)
 }
 
-func (w *ws) setInfraNetwork() error {
+func (c *Config) setInfraNetwork() error {
 	xkcd := xkcdpwgen.NewGenerator()
 	xkcd.SetNumWords(3)
 	xkcd.SetCapitalize(true)
@@ -296,10 +267,10 @@ func (w *ws) setInfraNetwork() error {
 		},
 	}
 
-	return survey.Ask(prompts, w.c)
+	return survey.Ask(prompts, c)
 }
 
-func (w *ws) setFields() error {
+func (c *Config) setFields() error {
 	numFields := 0
 	prompt := &survey.Select{
 		Message: "Select the number of fields present",
@@ -329,7 +300,7 @@ func (w *ws) setFields() error {
 			return err
 		}
 
-		w.c.Fields[i] = &Field{
+		c.Fields[i] = &Field{
 			ID:      i + 1,
 			IP:      fmt.Sprintf("100.64.0.%d", 10+i),
 			MAC:     mac,
@@ -337,10 +308,10 @@ func (w *ws) setFields() error {
 		}
 	}
 
-	w.c.AutoUser = AutomationUser
-	w.c.AutoPass = strings.ReplaceAll(uuid.New().String(), "-", "")
+	c.AutoUser = AutomationUser
+	c.AutoPass = strings.ReplaceAll(uuid.New().String(), "-", "")
 
-	w.c.AdminPass = strings.ReplaceAll(uuid.New().String(), "-", "")
+	c.AdminPass = strings.ReplaceAll(uuid.New().String(), "-", "")
 
 	xkcd := xkcdpwgen.NewGenerator()
 	xkcd.SetNumWords(3)
@@ -350,15 +321,15 @@ func (w *ws) setFields() error {
 		Message: fmt.Sprintf("Read-only user password (username: %s)", ViewOnlyUser),
 		Default: xkcd.GeneratePasswordString(),
 	}
-	w.c.ViewUser = ViewOnlyUser
-	return survey.AskOne(pPrompt, &w.c.ViewPass)
+	c.ViewUser = ViewOnlyUser
+	return survey.AskOne(pPrompt, &c.ViewPass)
 }
 
-func (w *ws) setIntegrations() error {
+func (c *Config) setIntegrations() error {
 	prompt := &survey.MultiSelect{
 		Message: "Select Integrations",
 		Options: allIntegrations.ToStrings(),
-		Default: w.c.Integrations.ToStrings(),
+		Default: c.Integrations.ToStrings(),
 	}
 
 	integrations := []string{}
@@ -366,11 +337,11 @@ func (w *ws) setIntegrations() error {
 		return nil
 	}
 
-	w.c.Integrations = IntegrationsFromStrings(integrations)
+	c.Integrations = IntegrationsFromStrings(integrations)
 	return nil
 }
 
-func (w *ws) loadTeams() error {
+func (c *Config) loadTeams() error {
 	teamPath := ""
 	prompt := &survey.Input{
 		Message: "Specify teams CSV file:",
@@ -394,11 +365,11 @@ func (w *ws) loadTeams() error {
 	if err != nil {
 		return err
 	}
-	w.c.Teams = t
+	c.Teams = t
 
 	confirm := false
 	cPrompt := &survey.Confirm{
-		Message: fmt.Sprintf("Loaded %d teams, does this look right?", len(w.c.Teams)),
+		Message: fmt.Sprintf("Loaded %d teams, does this look right?", len(c.Teams)),
 	}
 
 	if err := survey.AskOne(cPrompt, &confirm); err != nil {
