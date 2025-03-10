@@ -41,7 +41,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 
 	wg := new(sync.WaitGroup)
 
-	fmsConf, err := fms.LoadConfig("fms.json")
+	fmsConf, err := fms.NewConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
@@ -49,7 +49,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 
 	routerAddr := "100.64.0.1"
 	controller := config.New(
-		config.WithFMS(*fmsConf),
+		config.WithFMS(fmsConf),
 		config.WithLogger(appLogger),
 		config.WithRouter(routerAddr),
 	)
@@ -68,7 +68,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	f, err := fms.New(
 		fms.WithLogger(appLogger),
 		fms.WithTeamLocationMapper(tlm),
-		fms.WithFMSConf(*fmsConf),
+		fms.WithFMSConf(fmsConf),
 		fms.WithStartupWG(wg),
 	)
 	appLogger.Debug("HTTP Init")

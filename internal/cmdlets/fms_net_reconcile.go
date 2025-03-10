@@ -33,14 +33,14 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 
 	initLogger("reconcile-net")
 
-	fmsConf, err := fms.LoadConfig("fms.json")
+	fmsConf, err := fms.NewConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
 	}
 	routerAddr := "100.64.0.1"
 	controller := config.New(
-		config.WithFMS(*fmsConf),
+		config.WithFMS(fmsConf),
 		config.WithLogger(appLogger),
 		config.WithRouter(routerAddr),
 	)

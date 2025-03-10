@@ -3,7 +3,6 @@
 package cmdlets
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -26,28 +25,20 @@ func init() {
 
 func fmsSetupChangeIntegrationsCmdRun(c *cobra.Command, args []string) {
 	os.Exit(func() int {
-		fmsConf, err := fms.LoadConfig("fms.json")
+		fmsConf, err := fms.NewConfig(nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not load fms.json, have you run the wizard yet? (%s)\n", err)
 			return 1
 		}
 
-		fmsConf, err = fms.WizardChangeIntegrations(fmsConf)
-		if err != nil {
+		if err := fmsConf.WizardChangeIntegrations(); err != nil {
 			fmt.Fprintf(os.Stderr, "Could not change radio mode: %s\n", err)
 			return 1
 		}
 
-		f, err := os.Create("fms.json")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error opening fms.json: %s\n", err)
+		if err := fmsConf.Save(); err != nil {
+			fmt.Fprintf(os.Stderr, "Could not save config: %s\n", err)
 			return 1
-		}
-		defer f.Close()
-
-		if err := json.NewEncoder(f).Encode(fmsConf); err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing config: %s\n", err)
-			return 2
 		}
 		return 0
 	}())

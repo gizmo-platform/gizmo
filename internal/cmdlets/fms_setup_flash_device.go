@@ -34,7 +34,7 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 	initLogger("flash-device")
 	templateTo, _ := c.Flags().GetString("template-to")
 
-	cfg, err := fms.LoadConfig("fms.json")
+	cfg, err := fms.NewConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return

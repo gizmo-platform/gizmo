@@ -26,7 +26,7 @@ func init() {
 }
 
 func fmsNetCredentialCmdRun(c *cobra.Command, args []string) {
-	fmsConf, err := fms.LoadConfig("fms.json")
+	fmsConf, err := fms.NewConfig(nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading configuration: %s\n", err.Error())
 		return

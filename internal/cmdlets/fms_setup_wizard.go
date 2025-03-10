@@ -3,7 +3,6 @@
 package cmdlets
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -29,23 +28,15 @@ func init() {
 
 func fmsWizardCmdRun(c *cobra.Command, args []string) {
 	os.Exit(func() int {
-		_, err := fms.LoadConfig("fms.json")
-		cfg, err := fms.WizardSurvey(err == nil)
-		if err != nil {
+		cfg, err := fms.NewConfig(nil)
+		if err := cfg.WizardSurvey(err == nil); err != nil {
 			fmt.Fprintf(os.Stderr, "Error running the wizard! (%s)\n", err)
 			return 1
 		}
 
-		f, err := os.Create("fms.json")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error opening fms.json: %s\n", err)
+		if err := cfg.Save(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error waving fms.json: %s\n", err)
 			return 1
-		}
-		defer f.Close()
-
-		if err := json.NewEncoder(f).Encode(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing config: %s\n", err)
-			return 2
 		}
 
 		return 0
