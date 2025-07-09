@@ -84,5 +84,5 @@ func (f *FMS) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	ctx["bootmodes"] = f.hudVersions.Bootmodes
 	ctx["dsversions"] = f.hudVersions.DSVersions
 
-	f.doTemplate(w, r, "p2/views/field.p2", ctx)
+	f.doTemplate(w, r, "views/field/hud.p2", ctx)
 }

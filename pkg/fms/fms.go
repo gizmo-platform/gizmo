@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"embed"
 
 	"github.com/flosch/pongo2/v5"
 	"github.com/go-chi/chi/v5"
@@ -19,10 +20,13 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/http"
 )
 
+//go:embed ui/*
+var uifs embed.FS
+
 // New configures and returns an FMS instance that is a runnable
 // containing the TLM, webserver, and associated other components.
 func New(opts ...Option) (*FMS, error) {
-	sub, _ := fs.Sub(efs, "tpl")
+	sub, _ := fs.Sub(uifs, "ui/p2")
 	ldr := pongo2.NewFSLoader(sub)
 
 	x := new(FMS)
@@ -59,7 +63,8 @@ func New(opts ...Option) (*FMS, error) {
 
 	pongo2.RegisterFilter("valueok", x.filterValueOK)
 
-	r.Handle("/static/*", nhttp.FileServer(nhttp.FS(sub)))
+	sfs, _ := fs.Sub(uifs, "ui")
+	r.Handle("/static/*", nhttp.FileServer(nhttp.FS(sfs)))
 	r.Route("/gizmo/ds", func(r chi.Router) {
 		r.Get("/{id}/config", x.gizmoConfig)
 		r.Post("/{id}/meta", x.gizmoDSMetaReport)

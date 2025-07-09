@@ -1,0 +1,49 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Heads Up Display{% endblock %}
+
+{% block head %}
+  <meta http-equiv="refresh" content="5">
+{% endblock %}
+
+{% block content %}
+  <div class="hud-container">
+    {% for field in fields %}
+      <div class="flex-container flex-row center field">
+        {% for quad in quads %}
+          <div class="flex-item flex-max field-{{ quad|lower }}">
+            <p class="quad-label">{% if field.Team(quad).Team != 0 %}{{ field.Team(quad).Team }}{% else %}NO TEAM{% endif %}</p>
+            <div class="flex-container flex-row icon-row">
+              <div class="flex-item flex-container flex-column">
+                <span class="hud-icon status-{{ field.Team(quad).GizmoConnected|yesno:'ok,error' }}">
+                  <i class="flex-item fa-solid fa-robot"></i>
+                </span>
+                <div class="flex-item flex-container flex-row icon-row-small">
+                  <span class="flex-item status-{{ field.Team(quad).GizmoMeta.HardwareVersion|valueok:hwversions|yesno:'ok,error'}}">
+                    <i class="fa-solid fa-circle-check" title="Hardware: {{ field.Team(quad).GizmoMeta.HardwareVersion }}"></i>
+                  </span>
+                  <span class="flex-item status-{{ field.Team(quad).GizmoMeta.FirmwareVersion|valueok:fwversions|yesno:'ok,error'}}">
+                    <i class="fa-solid fa-circle-check" title="Firmware: {{ field.Team(quad).GizmoMeta.FirmwareVersion }}"></i>
+                  </span>
+                </div>
+              </div>
+              <div class="flex-item flex-container flex-column">
+                <span class="hud-icon status-{{ field.Team(quad).DSConnected|yesno:'ok,error'}}">
+                  <i class="flex-item fa-solid fa-gamepad"></i>
+                </span>
+                <div class="flex-item flex-container flex-row icon-row-small">
+                  <span class="flex-item status-{{ field.Team(quad).DSMeta.Bootmode|valueok:bootmodes|yesno:'ok,error' }}">
+                    <i class="fa-solid fa-circle-check" title="Bootmode: {{ field.Team(quad).DSMeta.Bootmode }}"></i>
+                  </span>
+                  <span class="flex-item status-{{ field.Team(quad).DSMeta.Version|valueok:dsversions|yesno:'ok,error' }}">
+                    <i class="fa-solid fa-circle-check" title="Version: {{ field.Team(quad).DSMeta.Version }}"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
