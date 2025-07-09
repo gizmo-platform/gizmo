@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Login | Gizmo FMS{% endblock %}</title>
+    <link href="/static/css/reset.css" rel="stylesheet">
+    <link href="/static/css/theme.css" rel="stylesheet">
+    {% block head %}
+    {% endblock %}
+  </head>
+  <body class="background">
+    <div class="flex-container flex-center full-height">
+      <div class="foreground flex-item box">
+        <form method="POST">
+          <table>
+            <tr>
+              <td><label for="username">Username:</label></td>
+              <td><input type="text" name="username" /></td>
+            </tr>
+
+            <tr>
+              <td><label for="password">Password:</label></td>
+              <td><input type="password" name="password" /></td>
+            </tr>
+
+            <tr>
+              <td colspan="2" class="center"><input type="submit" value="Authenticate" /></td>
+            </tr>
+          </table>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

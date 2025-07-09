@@ -65,6 +65,7 @@ func New(opts ...Option) (*FMS, error) {
 
 	sfs, _ := fs.Sub(uifs, "ui")
 	r.Handle("/static/*", nhttp.FileServer(nhttp.FS(sfs)))
+	r.Get("/login", x.uiViewLogin)
 	r.Route("/gizmo/ds", func(r chi.Router) {
 		r.Get("/{id}/config", x.gizmoConfig)
 		r.Post("/{id}/meta", x.gizmoDSMetaReport)
@@ -73,6 +74,7 @@ func New(opts ...Option) (*FMS, error) {
 		r.Post("/{id}/meta", x.gizmoMetaReport)
 	})
 	r.Route("/admin", func(r chi.Router) {
+		r.Get("/", x.uiViewAdminLanding)
 		r.Get("/cfg/quads", x.configuredQuads)
 		r.Post("/map/immediate", x.remapTeams)
 		r.Post("/map/pcsm", x.remapTeamsPCSM)
@@ -109,7 +111,7 @@ func (f *FMS) templateErrorHandler(w nhttp.ResponseWriter, err error) {
 
 func (f *FMS) doTemplate(w nhttp.ResponseWriter, r *nhttp.Request, tmpl string, ctx pongo2.Context) {
 	if ctx == nil {
-		ctx = pongo2.Context{}
+		ctx = pongo2.Context{"shownav": true}
 	}
 	t, err := f.tpl.FromCache(tmpl)
 	if err != nil {

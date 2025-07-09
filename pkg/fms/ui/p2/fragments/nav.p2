@@ -1,0 +1,24 @@
+<div id="nav" class="foreground flex-container flex-row noprint">
+  <div class="flex-item">
+    <span id="logomark">Gizmo FMS</span>
+  </div>
+  <div class="flex-item flex-max">
+    {% if user or true %}
+    <nav>
+      <div class="nav-container">
+        <div class="nav-header">Setup</div>
+        <div class="nav-dropdown">
+          <a class="nav-item" href="/admin/setup/oobe/">Out of Box</a>
+        </div>
+      </div>
+    </nav>
+    {% endif %}
+  </div>
+  <div class="flex-item">
+    {% if user %}
+      <a href="/logout" style="text-decoration: none; color: black;">Logout ({{ user.Identity }})</a>
+    {% else %}
+      <a href="/login">Login</a>
+    {% endif %}
+  </div>
+</div>

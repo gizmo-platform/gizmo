@@ -21,16 +21,64 @@ h3 {
 }
 
 table {
+    width: 100%;
+}
+
+th {
+    text-align: left;
+}
+
+table, tbody, th, td {
     padding: 0.5em;
 }
 
-#content {
-    height: 100%;
+tr:nth-child(even) {
+    background-color: #efefef;
+}
+
+nav a {
+    color: #000000;
+    text-decoration: none;
+}
+
+p {
+    margin-bottom: 0.8em;
+}
+
+#logomark {
+    font-weight: 800;
+}
+
+#nav {
+    background-color: #e0e0e0;
     width: 100%;
+}
+
+#content {
+    max-width: 80%;
+    margin-top: 1em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.background {
+    background-color: #7e7e7e;
 }
 
 .bold {
     font-weight: 550;
+}
+
+.box {
+    padding: 1em;
+    border: 1px solid black;
+    border-radius: 4px;
+    width: auto;
+    height: auto;
+}
+
+.center {
+    text-align: center;
 }
 
 .hud-container {
@@ -50,6 +98,11 @@ table {
     justify-content: space-evenly;
 }
 
+.flex-center {
+    align-items: center;
+    justify-content: center;
+}
+
 .flex-container {
     display: flex;
 }
@@ -63,7 +116,7 @@ table {
 }
 
 .flex-item {
-    padding: 0.5em;
+    padding: 1em;
 }
 
 .flex-max {
@@ -74,12 +127,16 @@ table {
     flex-shrink: 3;
 }
 
+.foreground {
+    background-color: #f9f9f9;
+}
+
 .field {
     margin: 1em;
 }
 
-.center {
-    text-align: center;
+.full-height {
+    height: 100%;
 }
 
 .grid-center {
@@ -130,4 +187,40 @@ table {
 
 .status-error {
     color: red;
+}
+
+.nav-header {
+    font-weight: 475;
+    margin-left: 1em;
+    margin-right: 1em;
+    margin-bottom: 0.25em;
+}
+
+.nav-container {
+    display: inline-block;
+    position: relative;
+}
+
+.nav-dropdown {
+    display: none;
+    position: absolute;
+    background-color: #dddddd;
+    border: 2px black solid;
+}
+
+.nav-container:hover .nav-dropdown {
+    display: block;
+}
+
+.nav-item {
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.5em;
+    min-width: 160px;
+    transition: background-color 100ms linear;
+}
+
+.nav-item:hover {
+    background-color: #eeeeee;
+    transition: background-color 100ms linear;
 }

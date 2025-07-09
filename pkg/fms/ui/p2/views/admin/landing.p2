@@ -1,0 +1,11 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Admin Landing | Gizmo FMS{% endblock %}
+
+{% block content %}
+  <div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+      <p>Admin Landing</p>
+    </div>
+  </div>
+{% endblock %}

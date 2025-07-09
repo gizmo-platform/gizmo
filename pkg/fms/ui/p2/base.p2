@@ -11,7 +11,10 @@
     {% block head %}
     {% endblock %}
   </head>
-  <body class="{% block bodystyle %}{% endblock %}">
+  <body class="{% block bodystyle %}background{% endblock %}">
+    {% if shownav %}
+    {% include "fragments/nav.p2" %}
+    {% endif %}
     <div id="content">
       {% block content %}
       {% endblock %}

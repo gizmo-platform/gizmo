@@ -83,6 +83,7 @@ func (f *FMS) fieldHUD(w http.ResponseWriter, r *http.Request) {
 	ctx["fwversions"] = f.hudVersions.FirmwareVersions
 	ctx["bootmodes"] = f.hudVersions.Bootmodes
 	ctx["dsversions"] = f.hudVersions.DSVersions
+	ctx["shownav"] = false
 
 	f.doTemplate(w, r, "views/field/hud.p2", ctx)
 }
