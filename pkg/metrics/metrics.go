@@ -4,13 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/mochi-mqtt/server/v2"
-	"github.com/mochi-mqtt/server/v2/packets"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -194,13 +191,6 @@ func (m *Metrics) DeleteZombieRobot(team string) {
 	m.robotWatchdogLifetime.Delete(l)
 	m.robotControlFrameAge.Delete(l)
 	m.robotControlFrames.Delete(l)
-}
-
-// MQTTCallback is called by external callers to process packets.
-func (m *Metrics) MQTTCallback(cl *mqtt.Client, sub packets.Subscription, pk packets.Packet) {
-	teamNum := strings.Split(pk.TopicName, "/")[1]
-	m.l.Trace("Called back", "team", teamNum)
-	m.ParseReport(teamNum, pk.Payload)
 }
 
 // StartFlusher clears the stats for robots every 10 seconds

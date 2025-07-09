@@ -15,7 +15,6 @@ require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/martinhoefling/goxkcdpwgen v0.1.1
 	github.com/mdp/qrterminal/v3 v3.2.0
-	github.com/mochi-mqtt/server/v2 v2.6.5
 	github.com/prometheus/client_golang v1.20.2
 	github.com/spf13/cobra v1.8.1
 	github.com/vishvananda/netlink v1.3.0
@@ -29,10 +28,10 @@ require (
 	github.com/djherbis/times v1.6.0 // indirect
 	github.com/elliotwutingfeng/asciiset v0.0.0-20230602022725-51bbb787efab // indirect
 	github.com/fatih/color v1.17.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
@@ -42,7 +41,6 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.57.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/rs/xid v1.6.0 // indirect
 	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect

@@ -32,8 +32,6 @@ type Metrics struct {
 	robotControlFrames    *prometheus.GaugeVec
 	robotLastInteraction  *prometheus.GaugeVec
 
-	robotOnField *prometheus.GaugeVec
-
 	stopStatFlusher chan struct{}
 	lastSeen        *sync.Map
 }
