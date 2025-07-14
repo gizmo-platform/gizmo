@@ -1,0 +1,46 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Stage Field Mapping | Gizmo FMS{% endblock %}
+
+{% block content %}
+  <div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+      <form id="stageform" method="post">
+        <table>
+          <tr>
+            <th>Field</th>
+            <th>Position</th>
+            <th>Current</th>
+            <th>Staged</th>
+          </tr>
+          {% for q in quads %}
+            <tr>
+              <td>{{ q|split:":"|first|cut:"field" }}</td>
+              <td>{{ q|split:":"|last|capfirst }}</td>
+              <td>
+                {% if active[q] %}
+                  {{ active[q] }} ({{ teams[active[q]]|teamName }})
+                {% else %}
+                  No Team
+                {% endif %}
+              </td>
+              <td>
+                <select name="{{ q }}">
+                  <option value="0" {% if not stage[q] %}selected{% endif %}>Empty</option>
+                  {% for team in roster %}
+                    <option value="{{ team.Number }}" {% if team.Number == stage[q] %}selected{% endif %}>{{ team.Number }} ({{ team.Name }})</option>
+                  {% endfor %}
+                </select>
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+      </form>
+      <form id="commitform" method="post" action="/ui/admin/map/commit-stage"></form>
+      <div class="flex-container flex-row flex-center">
+        <input form="stageform" type="submit" value="Save Stage Map" class="flex-item button" />
+        <input form="commitform" type="submit" value="Commit Staging Map" class="flex-item button" />
+      </div>
+    </div>
+  </div>
+{% endblock %}

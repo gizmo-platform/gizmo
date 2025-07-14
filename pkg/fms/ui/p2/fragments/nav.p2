@@ -8,7 +8,14 @@
       <div class="nav-container">
         <div class="nav-header">Setup</div>
         <div class="nav-dropdown">
-          <a class="nav-item" href="/admin/setup/oobe/">Out of Box</a>
+          <a class="nav-item" href="/ui/admin/setup/oobe/">Out of Box</a>
+        </div>
+      </div>
+      <div class="nav-container">
+        <div class="nav-header">Operate</div>
+        <div class="nav-dropdown">
+          <a class="nav-item" href="/ui/admin/map/current">Current Mapping</a>
+          <a class="nav-item" href="/ui/admin/map/stage">Stage Mapping</a>
         </div>
       </div>
     </nav>

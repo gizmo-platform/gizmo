@@ -2,6 +2,7 @@ package fms
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"io/fs"
 	nhttp "net/http"
@@ -9,9 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"embed"
 
-	"github.com/flosch/pongo2/v5"
+	"github.com/flosch/pongo2/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
 
@@ -62,6 +62,8 @@ func New(opts ...Option) (*FMS, error) {
 	}
 
 	pongo2.RegisterFilter("valueok", x.filterValueOK)
+	pongo2.RegisterFilter("split", x.filterSplit)
+	pongo2.RegisterFilter("teamName", x.filterTeamName)
 
 	sfs, _ := fs.Sub(uifs, "ui")
 	r.Handle("/static/*", nhttp.FileServer(nhttp.FS(sfs)))
@@ -83,6 +85,32 @@ func New(opts ...Option) (*FMS, error) {
 			hr.Get("/", x.fieldHUD)
 		})
 	})
+
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/field", func(r chi.Router) {
+			r.Get("/configured-quads", x.configuredQuads)
+		})
+		r.Route("/map", func(r chi.Router) {
+			r.Get("/current", x.apiGetCurrentMap)
+			r.Get("/stage", x.apiGetStageMap)
+			r.Post("/stage", x.apiUpdateStageMap)
+			r.Post("/commit-stage", x.apiCommitStageMap)
+		})
+	})
+
+	r.Route("/ui", func(r chi.Router) {
+		r.Route("/admin", func(r chi.Router) {
+			r.Get("/", x.uiViewAdminLanding)
+
+			r.Route("/map", func(r chi.Router) {
+				r.Get("/current", x.uiViewCurrentMap)
+				r.Get("/stage", x.uiViewStageMap)
+				r.Post("/stage", x.uiViewUpdateStageMap)
+				r.Post("/commit-stage", x.uiViewCommitStageMap)
+			})
+		})
+	})
+
 	r.Get("/metrics-sd", x.promSD)
 
 	x.s.Mount("/", r)
@@ -123,7 +151,7 @@ func (f *FMS) doTemplate(w nhttp.ResponseWriter, r *nhttp.Request, tmpl string, 
 	}
 }
 
-func (f *FMS) filterValueOK(in *pongo2.Value, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
+func (f *FMS) filterValueOK(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
 	list := strings.Split(param.String(), ",")
 	for _, val := range list {
 		if strings.TrimSpace(in.String()) == strings.TrimSpace(val) {
@@ -131,6 +159,20 @@ func (f *FMS) filterValueOK(in *pongo2.Value, param *pongo2.Value) (*pongo2.Valu
 		}
 	}
 	return pongo2.AsValue(false), nil
+}
+
+func (f *FMS) filterSplit(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
+	list := strings.Split(in.String(), param.String())
+	return pongo2.AsValue(list), nil
+}
+
+func (f *FMS) filterTeamName(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
+	t, ok := in.Interface().(*Team)
+	if !ok {
+		f.l.Error("Something that wasn't a team got passed to the teamName filter", "in", in.Interface())
+		return pongo2.AsValue(""), &pongo2.Error{Sender: "filter:teamName"}
+	}
+	return pongo2.AsValue(t.Name), nil
 }
 
 func (f *FMS) populateHUDVersions() {

@@ -4,10 +4,11 @@
 package fms
 
 import (
+	"sort"
 	"sync"
 	"time"
 
-	"github.com/flosch/pongo2/v5"
+	"github.com/flosch/pongo2/v6"
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
@@ -36,6 +37,10 @@ type TeamLocationMapper interface {
 	GetFieldForTeam(int) (string, error)
 	GetCurrentMapping() (map[int]string, error)
 	InsertOnDemandMap(map[int]string) error
+
+	GetStageMapping() (map[int]string, error)
+	InsertStageMapping(map[int]string) error
+	CommitStagedMap() error
 }
 
 type hudVersions struct {
@@ -81,6 +86,7 @@ type IntegrationSlice []Integration
 // FMS
 type Team struct {
 	Name     string
+	Number   int
 	SSID     string
 	PSK      string
 	VLAN     int
@@ -151,4 +157,19 @@ type Config struct {
 	AdvancedBGPIP     string
 	AdvancedBGPPeerIP string
 	AdvancedBGPVLAN   int
+}
+
+// SortedTeams returns a list of teams that are sorted by the team
+// number.  This makes it easy to visually scan a team list and know
+// roughly where they should be.
+func (c *Config) SortedTeams() []*Team {
+	out := []*Team{}
+	for n, t := range c.Teams {
+		t.Number = n
+		out = append(out, t)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Number < out[j].Number
+	})
+	return out
 }

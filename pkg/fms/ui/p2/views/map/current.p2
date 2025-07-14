@@ -1,0 +1,29 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Current Field Mapping | Gizmo FMS{% endblock %}
+
+{% block content %}
+  <div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+      <table>
+        <tr>
+          <th>Field</th>
+          <th>Position</th>
+          <th>Current</th>
+        </tr>
+        {% for q in quads %}
+          <tr>
+            <td>{{ q|split:":"|first|cut:"field" }}</td>
+            <td>{{ q|split:":"|last|capfirst }}</td>
+            <td>
+              {% if active[q] %}
+                {{ active[q] }} ({{ teams[active[q]]|teamName }})
+              {% else %}
+                No Team
+              {% endif %}
+            </td>
+          {% endfor %}
+      </table>
+    </div>
+  </div>
+{% endblock %}
