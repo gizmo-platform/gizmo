@@ -11,11 +11,17 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
 )
 
+// state contains the state that the TLM may need to persist.
+type state struct {
+	Active map[int]string
+	Stage  map[int]string
+}
+
 // TLM is a Team Location Mapper that contains a static mapping.
 type TLM struct {
 	l hclog.Logger
 
-	mapping    map[int]string
+	state      state
 	mutex      sync.RWMutex
 	controller *config.Configurator
 
@@ -28,7 +34,8 @@ type TLM struct {
 // New configures the TLM with the given options.
 func New(opts ...Option) *TLM {
 	t := new(TLM)
-	t.mapping = make(map[int]string)
+	t.state.Active = make(map[int]string)
+	t.state.Stage = make(map[int]string)
 	t.stop = make(chan (struct{}))
 
 	for _, o := range opts {
@@ -40,7 +47,7 @@ func New(opts ...Option) *TLM {
 // GetFieldForTeam returns the current location for a given team number.
 func (tlm *TLM) GetFieldForTeam(team int) (string, error) {
 	tlm.mutex.RLock()
-	mapping, ok := tlm.mapping[team]
+	mapping, ok := tlm.state.Active[team]
 	tlm.mutex.RUnlock()
 	if !ok {
 		return "none:none", errors.New("no mapping for team")
@@ -53,9 +60,9 @@ func (tlm *TLM) GetFieldForTeam(team int) (string, error) {
 func (tlm *TLM) InsertOnDemandMap(m map[int]string) error {
 	tlm.mutex.Lock()
 	defer tlm.mutex.Unlock()
-	tlm.mapping = m
+	tlm.state.Active = m
 
-	if err := tlm.controller.SyncTLM(tlm.mapping); err != nil {
+	if err := tlm.controller.SyncTLM(tlm.state.Active); err != nil {
 		tlm.l.Error("Error syncronizing match state", "error", err)
 		return err
 	}
@@ -88,16 +95,39 @@ func (tlm *TLM) InsertOnDemandMap(m map[int]string) error {
 
 // GetCurrentMapping is a convenience function to retrieve the current
 // mapping for the current match.
-func (tlm *TLM) GetCurrentMapping() (map[int]string, error) { return tlm.mapping, nil }
+func (tlm *TLM) GetCurrentMapping() (map[int]string, error) { return tlm.state.Active, nil }
+
+// InsertStageMapping is used to insert a mapping that is staged and
+// can be committed at a later time.
+func (tlm *TLM) InsertStageMapping(s map[int]string) error {
+	tlm.mutex.Lock()
+	defer tlm.mutex.Unlock()
+	tlm.state.Stage = s
+	if err := tlm.SaveState(); err != nil {
+		tlm.l.Warn("Error persisting match state", "error", err)
+	}
+
+	return nil
+}
+
+// GetStageMapping allows peeking at the currently staged team
+// mapping.
+func (tlm *TLM) GetStageMapping() (map[int]string, error) { return tlm.state.Stage, nil }
+
+// CommitStagedMap transfers staging to current, and applies it.  It
+// does not clear the stage map!
+func (tlm *TLM) CommitStagedMap() error {
+	return tlm.InsertOnDemandMap(tlm.state.Stage)
+}
 
 // GetCurrentTeams returns the teams that are expected to be on the
 // field at this time.
 func (tlm *TLM) GetCurrentTeams() []int {
-	ret := make([]int, len(tlm.mapping))
+	ret := make([]int, len(tlm.state.Active))
 
 	i := 0
 	tlm.mutex.RLock()
-	for team := range tlm.mapping {
+	for team := range tlm.state.Active {
 		ret[i] = team
 	}
 	tlm.mutex.RUnlock()
@@ -112,7 +142,7 @@ func (tlm *TLM) SaveState() error {
 		return err
 	}
 	defer f.Close()
-	return json.NewEncoder(f).Encode(tlm.mapping)
+	return json.NewEncoder(f).Encode(tlm.state)
 }
 
 // RecoverState loads the TLM data from a file.
@@ -122,5 +152,5 @@ func (tlm *TLM) RecoverState() error {
 		return err
 	}
 	defer f.Close()
-	return json.NewDecoder(f).Decode(&tlm.mapping)
+	return json.NewDecoder(f).Decode(&tlm.state)
 }
