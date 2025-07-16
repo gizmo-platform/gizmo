@@ -1,10 +1,12 @@
 package fms
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"strconv"
 
 	"github.com/flosch/pongo2/v6"
@@ -91,6 +93,10 @@ func (f *FMS) uiViewCommitStageMap(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/ui/admin/map/stage", http.StatusSeeOther)
 }
 
+func (f *FMS) uiViewOutOfBoxSetup(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/setup/oob.p2", nil)
+}
+
 func (f *FMS) apiGetCurrentMap(w http.ResponseWriter, r *http.Request) {
 	m, _ := f.tlm.GetCurrentMapping()
 	json.NewEncoder(w).Encode(m)
@@ -129,6 +135,48 @@ func (f *FMS) apiCommitStageMap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (f *FMS) apiFetchTools(w http.ResponseWriter, r *http.Request) {
+	f.runSystemCommand(w, "sudo", "gizmo", "fms", "setup", "fetch-tools")
+}
+
+func (f *FMS) apiFetchPackages(w http.ResponseWriter, r *http.Request) {
+	f.runSystemCommand(w, "sudo", "gizmo", "fms", "setup", "fetch-packages")
+}
+
+func (f *FMS) apiSetTimezone(w http.ResponseWriter, r *http.Request) {
+	// This is a bad antipattern, but you need to be root to
+	// modify the clock and to adjust the timezone links, and this
+	// is the better approach than running the entire Gizmo
+	// process with elevated permissions.  We could use a setuid
+	// helper binary here, but that would be clunky and usually
+	// leads to more security problems than it solves.
+	f.runSystemCommand(w, "sudo", "tzupdate")
+}
+
+func (f *FMS) runSystemCommand(w http.ResponseWriter, exe string, args ...string) error {
+	flusher, flushAvailable := w.(http.Flusher)
+	cmd := exec.Command(exe, args...)
+	rPipe, wPipe := io.Pipe()
+	cmd.Stdout = wPipe
+	cmd.Stderr = wPipe
+	cmd.Start()
+
+	scanner := bufio.NewScanner(rPipe)
+	scanner.Split(bufio.ScanLines)
+	go func() {
+		for scanner.Scan() {
+			w.Write(scanner.Bytes())
+			w.Write([]byte("\r\n"))
+			if flushAvailable {
+				flusher.Flush()
+			}
+		}
+	}()
+	err := cmd.Wait()
+	w.Write([]byte("\r\n"))
+	return err
 }
 
 func (f *FMS) invertTLMMap(m map[int]string) map[string]int {

@@ -41,7 +41,7 @@ const (
 	pipeWirePulseConf       = "/usr/share/examples/pipewire/20-pipewire-pulse.conf"
 	pipeWireWireplumberConf = "/usr/share/examples/wireplumber/10-wireplumber.conf"
 
-	sudoersWheelInclude = "/etc/sudoers.d/wheel"
+	sudoersGizmoInclude = "/etc/sudoers.d/gizmo"
 
 	adminIceWMTheme   = "/home/admin/.icewm/theme"
 	adminIceWMStartup = "/home/admin/.icewm/startup"
@@ -218,7 +218,7 @@ func (st *SetupTool) configureSDDM() error {
 }
 
 func (st *SetupTool) configureSudo() error {
-	return st.sc.Template(sudoersWheelInclude, "tpl/sudoers.conf.tpl", 0644, nil)
+	return st.sc.Template(sudoersGizmoInclude, "tpl/sudoers.conf.tpl", 0644, nil)
 }
 
 func (st *SetupTool) configureIceWM() error {
