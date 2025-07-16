@@ -8,7 +8,7 @@ import (
 
 // WithGSSConfig configures this driver station to use a particular
 // GSS configuration set.
-func WithGSSConfig(cfg config.Config) Option {
+func WithGSSConfig(cfg config.GSSConfig) Option {
 	return func(d *DriverStation) { d.cfg = cfg }
 }
 

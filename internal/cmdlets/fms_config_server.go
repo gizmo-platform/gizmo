@@ -36,11 +36,11 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	teams := make(map[string]config.Config)
+	teams := make(map[string]config.GSSConfig)
 	names := []string{}
 	numbers := make(map[int]string)
 	for id, team := range fmsConf.Teams {
-		t := config.Config{
+		t := config.GSSConfig{
 			Team:    id,
 			NetSSID: team.SSID,
 			NetPSK:  team.PSK,
@@ -50,7 +50,7 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 		names = append(names, team.Name)
 	}
 
-	prvdr := func(t int) config.Config {
+	prvdr := func(t int) config.GSSConfig {
 		prompt := &survey.Select{
 			Message: "Select configuration to bind to this Gizmo",
 			Options: names,
@@ -58,7 +58,7 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 		}
 		selected := ""
 		if err := survey.AskOne(prompt, &selected); err != nil {
-			return config.Config{}
+			return config.GSSConfig{}
 		}
 		return teams[selected]
 	}
@@ -67,7 +67,7 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 	if oneshot {
 		opts = append(opts, config.WithOneshotMode())
 	}
-	srv := config.NewServer(opts...)
+	srv := config.NewGSSServer(opts...)
 
 	if err := srv.Serve(); err != nil {
 		appLogger.Error("Error initializing config server", "error", err)

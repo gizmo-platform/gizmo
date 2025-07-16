@@ -2,9 +2,9 @@
 // configuration data.
 package config
 
-// Config holds a number of settings that are unique to each driver
+// GSSConfig holds a number of settings that are unique to each driver
 // station and gizmo pair.
-type Config struct {
+type GSSConfig struct {
 	Team     int
 	NetSSID  string
 	NetPSK   string

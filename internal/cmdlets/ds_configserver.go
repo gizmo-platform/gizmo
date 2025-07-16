@@ -33,11 +33,11 @@ func dsConfigServerCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	prvdr := func(_ int) config.Config {
+	prvdr := func(_ int) config.GSSConfig {
 		return *cfg
 	}
 
-	srv := config.NewServer(config.WithProvider(prvdr), config.WithLogger(appLogger))
+	srv := config.NewGSSServer(config.WithProvider(prvdr), config.WithLogger(appLogger))
 
 	if err := srv.Serve(); err != nil {
 		appLogger.Error("Error initializing config server", "error", err)
