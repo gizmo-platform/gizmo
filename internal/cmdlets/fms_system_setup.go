@@ -5,7 +5,7 @@ package cmdlets
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/fms/system"
 )
 
 var (
@@ -27,7 +27,7 @@ func init() {
 func fmsSystemSetupCmdRun(c *cobra.Command, args []string) {
 	initLogger("system-setup")
 
-	setuptool := fms.NewSetupTool(appLogger)
+	setuptool := system.NewSetupTool(appLogger)
 	if err := setuptool.Configure(); err != nil {
 		appLogger.Error("Fatal Error during install", "error", err)
 	}
