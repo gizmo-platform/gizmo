@@ -43,6 +43,14 @@ nav a {
 
 p {
     margin-bottom: 0.8em;
+    line-height: 1.2;
+}
+
+code {
+  background-color: #eee;
+  border-radius: 3px;
+  font-family: courier, monospace;
+  padding: 0 3px;
 }
 
 #logomark {

@@ -97,6 +97,12 @@ func New(opts ...Option) (*FMS, error) {
 			r.Post("/stage", x.apiUpdateStageMap)
 			r.Post("/commit-stage", x.apiCommitStageMap)
 		})
+
+		r.Route("/setup", func(r chi.Router) {
+			r.Post("/fetch-tools", x.apiFetchTools)
+			r.Post("/fetch-packages", x.apiFetchPackages)
+			r.Post("/set-timezone", x.apiSetTimezone)
+		})
 	})
 
 	r.Route("/ui", func(r chi.Router) {
@@ -108,6 +114,10 @@ func New(opts ...Option) (*FMS, error) {
 				r.Get("/stage", x.uiViewStageMap)
 				r.Post("/stage", x.uiViewUpdateStageMap)
 				r.Post("/commit-stage", x.uiViewCommitStageMap)
+			})
+
+			r.Route("/setup", func(r chi.Router) {
+				r.Get("/oob", x.uiViewOutOfBoxSetup)
 			})
 		})
 	})
