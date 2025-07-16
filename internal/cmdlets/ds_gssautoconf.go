@@ -83,7 +83,7 @@ func dsGSSAutoConfCmdRun(c *cobra.Command, args []string) {
 		r := rand.New(rand.NewSource(seed))
 		uuid.SetRand(r)
 
-		cfg := config.Config{
+		cfg := config.GSSConfig{
 			Team:     num,
 			NetSSID:  strings.ReplaceAll(uuid.New().String(), "-", ""),
 			NetPSK:   strings.ReplaceAll(uuid.New().String(), "-", ""),

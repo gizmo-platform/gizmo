@@ -63,7 +63,7 @@ func dsBulkCmdRun(c *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
 	}
 	for i := answers.Base; i <= answers.Base+answers.Count; i++ {
-		cfg := config.Config{
+		cfg := config.GSSConfig{
 			Team:     i,
 			NetSSID:  strings.ReplaceAll(uuid.New().String(), "-", ""),
 			NetPSK:   strings.ReplaceAll(uuid.New().String(), "-", ""),

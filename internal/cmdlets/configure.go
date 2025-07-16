@@ -39,7 +39,7 @@ func configCmdRun(c *cobra.Command, args []string) {
 		},
 	}
 
-	cfg := config.Config{
+	cfg := config.GSSConfig{
 		ServerIP: "gizmo-ds",
 		NetSSID:  strings.ReplaceAll(uuid.New().String(), "-", ""),
 		NetPSK:   strings.ReplaceAll(uuid.New().String(), "-", ""),

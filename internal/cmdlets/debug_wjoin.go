@@ -31,7 +31,7 @@ func debugWJoinRun(c *cobra.Command, args []string) {
 	}
 	defer f.Close()
 
-	cfg := config.Config{}
+	cfg := config.GSSConfig{}
 
 	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Error decoding config: %s\n", err)

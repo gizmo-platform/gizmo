@@ -18,7 +18,7 @@ type DriverStation struct {
 	l hclog.Logger
 	c net.Conn
 
-	cfg  config.Config
+	cfg  config.GSSConfig
 	fCfg FieldConfig
 
 	sc *sysconf.SysConf

@@ -12,9 +12,9 @@ import (
 	"go.bug.st/serial/enumerator"
 )
 
-// Server is a binding of the related functions that make up the
+// GSSServer is a binding of the related functions that make up the
 // configuration interface for the Gizmo itself.
-type Server struct {
+type GSSServer struct {
 	l hclog.Logger
 	t *time.Ticker
 
@@ -24,26 +24,26 @@ type Server struct {
 }
 
 // Option configures the server
-type Option func(*Server)
+type Option func(*GSSServer)
 
 // Provider hands back the configuration for a given Gizmo.  This can
 // either be automatic, or with manual intervention, this WILL stall
 // the config server if it calls other resources!
-type Provider func(team int) Config
+type Provider func(team int) GSSConfig
 
 // WithLogger sets the logging instance for this config server.
-func WithLogger(l hclog.Logger) Option { return func(s *Server) { s.l = l } }
+func WithLogger(l hclog.Logger) Option { return func(s *GSSServer) { s.l = l } }
 
 // WithProvider sets up the config provider that will be used by this server.
-func WithProvider(p Provider) Option { return func(s *Server) { s.provider = p } }
+func WithProvider(p Provider) Option { return func(s *GSSServer) { s.provider = p } }
 
 // WithOneshotMode instructs the configserver to exit after a single
 // provisioning cycle.
-func WithOneshotMode() Option { return func(s *Server) { s.once = true } }
+func WithOneshotMode() Option { return func(s *GSSServer) { s.once = true } }
 
-// NewServer returns the server instance with the options set
-func NewServer(opts ...Option) *Server {
-	x := &Server{}
+// NewGSSServer returns the server instance with the options set
+func NewGSSServer(opts ...Option) *GSSServer {
+	x := &GSSServer{}
 	x.l = hclog.NewNullLogger()
 	x.t = time.NewTicker(time.Second * 5)
 
@@ -54,7 +54,7 @@ func NewServer(opts ...Option) *Server {
 }
 
 // Serve sits and serves forever until shutdown is called.
-func (s *Server) Serve() error {
+func (s *GSSServer) Serve() error {
 	for range s.t.C {
 		ports, err := enumerator.GetDetailedPortsList()
 		if err != nil {
@@ -78,7 +78,7 @@ func (s *Server) Serve() error {
 	return nil
 }
 
-func (s *Server) installConfig(name string) {
+func (s *GSSServer) installConfig(name string) {
 	mode := &serial.Mode{
 		BaudRate: 9600,
 		Parity:   serial.NoParity,
