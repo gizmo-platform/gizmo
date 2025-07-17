@@ -27,6 +27,19 @@ type EventStream struct {
 	subscribers      map[*subscriber]struct{}
 }
 
+// New returns an initialized event streamer ready for use.
+func New(l hclog.Logger) *EventStream {
+	es := &EventStream{
+		l:              l,
+		maxUndelivered: 16,
+		subscribers:    make(map[*subscriber]struct{}),
+	}
+	if l == nil {
+		es.l = hclog.NewNullLogger()
+	}
+	return es
+}
+
 // subscriber represents a subscriber.
 // Messages are sent on the msgs channel and if the client
 // cannot keep up with the messages, closeSlow is called.
@@ -38,6 +51,7 @@ type subscriber struct {
 // Handler implements the http.Handler interface so that the
 // eventstream can be plugged into a webserver.
 func (es *EventStream) Handler(w http.ResponseWriter, r *http.Request) {
+	es.l.Debug("Incomming subscriber", "remote-addr", r.RemoteAddr)
 	err := es.subscribe(w, r)
 	if errors.Is(err, context.Canceled) {
 		return

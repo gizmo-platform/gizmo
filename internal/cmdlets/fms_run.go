@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/eventstream"
 	"github.com/gizmo-platform/gizmo/pkg/fms"
 	rconfig "github.com/gizmo-platform/gizmo/pkg/routeros/config"
 	"github.com/gizmo-platform/gizmo/pkg/tlm/net"
@@ -66,11 +67,15 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	}
 	appLogger.Debug("TLM Init")
 
+	es := eventstream.New(appLogger)
+	appLogger.Debug("EventStream Init")
+
 	f, err := fms.New(
 		fms.WithLogger(appLogger),
 		fms.WithTeamLocationMapper(tlm),
 		fms.WithFMSConf(fmsConf),
 		fms.WithStartupWG(wg),
+		fms.WithEventStreamer(es),
 	)
 	appLogger.Debug("HTTP Init")
 

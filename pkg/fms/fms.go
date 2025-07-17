@@ -87,6 +87,7 @@ func New(opts ...Option) (*FMS, error) {
 	})
 
 	r.Route("/api", func(r chi.Router) {
+		r.Get("/eventstream", x.es.Handler)
 		r.Route("/field", func(r chi.Router) {
 			r.Get("/configured-quads", x.configuredQuads)
 		})
