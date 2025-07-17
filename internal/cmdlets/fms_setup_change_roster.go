@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 var (
@@ -28,7 +28,7 @@ func init() {
 
 func fmsSetupChangeRosterCmdRun(c *cobra.Command, args []string) {
 	os.Exit(func() int {
-		fmsConf, err := fms.NewConfig(nil)
+		fmsConf, err := config.NewFMSConfig(nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not load fms.json, have you run the wizard yet? (%s)\n", err)
 			return 1

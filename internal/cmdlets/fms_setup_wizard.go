@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 var (
@@ -28,7 +28,7 @@ func init() {
 
 func fmsWizardCmdRun(c *cobra.Command, args []string) {
 	os.Exit(func() int {
-		cfg, err := fms.NewConfig(nil)
+		cfg, err := config.NewFMSConfig(nil)
 		if err := cfg.WizardSurvey(err == nil); err != nil {
 			fmt.Fprintf(os.Stderr, "Error running the wizard! (%s)\n", err)
 			return 1

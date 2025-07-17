@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 // WithLogger sets the parent logging instance for the configurator
@@ -13,7 +13,7 @@ func WithLogger(l hclog.Logger) Option {
 
 // WithFMS provides the current FMS configuration to the system, which
 // influences the components that are configured.
-func WithFMS(fms *fms.Config) Option {
+func WithFMS(fms *config.FMSConfig) Option {
 	return func(c *Configurator) { c.fc = fms }
 }
 

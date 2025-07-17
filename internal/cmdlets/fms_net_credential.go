@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 var (
@@ -26,7 +26,7 @@ func init() {
 }
 
 func fmsNetCredentialCmdRun(c *cobra.Command, args []string) {
-	fmsConf, err := fms.NewConfig(nil)
+	fmsConf, err := config.NewFMSConfig(nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading configuration: %s\n", err.Error())
 		return

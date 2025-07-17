@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 // Option enables variadic option passing to the server on startup.
@@ -31,7 +33,7 @@ func WithTeamLocationMapper(t TeamLocationMapper) Option {
 // WithFMSConf generates all the quad data out of the config for the
 // FMS itself.  It provides a more convenient system than using the
 // direct Quad interface.
-func WithFMSConf(c *Config) Option {
+func WithFMSConf(c *config.FMSConfig) Option {
 	return func(f *FMS) error {
 		quads := []string{}
 		for _, f := range c.Fields {

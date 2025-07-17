@@ -1,9 +1,10 @@
-package fms
+package config
 
 import (
 	"encoding/json"
 	"os"
 	"os/signal"
+	"sort"
 	"syscall"
 
 	"github.com/hashicorp/go-hclog"
@@ -11,16 +12,25 @@ import (
 
 const (
 	defconfPath = "/etc/gizmo/fms.json"
+
+	// AutomationUser is created on remote systems to allow the
+	// FMS to manage them programattically.
+	AutomationUser = "gizmo-fms"
+
+	// ViewOnlyUser is created on remote systems to enable
+	// debugging and generally make it possible to get into
+	// systems.
+	ViewOnlyUser = "gizmo-ro"
 )
 
-// NewConfig returns a new configuration instance, that has been
+// NewFMSConfig returns a new configuration instance, that has been
 // loaded from the default path if possible.
-func NewConfig(l hclog.Logger) (*Config, error) {
+func NewFMSConfig(l hclog.Logger) (*FMSConfig, error) {
 	if l == nil {
 		l = hclog.NewNullLogger()
 	}
 
-	c := new(Config)
+	c := new(FMSConfig)
 	c.l = l.Named("config")
 	c.Teams = make(map[int]*Team)
 	c.Fields = make(map[int]*Field)
@@ -54,7 +64,7 @@ func NewConfig(l hclog.Logger) (*Config, error) {
 }
 
 // Load loads a config file from the given path on disk.
-func (c *Config) Load() error {
+func (c *FMSConfig) Load() error {
 	f, err := os.Open(c.path)
 	if err != nil {
 		return err
@@ -65,7 +75,7 @@ func (c *Config) Load() error {
 }
 
 // Save persists a config to the named path, creating it if necessary.
-func (c *Config) Save() error {
+func (c *FMSConfig) Save() error {
 	f, err := os.Create(c.path)
 	if err != nil {
 		return err
@@ -73,4 +83,19 @@ func (c *Config) Save() error {
 	defer f.Close()
 
 	return json.NewEncoder(f).Encode(c)
+}
+
+// SortedTeams returns a list of teams that are sorted by the team
+// number.  This makes it easy to visually scan a team list and know
+// roughly where they should be.
+func (c *FMSConfig) SortedTeams() []*Team {
+	out := []*Team{}
+	for n, t := range c.Teams {
+		t.Number = n
+		out = append(out, t)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Number < out[j].Number
+	})
+	return out
 }

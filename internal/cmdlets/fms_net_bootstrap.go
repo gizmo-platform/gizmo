@@ -18,8 +18,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
-	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
+	"github.com/gizmo-platform/gizmo/pkg/config"
+	rconfig "github.com/gizmo-platform/gizmo/pkg/routeros/config"
 )
 
 var (
@@ -187,15 +187,15 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 	skipInit, _ := c.Flags().GetBool("skip-init")
 	initOnly, _ := c.Flags().GetBool("init-only")
 
-	fmsConf, err := fms.NewConfig(appLogger)
+	fmsConf, err := config.NewFMSConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
 	}
-	controller := config.New(
-		config.WithFMS(fmsConf),
-		config.WithLogger(appLogger),
-		config.WithRouter(bootstrapAddr),
+	controller := rconfig.New(
+		rconfig.WithFMS(fmsConf),
+		rconfig.WithLogger(appLogger),
+		rconfig.WithRouter(bootstrapAddr),
 	)
 	ctx := make(map[string]interface{})
 	ctx["RouterBootstrap"] = true

@@ -5,8 +5,8 @@ package cmdlets
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
-	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
+	"github.com/gizmo-platform/gizmo/pkg/config"
+	rconfig "github.com/gizmo-platform/gizmo/pkg/routeros/config"
 )
 
 var (
@@ -33,16 +33,16 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 
 	initLogger("reconcile-net")
 
-	fmsConf, err := fms.NewConfig(appLogger)
+	fmsConf, err := config.NewFMSConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
 	}
 	routerAddr := "100.64.0.1"
-	controller := config.New(
-		config.WithFMS(fmsConf),
-		config.WithLogger(appLogger),
-		config.WithRouter(routerAddr),
+	controller := rconfig.New(
+		rconfig.WithFMS(fmsConf),
+		rconfig.WithLogger(appLogger),
+		rconfig.WithRouter(routerAddr),
 	)
 
 	// Not in bootstrap mode, and make sure of that.

@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
-	"github.com/gizmo-platform/gizmo/pkg/fms"
 )
 
 var (
@@ -30,7 +29,7 @@ func fmsConfigServerCmdRun(c *cobra.Command, args []string) {
 	oneshot, _ := c.Flags().GetBool("oneshot")
 	initLogger("config-server")
 
-	fmsConf, err := fms.NewConfig(appLogger)
+	fmsConf, err := config.NewFMSConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return

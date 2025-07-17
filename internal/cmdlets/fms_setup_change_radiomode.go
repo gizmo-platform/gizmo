@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
-	"github.com/gizmo-platform/gizmo/pkg/routeros/config"
+	"github.com/gizmo-platform/gizmo/pkg/config"
+	rconfig "github.com/gizmo-platform/gizmo/pkg/routeros/config"
 )
 
 var (
@@ -29,7 +29,7 @@ func fmsSetupChangeRadioModeCmdRun(c *cobra.Command, args []string) {
 	skipApply, _ := c.Flags().GetBool("skip-apply")
 
 	os.Exit(func() int {
-		fmsConf, err := fms.NewConfig(nil)
+		fmsConf, err := config.NewFMSConfig(nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not load fms.json, have you run the wizard yet? (%s)\n", err)
 			return 1
@@ -40,20 +40,13 @@ func fmsSetupChangeRadioModeCmdRun(c *cobra.Command, args []string) {
 			return 1
 		}
 
-		f, err := os.Create("fms.json")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error opening fms.json: %s\n", err)
-			return 1
-		}
-		defer f.Close()
-
 		if err := fmsConf.Save(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing config: %s\n", err)
 			return 2
 		}
 
 		initLogger("change-radio")
-		controller := config.New(config.WithFMS(fmsConf), config.WithLogger(appLogger))
+		controller := rconfig.New(rconfig.WithFMS(fmsConf), rconfig.WithLogger(appLogger))
 		ctx := make(map[string]interface{})
 		ctx["RouterBootstrap"] = false
 		ctx["FieldBootstrap"] = false

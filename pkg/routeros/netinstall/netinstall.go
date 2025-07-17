@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/vishvananda/netlink"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 const (
@@ -115,7 +115,7 @@ func WithBootstrapNet(s string) InstallerOpt {
 
 // WithFMS pulls in the relevant settings from the config that needs
 // to be baked at netinstall time.
-func WithFMS(c *fms.Config) InstallerOpt {
+func WithFMS(c *config.FMSConfig) InstallerOpt {
 	return func(i *Installer) {
 		i.bootstrapCtx["AutoUser"] = c.AutoUser
 		i.bootstrapCtx["AutoPass"] = c.AutoPass

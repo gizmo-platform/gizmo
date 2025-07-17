@@ -1,6 +1,6 @@
 //go:build linux
 
-package fms
+package config
 
 import (
 	"errors"
@@ -18,7 +18,7 @@ import (
 // WizardSurvey runs a step by step config workflow to gather all the
 // information required to generate the software configuration for the
 // FMS.
-func (c *Config) WizardSurvey(wouldOverwrite bool) error {
+func (c *FMSConfig) WizardSurvey(wouldOverwrite bool) error {
 	if err := c.bigScaryOverwriteWarning(wouldOverwrite); err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (c *Config) WizardSurvey(wouldOverwrite bool) error {
 // that already exists.  Teams will be loaded then reconciled.
 // Existing teams can have name updated, but wireless parameters will
 // not be changed.
-func (c *Config) WizardChangeRoster() error {
+func (c *FMSConfig) WizardChangeRoster() error {
 	if err := c.loadTeams(); err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (c *Config) WizardChangeRoster() error {
 // is assigned to.  This function duplicates some of the config in the
 // field configuration step, but this is to avoid any possibility of
 // creating or destroying a field.
-func (c *Config) WizardChangeChannels() error {
+func (c *FMSConfig) WizardChangeChannels() error {
 	for i := range c.Fields {
 		channelPrompt := &survey.Select{
 			Message: "Select the channel to pin this field to.  You can change this later.",
@@ -125,17 +125,17 @@ func (c *Config) WizardChangeChannels() error {
 
 // WizardChangeRadioMode is used to reconfigure the radio mode after
 // it has been initially setup.
-func (c *Config) WizardChangeRadioMode() error {
+func (c *FMSConfig) WizardChangeRadioMode() error {
 	return c.setRadioMode()
 }
 
 // WizardChangeIntegrations can be used to reconfigure what
 // integrations are enabled.
-func (c *Config) WizardChangeIntegrations() error {
+func (c *FMSConfig) WizardChangeIntegrations() error {
 	return c.setIntegrations()
 }
 
-func (c *Config) bigScaryOverwriteWarning(wouldOverwrite bool) error {
+func (c *FMSConfig) bigScaryOverwriteWarning(wouldOverwrite bool) error {
 	if !wouldOverwrite {
 		return nil
 	}
@@ -162,7 +162,7 @@ func (c *Config) bigScaryOverwriteWarning(wouldOverwrite bool) error {
 	return nil
 }
 
-func (c *Config) advancedNetCfg() error {
+func (c *FMSConfig) advancedNetCfg() error {
 	prompts := []*survey.Question{
 		{
 			Name:     "AdvancedBGPAS",
@@ -201,7 +201,7 @@ func (c *Config) advancedNetCfg() error {
 	return survey.Ask(prompts, c)
 }
 
-func (c *Config) setFMSMac() error {
+func (c *FMSConfig) setFMSMac() error {
 	eth0, err := netlink.LinkByName("eth0")
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func (c *Config) setFMSMac() error {
 	return survey.AskOne(prompt, &c.FMSMac)
 }
 
-func (c *Config) setRadioMode() error {
+func (c *FMSConfig) setRadioMode() error {
 	prompt := &survey.Select{
 		Message: "Select Radio Mode",
 		Default: func() string {
@@ -230,7 +230,7 @@ func (c *Config) setRadioMode() error {
 	return survey.AskOne(prompt, &c.RadioMode)
 }
 
-func (c *Config) setInfraNetwork() error {
+func (c *FMSConfig) setInfraNetwork() error {
 	xkcd := xkcdpwgen.NewGenerator()
 	xkcd.SetNumWords(3)
 	xkcd.SetCapitalize(true)
@@ -270,7 +270,7 @@ func (c *Config) setInfraNetwork() error {
 	return survey.Ask(prompts, c)
 }
 
-func (c *Config) setFields() error {
+func (c *FMSConfig) setFields() error {
 	numFields := 0
 	prompt := &survey.Select{
 		Message: "Select the number of fields present",
@@ -325,7 +325,7 @@ func (c *Config) setFields() error {
 	return survey.AskOne(pPrompt, &c.ViewPass)
 }
 
-func (c *Config) setIntegrations() error {
+func (c *FMSConfig) setIntegrations() error {
 	prompt := &survey.MultiSelect{
 		Message: "Select Integrations",
 		Options: allIntegrations.ToStrings(),
@@ -341,7 +341,7 @@ func (c *Config) setIntegrations() error {
 	return nil
 }
 
-func (c *Config) loadTeams() error {
+func (c *FMSConfig) loadTeams() error {
 	teamPath := ""
 	prompt := &survey.Input{
 		Message: "Specify teams CSV file:",
@@ -361,7 +361,7 @@ func (c *Config) loadTeams() error {
 	}
 	defer f.Close()
 
-	t, err := loadTeams(f)
+	t, err := LoadTeams(f)
 	if err != nil {
 		return err
 	}
