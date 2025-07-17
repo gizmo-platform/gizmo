@@ -4,6 +4,7 @@
 package fms
 
 import (
+	nhttp "net/http"
 	"sync"
 	"time"
 
@@ -27,6 +28,13 @@ type TeamLocationMapper interface {
 	CommitStagedMap() error
 }
 
+// EventStreamer represents the streaming interface server that allows
+// websocket subscribers to join the event stream and get broadcast
+// events.
+type EventStreamer interface {
+	Handler(nhttp.ResponseWriter, *nhttp.Request)
+}
+
 type hudVersions struct {
 	HardwareVersions string
 	FirmwareVersions string
@@ -36,9 +44,10 @@ type hudVersions struct {
 
 // FMS encapsulates the FMS runnable.
 type FMS struct {
-	s *http.Server
-	c *config.FMSConfig
-	l hclog.Logger
+	s  *http.Server
+	c  *config.FMSConfig
+	l  hclog.Logger
+	es EventStreamer
 
 	tlm TeamLocationMapper
 

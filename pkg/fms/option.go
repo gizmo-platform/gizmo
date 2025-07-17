@@ -57,3 +57,12 @@ func WithStartupWG(wg *sync.WaitGroup) Option {
 		return nil
 	}
 }
+
+// WithEventStreamer allows injecting a streaming backend for the FMS
+// to serve over http.
+func WithEventStreamer(es EventStreamer) Option {
+	return func(f *FMS) error {
+		f.es = es
+		return nil
+	}
+}
