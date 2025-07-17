@@ -26,7 +26,8 @@ func init() {
 func fmsFetchToolsCmdRun(c *cobra.Command, args []string) {
 	initLogger("fetch-tools")
 
-	if err := netinstall.FetchTools(appLogger); err != nil {
+	f := netinstall.NewFetcher(appLogger)
+	if err := f.FetchTools(); err != nil {
 		appLogger.Error("Unable to fetch one or more tools, see above", "error", err)
 	}
 }

@@ -26,7 +26,8 @@ func init() {
 func fmsFetchPackagesCmdRun(c *cobra.Command, args []string) {
 	initLogger("fetch-packages")
 
-	if err := netinstall.FetchPackages(appLogger); err != nil {
+	f := netinstall.NewFetcher(appLogger)
+	if err := f.FetchPackages(); err != nil {
 		appLogger.Error("Unable to fetch one or more packages, see above", "error", err)
 	}
 }

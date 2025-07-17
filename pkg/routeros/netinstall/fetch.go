@@ -17,9 +17,24 @@ const (
 	routerosCDN = "https://cdn.mikrotik.com/routeros/" + RouterOSVersion + "/"
 )
 
+// Fetcher binds the methods that fetch packages, and allows the FMS
+// to consume all parts of the fetching process as an interface.
+type Fetcher struct {
+	l hclog.Logger
+}
+
+// NewFetcher initializes the fetcher.
+func NewFetcher(l hclog.Logger) *Fetcher {
+	f := &Fetcher{l: l}
+	if l == nil {
+		f.l = hclog.NewNullLogger()
+	}
+	return f
+}
+
 // FetchPackages retrieves routeros packages that have been qualified
 // and unpacks them into ImagePath.
-func FetchPackages(l hclog.Logger) error {
+func (f *Fetcher) FetchPackages() error {
 	pkgs := []string{
 		RouterPkgARM,
 		RouterPkgARM64,
@@ -30,28 +45,28 @@ func FetchPackages(l hclog.Logger) error {
 	}
 
 	if err := os.MkdirAll(ImagePath, 0755); err != nil {
-		l.Error("Could not create image path", "error", err)
+		f.l.Error("Could not create image path", "error", err)
 		return err
 	}
 
 	for _, pkg := range pkgs {
-		l.Info("Fetching Package", "pkg", pkg)
-		f, err := os.Create(filepath.Join(ImagePath, pkg))
+		f.l.Info("Fetching Package", "pkg", pkg)
+		dest, err := os.Create(filepath.Join(ImagePath, pkg))
 		if err != nil {
-			l.Error("Error creating path", "error", err)
+			f.l.Error("Error creating path", "error", err)
 			return err
 		}
-		defer f.Close()
+		defer dest.Close()
 
 		resp, err := http.Get(routerosCDN + pkg)
 		if err != nil {
-			l.Error("Error retrieving package", "error", err)
+			f.l.Error("Error retrieving package", "error", err)
 			return err
 		}
 		defer resp.Body.Close()
 
-		if _, err := io.Copy(f, resp.Body); err != nil {
-			l.Error("Error writing package to disk", "error", err)
+		if _, err := io.Copy(dest, resp.Body); err != nil {
+			f.l.Error("Error writing package to disk", "error", err)
 			return err
 		}
 	}
@@ -61,10 +76,10 @@ func FetchPackages(l hclog.Logger) error {
 
 // FetchTools retrieves the qualified version of netinstall-cli and
 // unpacks it into netinstallPath
-func FetchTools(l hclog.Logger) error {
+func (f *Fetcher) FetchTools() error {
 	resp, err := http.Get(routerosCDN + netinstallPkg)
 	if err != nil {
-		l.Error("Error downloading", "error", err)
+		f.l.Error("Error downloading", "error", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -86,21 +101,21 @@ loop:
 		case hdr == nil:
 			continue // handles rare bugs from broken source tar
 		case hdr.Name == "netinstall-cli":
-			f, err := os.Create(netinstallPath)
+			dest, err := os.Create(netinstallPath)
 			if err != nil {
-				l.Error("Error creating file", "error", err)
+				f.l.Error("Error creating file", "error", err)
 				return err
 			}
-			defer f.Close()
-			f.Chmod(0755)
+			defer dest.Close()
+			dest.Chmod(0755)
 
-			if _, err := io.Copy(f, r); err != nil {
-				l.Error("Error writing files", "error", err)
+			if _, err := io.Copy(dest, r); err != nil {
+				f.l.Error("Error writing files", "error", err)
 				return err
 			}
 
 			if err := exec.Command("/usr/bin/setcap", "cap_net_raw,cap_net_bind_service+ep", netinstallPath).Run(); err != nil {
-				l.Error("Error elevating capability on tool", "error", err)
+				f.l.Error("Error elevating capability on tool", "error", err)
 				return err
 			}
 			return nil
