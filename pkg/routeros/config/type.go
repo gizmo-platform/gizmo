@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
 //go:embed tf/*
@@ -20,7 +20,7 @@ type Option func(*Configurator)
 // validate that the configuration is as intended.
 type Configurator struct {
 	l  hclog.Logger
-	fc *fms.Config
+	fc *config.FMSConfig
 
 	stateDir string
 

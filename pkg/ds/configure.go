@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/vishvananda/netlink"
+
+	"github.com/gizmo-platform/gizmo/pkg/util"
 )
 
 const (
@@ -93,7 +95,7 @@ func (ds *DriverStation) configureNetwork() error {
 
 	err = netlink.LinkAdd(&netlink.Bridge{LinkAttrs: netlink.LinkAttrs{
 		Name:         "br0",
-		HardwareAddr: NumberToMAC(ds.cfg.Team, 1),
+		HardwareAddr: util.NumberToMAC(ds.cfg.Team, 1),
 	}})
 	if err != nil && err.Error() != "file exists" {
 		ds.l.Error("Could not create bridge device", "error", err)

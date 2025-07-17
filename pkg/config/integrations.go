@@ -1,4 +1,4 @@
-package fms
+package config
 
 var (
 	allIntegrations  = IntegrationSlice{IntegrationPCSM}

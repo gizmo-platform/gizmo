@@ -1,4 +1,4 @@
-package fms
+package config
 
 import (
 	"encoding/csv"
@@ -9,10 +9,12 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gizmo-platform/gizmo/pkg/ds"
+	"github.com/gizmo-platform/gizmo/pkg/util"
 )
 
-func loadTeams(fr io.Reader) (map[int]*Team, error) {
+// LoadTeams returns a map of team numbers to team structs, and is
+// meant to allow loading from any reader, usually a file..
+func LoadTeams(fr io.Reader) (map[int]*Team, error) {
 	teams := make(map[int]*Team)
 	r := csv.NewReader(fr)
 	var header []string
@@ -47,8 +49,8 @@ func loadTeams(fr io.Reader) (map[int]*Team, error) {
 				SSID:     strings.ReplaceAll(uuid.New().String(), "-", ""),
 				PSK:      strings.ReplaceAll(uuid.New().String(), "-", ""),
 				CIDR:     fmt.Sprintf("10.%d.%d.0/24", int(num/100), num%100),
-				GizmoMAC: ds.NumberToMAC(num, 0).String(),
-				DSMAC:    ds.NumberToMAC(num, 1).String(),
+				GizmoMAC: util.NumberToMAC(num, 0).String(),
+				DSMAC:    util.NumberToMAC(num, 1).String(),
 			}
 			vlan++
 		}

@@ -10,7 +10,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 
-	"github.com/gizmo-platform/gizmo/pkg/fms"
+	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
 )
 
@@ -34,7 +34,7 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 	initLogger("flash-device")
 	templateTo, _ := c.Flags().GetString("template-to")
 
-	cfg, err := fms.NewConfig(appLogger)
+	cfg, err := config.NewFMSConfig(appLogger)
 	if err != nil {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
