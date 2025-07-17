@@ -4,8 +4,6 @@
 # non-interactive mode when called by the webserver, which is
 # necessary to avoid a complex prompting scheme to pass the user
 # credentials inwards.
-_gizmo ALL=(root) NOPASSWD:/usr/local/bin/gizmo fms setup fetch-tools
-_gizmo ALL=(root) NOPASSWD:/usr/local/bin/gizmo fms setup fetch-packages
 _gizmo ALL=(root) NOPASSWD:/usr/bin/tzupdate
 
 # This allows the 'admin' user to transparently gain authority, as
