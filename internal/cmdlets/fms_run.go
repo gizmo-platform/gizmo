@@ -17,6 +17,7 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/eventstream"
 	"github.com/gizmo-platform/gizmo/pkg/fms"
 	rconfig "github.com/gizmo-platform/gizmo/pkg/routeros/config"
+	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
 	"github.com/gizmo-platform/gizmo/pkg/tlm/net"
 )
 
@@ -70,12 +71,20 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	es := eventstream.New(appLogger)
 	appLogger.Debug("EventStream Init")
 
+	nsf := netinstall.NewFetcher(
+		netinstall.WithFetcherLogger(appLogger),
+		netinstall.WithFetcherEventStreamer(es),
+		netinstall.WithFetcherPackageDir(os.Getenv("GIZMO_ROS_IMAGE_PATH")),
+	)
+	appLogger.Debug("Netinstall Init")
+
 	f, err := fms.New(
 		fms.WithLogger(appLogger),
 		fms.WithTeamLocationMapper(tlm),
 		fms.WithFMSConf(fmsConf),
 		fms.WithStartupWG(wg),
 		fms.WithEventStreamer(es),
+		fms.WithFileFetcher(nsf),
 	)
 	appLogger.Debug("HTTP Init")
 

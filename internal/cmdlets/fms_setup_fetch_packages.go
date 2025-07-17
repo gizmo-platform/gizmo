@@ -3,6 +3,8 @@
 package cmdlets
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
@@ -26,7 +28,10 @@ func init() {
 func fmsFetchPackagesCmdRun(c *cobra.Command, args []string) {
 	initLogger("fetch-packages")
 
-	f := netinstall.NewFetcher(appLogger)
+	f := netinstall.NewFetcher(
+		netinstall.WithFetcherLogger(appLogger),
+		netinstall.WithFetcherPackageDir(os.Getenv("GIZMO_ROS_IMAGE_PATH")),
+	)
 	if err := f.FetchPackages(); err != nil {
 		appLogger.Error("Unable to fetch one or more packages, see above", "error", err)
 	}
