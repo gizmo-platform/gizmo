@@ -138,11 +138,19 @@ func (f *FMS) apiCommitStageMap(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f *FMS) apiFetchTools(w http.ResponseWriter, r *http.Request) {
-	f.runSystemCommand(w, "sudo", "gizmo", "fms", "setup", "fetch-tools")
+	if err := f.fetcher.FetchTools(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (f *FMS) apiFetchPackages(w http.ResponseWriter, r *http.Request) {
-	f.runSystemCommand(w, "sudo", "gizmo", "fms", "setup", "fetch-packages")
+	if err := f.fetcher.FetchPackages(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (f *FMS) apiSetTimezone(w http.ResponseWriter, r *http.Request) {

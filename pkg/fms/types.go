@@ -35,6 +35,13 @@ type EventStreamer interface {
 	Handler(nhttp.ResponseWriter, *nhttp.Request)
 }
 
+// FileFetcher fetches restricted files that cannot be baked into the
+// image.
+type FileFetcher interface {
+	FetchPackages() error
+	FetchTools() error
+}
+
 type hudVersions struct {
 	HardwareVersions string
 	FirmwareVersions string
@@ -48,6 +55,8 @@ type FMS struct {
 	c  *config.FMSConfig
 	l  hclog.Logger
 	es EventStreamer
+
+	fetcher FileFetcher
 
 	tlm TeamLocationMapper
 

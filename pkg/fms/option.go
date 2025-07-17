@@ -66,3 +66,12 @@ func WithEventStreamer(es EventStreamer) Option {
 		return nil
 	}
 }
+
+// WithFileFetcher injects the backend that may be used to fetch
+// restrited artifacts from Mikrotik.
+func WithFileFetcher(fetcher FileFetcher) Option {
+	return func(f *FMS) error {
+		f.fetcher = fetcher
+		return nil
+	}
+}
