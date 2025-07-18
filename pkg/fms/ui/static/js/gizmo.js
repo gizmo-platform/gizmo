@@ -15,12 +15,21 @@ ws.addEventListener("message", (event) => {
             break;
         case MsgTypeError:
             console.error("Error from remote:", msg.Error);
+            Toastify({
+                text: "Error: " + msg.Error,
+                duration: 8000,
+                className: "status-error",
+            }).showToast();
             break;
         case MsgTypeLogLine:
             console.log(msg.Message);
             break;
         case MsgTypeFileFetch:
             console.log("fetched file:", msg.Filename);
+            Toastify({
+                text: "Fetched file: " + msg.Filename,
+                duration: 3000
+            }).showToast();
         }
 
     } catch (error) {

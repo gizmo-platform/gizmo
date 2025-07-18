@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Gizmo FMS{% endblock %}</title>
     <link href="/static/css/reset.css" rel="stylesheet">
+    <link href="/static/css/toastify.css" rel="stylesheet">
     <link href="/static/css/theme.css" rel="stylesheet">
     {% block head %}
     {% endblock %}
@@ -18,6 +19,7 @@
   </body>
   <script defer src="/static/fa/js/solid.js"></script>
   <script defer src="/static/fa/js/fontawesome.js"></script>
+  <script defer src="/static/js/toastify.js"></script>
   <script defer src="/static/js/reconnecting-websocket.js"></script>
   <script defer src="/static/js/gizmo.js"></script>
 </html>
