@@ -27,7 +27,7 @@ const (
 // EventError contains the underlying error that occured.
 type EventError struct {
 	Type  EventType
-	Error error
+	Error string
 }
 
 // EventLogLine contains a message from a log.

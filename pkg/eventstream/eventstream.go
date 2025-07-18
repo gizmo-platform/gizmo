@@ -8,7 +8,7 @@ import (
 func (es *EventStream) PublishError(err error) {
 	e := EventError{
 		Type:  EventTypeError,
-		Error: err,
+		Error: err.Error(),
 	}
 
 	bytes, err := json.Marshal(e)
