@@ -3,24 +3,42 @@
 {% block title %}Out of Box Setup | Gizmo FMS{% endblock %}
 
 {% block content %}
-  <div class="flex-container flex-row flex-center">
+<div class="flex-container flex-row flex-center">
     <div class="flex-item flex-max foreground box">
-      <h1>Out of Box Setup</h1>
-      <p>This page will allow you to complete out of box setup tasks that are required before further configuration is possible.  These actions require network access, before proceeding, connect the FMS workstation to either a wired Ethernet connection or join a WiFi network.</p>
-      <hr />
+        <h1>Out of Box Setup</h1>
+        <p>This page will allow you to complete out of box setup tasks that are required before further configuration is possible.  These actions require network access, before proceeding, connect the FMS workstation to either a wired Ethernet connection or join a WiFi network.</p>
+        <hr />
 
-      <p>For licensing reasons, certain files are not included in the system image, and you must click the button below to retrieve them.  Use of licensed components from Mikrotik is governed by the <a href="https://mikrotik.com/downloadterms.html">Mikrotik License Agreement</a>.</p>
-      <div class="flex-container flex-row flex-center">
-        <button class="button">Fetch Mikrotik Tools</button>
-        <button class="button">Fetch Mikrotik Packages</button>
-      </div>
-      <hr />
+        <p>For licensing reasons, certain files are not included in the system image, and you must click the button below to retrieve them.  Use of licensed components from Mikrotik is governed by the <a href="https://mikrotik.com/downloadterms.html">Mikrotik License Agreement</a>.</p>
+        <div class="flex-container flex-row flex-center">
+            <button class="button" id="btn-fetch-tools">Fetch Mikrotik Tools</button>
+            <button class="button" id="btn-fetch-packages">Fetch Mikrotik Packages</button>
+        </div>
+        <hr />
 
-      <p>The system clock will be automatically set based on your location as determined by your internet connection.  If this is not correct, you may edit the timezone manually by invoking <code>tzupdate --timezone &lt;zone&gt;</code> from a terminal.</p>
-      <div class="flex-container flex-row flex-center">
-        <button class="button">Set Timezone</button>
-      </div>
-      <hr />
+        <p>The system clock will be automatically set based on your location as determined by your internet connection.  If this is not correct, you may edit the timezone manually by invoking <code>tzupdate --timezone &lt;zone&gt;</code> from a terminal.</p>
+        <div class="flex-container flex-row flex-center">
+            <button class="button" id="btn-set-timezone">Set Timezone</button>
+        </div>
+        <hr />
     </div>
-  </div>
+</div>
+
+<script>
+ const btnFetchTools = document.getElementById('btn-fetch-tools');
+ const btnFetchPackages = document.getElementById('btn-fetch-packages');
+ const btnSetTimezone = document.getElementById('btn-set-timezone');
+
+ btnFetchTools.addEventListener("click", (event) => {
+     fetch("/api/setup/fetch-tools", { method: "POST" });
+ });
+
+ btnFetchPackages.addEventListener("click", (event) => {
+     fetch("/api/setup/fetch-packages", { method: "POST" });
+ });
+
+ btnSetTimezone.addEventListener("click", (event) => {
+     fetch("/api/setup/set-timezone", { method: "POST" });
+ });
+</script>
 {% endblock %}
