@@ -55,13 +55,13 @@ const (
 	WifiPkgARM64 = "wireless-" + RouterOSVersion + "-arm64.npk"
 
 	netinstallPkg  = "netinstall-" + RouterOSVersion + ".tar.gz"
-	netinstallPath = "/usr/local/bin/netinstall-cli"
+	netinstallPath = "/var/lib/gizmo/bin/netinstall-cli"
 
 	provisionAddr = "192.168.88.2/24"
 	targetAddr    = "192.168.88.1"
 
 	// ImagePath is a location to store routerOS images into.
-	ImagePath = "/usr/share/routeros"
+	ImagePath = "/var/lib/gizmo/routeros"
 
 	// BootstrapNetScoring is what the scoring box uses to bring
 	// up the initial net which involves a special bootstrap VLAN.
