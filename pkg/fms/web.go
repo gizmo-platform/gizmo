@@ -160,6 +160,7 @@ func (f *FMS) apiSetTimezone(w http.ResponseWriter, r *http.Request) {
 	// process with elevated permissions.  We could use a setuid
 	// helper binary here, but that would be clunky and usually
 	// leads to more security problems than it solves.
+	f.es.PublishActionStart("Set Timezone", "tzupdate")
 	f.runSystemCommand(w, "sudo", "tzupdate")
 }
 

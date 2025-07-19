@@ -33,6 +33,8 @@ type TeamLocationMapper interface {
 // events.
 type EventStreamer interface {
 	Handler(nhttp.ResponseWriter, *nhttp.Request)
+
+	PublishActionStart(string, string)
 }
 
 // FileFetcher fetches restricted files that cannot be baked into the
