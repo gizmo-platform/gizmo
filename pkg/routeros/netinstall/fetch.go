@@ -24,6 +24,7 @@ const (
 type EventStreamer interface {
 	PublishError(error)
 	PublishFileFetch(string)
+	PublishActionStart(string, string)
 }
 
 // Fetcher binds the methods that fetch packages, and allows the FMS
@@ -34,6 +35,7 @@ type Fetcher struct {
 	es EventStreamer
 
 	packageDir string
+	binDir     string
 }
 
 // FetcherOpt binds variadic setters that mutate the fetcher during
@@ -62,6 +64,13 @@ func WithFetcherPackageDir(dir string) FetcherOpt {
 	}
 }
 
+// WithFetcherBinDir allows changing the bin directory
+func WithFetcherBinDir(dir string) FetcherOpt {
+	return func(f *Fetcher) {
+		f.binDir = dir
+	}
+}
+
 // NewFetcher initializes the fetcher.
 func NewFetcher(opts ...FetcherOpt) *Fetcher {
 	f := new(Fetcher)
@@ -76,6 +85,9 @@ func NewFetcher(opts ...FetcherOpt) *Fetcher {
 	}
 	if f.packageDir == "" {
 		f.packageDir = ImagePath
+	}
+	if f.binDir == "" {
+		f.binDir = BinPath
 	}
 
 	return f
@@ -101,6 +113,7 @@ func (f *Fetcher) FetchPackages() error {
 
 	for _, pkg := range pkgs {
 		f.l.Info("Fetching Package", "pkg", pkg)
+		f.es.PublishActionStart("File Download", pkg)
 		dest, err := os.Create(filepath.Join(f.packageDir, pkg))
 		if err != nil {
 			f.l.Error("Error creating path", "error", err)
@@ -131,6 +144,15 @@ func (f *Fetcher) FetchPackages() error {
 // FetchTools retrieves the qualified version of netinstall-cli and
 // unpacks it into netinstallPath
 func (f *Fetcher) FetchTools() error {
+	f.l.Info("Downloading Mikrotik Tools")
+	f.es.PublishActionStart("File Download", netinstallPkg)
+
+	if err := os.MkdirAll(f.binDir, 0755); err != nil {
+		f.l.Error("Could not create bin path", "error", err)
+		f.es.PublishError(err)
+		return err
+	}
+
 	resp, err := http.Get(routerosCDN + netinstallPkg)
 	if err != nil {
 		f.l.Error("Error downloading", "error", err)
@@ -151,6 +173,7 @@ loop:
 		hdr, err := r.Next()
 		switch {
 		case err == io.EOF:
+			f.l.Debug("End of file during tar extraction")
 			break loop
 		case err != nil:
 			f.es.PublishError(err)
@@ -158,7 +181,6 @@ loop:
 		case hdr == nil:
 			continue // handles rare bugs from broken source tar
 		case hdr.Name == "netinstall-cli":
-
 			dest, err := os.Create(netinstallPath)
 			if err != nil {
 				f.l.Error("Error creating file", "error", err)
@@ -174,14 +196,16 @@ loop:
 				return err
 			}
 
-			if err := exec.Command("/usr/bin/setcap", "cap_net_raw,cap_net_bind_service+ep", netinstallPath).Run(); err != nil {
+			if err := exec.Command("sudo", "/usr/bin/setcap", "cap_net_raw,cap_net_bind_service+ep", netinstallPath).Run(); err != nil {
 				f.l.Error("Error elevating capability on tool", "error", err)
 				f.es.PublishError(err)
 				return err
 			}
+			f.l.Info("Fetched Mikrotik Tool", "tool", "netinstall-cli")
+			f.es.PublishFileFetch(netinstallPkg)
 			return nil
 		}
 	}
-	f.es.PublishFileFetch(netinstallPkg)
+	f.l.Warn("Escaped tool fetch without loading netinstall-cli!?")
 	return nil
 }

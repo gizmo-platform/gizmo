@@ -63,6 +63,9 @@ const (
 	// ImagePath is a location to store routerOS images into.
 	ImagePath = "/var/lib/gizmo/routeros"
 
+	// BinPath is the default location tools are downloaded to.
+	BinPath = "/var/lib/gizmo/bin"
+
 	// BootstrapNetScoring is what the scoring box uses to bring
 	// up the initial net which involves a special bootstrap VLAN.
 	// This is necessary to bring up the network in a

@@ -16,5 +16,8 @@ func (ns *NullStream) PublishError(_ error) {}
 // PublishLogLine discards all log lines.
 func (ns *NullStream) PublishLogLine(_ string) {}
 
+// PublishActionStart discards all actions.
+func (ns *NullStream) PublishActionStart(_, _ string) {}
+
 // PublishFileFetch discards all filenames.
 func (ns *NullStream) PublishFileFetch(_ string) {}
