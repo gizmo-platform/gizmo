@@ -29,6 +29,10 @@ func fmsSystemInstallCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Fatal Error during install", "error", err)
 	}
 
+	if err := setuptool.SetupGizmoFMSSvc(); err != nil {
+		appLogger.Error("Fatal Error during system service setup", "error", err)
+	}
+
 	if err := setuptool.SetupBoot(); err != nil {
 		appLogger.Error("Fatal Error during boot setup", "error", err)
 	}
