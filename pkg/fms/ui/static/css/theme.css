@@ -69,6 +69,11 @@ code {
     margin-right: auto;
 }
 
+/* Tighten up spacing around items inside of a display div */
+#disproot .flex-item {
+    padding: 0.25em;
+}
+
 .background {
     background-color: #7e7e7e;
 }
@@ -200,6 +205,10 @@ code {
 
 .status-error {
     color: red;
+}
+
+.black-background {
+    background: black;
 }
 
 .nav-header {

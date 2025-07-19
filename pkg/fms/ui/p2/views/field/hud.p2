@@ -1,10 +1,12 @@
-{% extends "../../base.p2" %}
+{% extends "../../display.p2" %}
 
 {% block title %}Heads Up Display{% endblock %}
 
 {% block head %}
   <meta http-equiv="refresh" content="5">
 {% endblock %}
+
+{% block bodystyle %}black-background{% endblock %}
 
 {% block content %}
   <div class="hud-container">
