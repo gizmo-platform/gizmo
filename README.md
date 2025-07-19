@@ -1,15 +1,18 @@
-# BEST Robotics Gizmo
+# Gizmo Platform
 
 Welcome, lets drive some robots!  The Gizmo is an open source and open
-hardware platform developed in cooperation with the team behind [BEST
-Robotics](https://bestrobotics.org) which you can use to build and
-control robots.  The system is composed of multiple parts including a
-[hardware device](https://github.com/gizmo-platform/hardware) that
-contains the control components, the Gizmo utilities (this repo), the
-system software that runs on the hardware
-[firmware](https://github.com/gizmo-platform/firmware), and an [Arduino
-library](https://github.com/gizmo-platform/ArduinoGizmo) that lets you
-build custom code to control your robot.
+hardware platform which you can use to build and control robots.  The
+system is composed of multiple parts including a [hardware
+device](https://github.com/gizmo-platform/hardware) that contains the
+control components, the Gizmo utilities (this repo), the system
+software that runs on the hardware
+[firmware](https://github.com/gizmo-platform/firmware), and an
+[Arduino library](https://github.com/gizmo-platform/ArduinoGizmo) that
+lets you build custom code to control your robot.
+
+You can even program your robot using
+[CircuitPython](https://github.com/gizmo-platform/CircuitPython_Gizmo)
+or [MicroBlocks](https://microblocks.fun).
 
 ## Documentation
 
@@ -21,9 +24,9 @@ guides on how to run practice and competition mode fields.
 ## Contributing
 
 We're thrilled you're interested in contributing to this ecosystem.
-For large contributions, we ask that you open an issue first to ensrue
-that your goals align with a direction we're able to support.  This
-helps make sure nobody does work that we can't accept into the
+For large contributions, we ask that you open an issue first to
+ensuree that your goals align with a direction we're able to support.
+This helps make sure nobody does work that we can't accept into the
 project.
 
 Once you have a go-ahead (or your change is a smaller bugfix or
