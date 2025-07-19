@@ -19,6 +19,8 @@ const (
 	// We need to be before sysctls, which fire at 08.
 	coresvc = "/etc/runit/core-services/06-gizmo.sh"
 
+	gizmoFMSSvc = "/etc/sv/gizmo-fms/run"
+
 	promConf   = "/etc/prometheus/prometheus.yml"
 	sysctlConf = "/etc/sysctl.conf"
 	dhcpcdConf = "/etc/dhcpcd.conf"
@@ -134,6 +136,13 @@ func (st *SetupTool) Install() error {
 // jobs.
 func (st *SetupTool) SetupBoot() error {
 	return st.sc.Template(coresvc, "tpl/coresvc.sh.tpl", 0644, nil)
+}
+
+// SetupGizmoFMSSvc installs the Gizmo FMS service.  This has to happen
+// at early install time as the core-service will try to enable it,
+// which can only happen if the service already exists in the image.
+func (st *SetupTool) SetupGizmoFMSSvc() error {
+	return st.sc.Template(gizmoFMSSvc, "tpl/gizmo-fms.run.tpl", 0755, nil)
 }
 
 // Configure calls all the configure steps to configure the FMS workstation.
@@ -325,6 +334,7 @@ func (st *SetupTool) enableServices() error {
 		"prometheus",
 		"sddm",
 		"seatd",
+		"gizmo-fms",
 	}
 	for _, s := range svcs {
 		st.l.Info("Enabling Service", "service", s)

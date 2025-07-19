@@ -1,7 +1,8 @@
 const MsgTypeUnknown = 0;
 const MsgTypeError = 1;
 const MsgTypeLogLine = 2;
-const MsgTypeFileFetch = 3;
+const MsgTypeActionStart = 3;
+const MsgTypeFileFetch = 4;
 
 var ws = new ReconnectingWebSocket('ws://' + document.location.host + '/api/eventstream');
 
@@ -18,11 +19,17 @@ ws.addEventListener("message", (event) => {
             Toastify({
                 text: "Error: " + msg.Error,
                 duration: 8000,
-                className: "status-error",
             }).showToast();
             break;
         case MsgTypeLogLine:
             console.log(msg.Message);
+            break;
+        case MsgTypeActionStart:
+            console.log(msg.Message);
+            Toastify({
+                text: "Started Action: " + msg.Action + " (" + msg.Message + ")",
+                duration: 3000
+            }).showToast();
             break;
         case MsgTypeFileFetch:
             console.log("fetched file:", msg.Filename);
@@ -30,6 +37,7 @@ ws.addEventListener("message", (event) => {
                 text: "Fetched file: " + msg.Filename,
                 duration: 3000
             }).showToast();
+            break;
         }
 
     } catch (error) {

@@ -26,7 +26,7 @@ mount_image() {
 }
 
 install_common() {
-    cp dist/gizmo_linux_arm64/gizmo /mnt/target/usr/local/bin/gizmo
+    cp dist/gizmo_linux_arm64_v8.0/gizmo /mnt/target/usr/local/bin/gizmo
     chmod +x /mnt/target/usr/local/bin/gizmo
     cd /mnt/target || exit 1
     chroot /mnt/target /usr/bin/xbps-install -Suy xbps
@@ -40,7 +40,9 @@ install_common() {
 install_fms() {
     chroot /mnt/target /usr/local/bin/gizmo fms system-install
     chroot /mnt/target /usr/bin/useradd -m -s /bin/bash -c "FMS Admin" -G wheel,storage,dialout,docker admin
-    chroot /mnt/target passwd -l root
+    chroot /mnt/target /usr/bin/useradd -r -m -s /bin/nologin -c "Gizmo System User" -d /var/lib/gizmo _gizmo
+    chroot /mnt/target /usr/bin/ln -sf /var/lib/gizmo/bin/netinstall-cli /usr/bin/netinstall-cli
+    chroot /mnt/target /usr/bin/passwd -l root
     echo ENABLE_ROOT_GROWPART=yes > /mnt/target/etc/default/growpart
     echo admin:gizmo | chroot /mnt/target chpasswd -c SHA512
 }

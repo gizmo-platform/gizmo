@@ -19,6 +19,11 @@ const (
 	// other events.
 	EventTypeLogLine
 
+	// EventTypeActionStart is used to signal that an asynchronous
+	// action has been requested, and that the system is
+	// attempting to process it.
+	EventTypeActionStart
+
 	// EventTypeFileFetch is fired when a file is successfully
 	// retrieved from a remote source.
 	EventTypeFileFetch
@@ -33,6 +38,13 @@ type EventError struct {
 // EventLogLine contains a message from a log.
 type EventLogLine struct {
 	Type    EventType
+	Message string
+}
+
+// EventActionStart contains an action name, and a message
+type EventActionStart struct {
+	Type    EventType
+	Action  string
 	Message string
 }
 
