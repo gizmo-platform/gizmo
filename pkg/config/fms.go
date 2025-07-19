@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	defconfPath = "/etc/gizmo/fms.json"
+	defconfPath = "/var/lib/gizmo/fms.json"
 
 	// AutomationUser is created on remote systems to allow the
 	// FMS to manage them programattically.

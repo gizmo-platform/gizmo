@@ -158,6 +158,7 @@ loop:
 		case hdr == nil:
 			continue // handles rare bugs from broken source tar
 		case hdr.Name == "netinstall-cli":
+
 			dest, err := os.Create(netinstallPath)
 			if err != nil {
 				f.l.Error("Error creating file", "error", err)
