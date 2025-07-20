@@ -50,6 +50,21 @@ func (es *EventStream) PublishActionStart(action, msg string) {
 	es.publish(bytes)
 }
 
+// PublishActionComplete pushes an asynchronous action complete message.
+func (es *EventStream) PublishActionComplete(action string) {
+	e := EventActionComplete{
+		Type:   EventTypeActionComplete,
+		Action: action,
+	}
+
+	bytes, err := json.Marshal(e)
+	if err != nil {
+		es.l.Warn("Error marshaling error", "error", err)
+		return
+	}
+	es.publish(bytes)
+}
+
 // PublishFileFetch pushes a filename into the event stream.
 func (es *EventStream) PublishFileFetch(file string) {
 	e := EventFileFetch{

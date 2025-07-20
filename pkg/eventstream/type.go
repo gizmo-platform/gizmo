@@ -24,6 +24,10 @@ const (
 	// attempting to process it.
 	EventTypeActionStart
 
+	// EventTypeActionComplete is used to signal that an
+	// asynchronous action has successfully completed.
+	EventTypeActionComplete
+
 	// EventTypeFileFetch is fired when a file is successfully
 	// retrieved from a remote source.
 	EventTypeFileFetch
@@ -46,6 +50,13 @@ type EventActionStart struct {
 	Type    EventType
 	Action  string
 	Message string
+}
+
+// EventActionComplete conatins an action name to signal completion
+// for.
+type EventActionComplete struct {
+	Type   EventType
+	Action string
 }
 
 // EventFileFetch contains a filename that was fetched successfully.

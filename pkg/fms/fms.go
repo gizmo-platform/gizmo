@@ -102,6 +102,7 @@ func New(opts ...Option) (*FMS, error) {
 			r.Post("/fetch-tools", x.apiFetchTools)
 			r.Post("/fetch-packages", x.apiFetchPackages)
 			r.Post("/set-timezone", x.apiSetTimezone)
+			r.Post("/update-roster", x.apiUpdateRoster)
 		})
 	})
 
@@ -118,6 +119,7 @@ func New(opts ...Option) (*FMS, error) {
 
 			r.Route("/setup", func(r chi.Router) {
 				r.Get("/oob", x.uiViewOutOfBoxSetup)
+				r.Get("/roster", x.uiViewRosterForm)
 			})
 		})
 	})

@@ -9,6 +9,7 @@
         <div class="nav-header">Setup</div>
         <div class="nav-dropdown">
           <a class="nav-item" href="/ui/admin/setup/oob">Out of Box</a>
+          <a class="nav-item" href="/ui/admin/setup/roster">Roster</a>
         </div>
       </div>
       <div class="nav-container">

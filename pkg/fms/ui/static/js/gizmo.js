@@ -2,7 +2,8 @@ const MsgTypeUnknown = 0;
 const MsgTypeError = 1;
 const MsgTypeLogLine = 2;
 const MsgTypeActionStart = 3;
-const MsgTypeFileFetch = 4;
+const MsgTypeActionComplete = 4;
+const MsgTypeFileFetch = 5;
 
 var ws = new ReconnectingWebSocket('ws://' + document.location.host + '/api/eventstream');
 
@@ -28,6 +29,12 @@ ws.addEventListener("message", (event) => {
             console.log(msg.Message);
             Toastify({
                 text: "Started Action: " + msg.Action + " (" + msg.Message + ")",
+                duration: 3000
+            }).showToast();
+            break;
+        case MsgTypeActionComplete:
+            Toastify({
+                text: "Completed Action: " + msg.Action,
                 duration: 3000
             }).showToast();
             break;

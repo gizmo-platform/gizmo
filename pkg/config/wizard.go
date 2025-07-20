@@ -70,31 +70,30 @@ func (c *FMSConfig) WizardSurvey(wouldOverwrite bool) error {
 // Existing teams can have name updated, but wireless parameters will
 // not be changed.
 func (c *FMSConfig) WizardChangeRoster() error {
-	if err := c.loadTeams(); err != nil {
+	teamPath := ""
+	prompt := &survey.Input{
+		Message: "Specify teams CSV file:",
+		Suggest: func(toComplete string) []string {
+			files, _ := filepath.Glob(toComplete + "*.csv")
+			return files
+		},
+	}
+
+	if err := survey.AskOne(prompt, &teamPath); err != nil {
 		return err
 	}
 
-	// Add any team that isn't in the existing import, and update
-	// the VLAN and name for any team that is present.
-	seen := make(map[int]struct{})
-	for num, team := range c.Teams {
-		seen[num] = struct{}{}
-		if _, exists := c.Teams[num]; exists {
-			c.Teams[num].Name = c.Teams[num].Name
-			c.Teams[num].VLAN = c.Teams[num].VLAN
-			c.Teams[num].GizmoMAC = c.Teams[num].GizmoMAC
-			c.Teams[num].DSMAC = c.Teams[num].DSMAC
-		} else {
-			c.Teams[num] = team
-		}
+	f, err := os.Open(teamPath)
+	if err != nil {
+		return err
 	}
+	defer f.Close()
 
-	// Delete any team that isn't present in the new list.
-	for id := range c.Teams {
-		if _, present := seen[id]; !present {
-			delete(c.Teams, id)
-		}
+	t, err := LoadTeams(f)
+	if err != nil {
+		return err
 	}
+	c.ReconcileTeams(t)
 
 	return nil
 }
@@ -133,6 +132,33 @@ func (c *FMSConfig) WizardChangeRadioMode() error {
 // integrations are enabled.
 func (c *FMSConfig) WizardChangeIntegrations() error {
 	return c.setIntegrations()
+}
+
+// ReconcileTeams updates the configuration's team list to match the
+// one that is provided.  This has to be done with care to avoid
+// cycling security keys unnecessarily.
+func (c *FMSConfig) ReconcileTeams(t map[int]*Team) {
+	// Add any team that isn't in the existing import, and update
+	// the VLAN and name for any team that is present.
+	seen := make(map[int]struct{})
+	for num, team := range t {
+		seen[num] = struct{}{}
+		if _, exists := c.Teams[num]; exists {
+			c.Teams[num].Name = t[num].Name
+			c.Teams[num].VLAN = t[num].VLAN
+			c.Teams[num].GizmoMAC = t[num].GizmoMAC
+			c.Teams[num].DSMAC = t[num].DSMAC
+		} else {
+			c.Teams[num] = team
+		}
+	}
+
+	// Delete any team that isn't present in the new list.
+	for id := range c.Teams {
+		if _, present := seen[id]; !present {
+			delete(c.Teams, id)
+		}
+	}
 }
 
 func (c *FMSConfig) bigScaryOverwriteWarning(wouldOverwrite bool) error {

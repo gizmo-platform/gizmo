@@ -1,0 +1,98 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Roster Management | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Roster Management</h1>
+        <p>Use this form to submit a new roster to the system.  Submitting a new roster after one has been loaded will result in teams being added and dropped to achieve a match with the new roster.  If a team exists in both old and new rosters, the security keys will be maintained (no re-bind necessary).</p>
+        <p>The file must be in CSV format, must have headers, and must have the columns <code>Number</code> and <code>Name</code> (case-sensitive) as the first two columns.</p>
+        <form>
+            <label for="roster_file">Roster File</label>
+            <input type="file" name="roster_file" id="roster_file" accept="tex/csv" />
+        </form>
+        <br />
+        <hr />
+        <br />
+
+        <div id="roster_container"></div>
+        <div id="roster_actions" class="hidden">
+            <hr />
+            <div class="flex-container flex-row flex-center">
+                <div class="flex-item">
+                    <p>If the above teams are as expected, you may submit this roster using the button below.</p>
+                    <center><button id="btn-submit-roster" class="button">Submit Roster</button></center>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+ const teams = new Map();
+
+ container = document.getElementById('roster_container');
+ document.getElementById('roster_file').addEventListener('change', function(event) {
+     const file = event.target.files[0];
+     if (file) {
+         const reader = new FileReader();
+         reader.onload = function(e) {
+             const csvText = e.target.result;
+             const lines = csvText.split(/\r?\n/);
+             lines.forEach(line => {
+                 if (line.trim() !== '') {
+                     const fields = line.split(',');
+                     if (!isNaN(fields[0])) {
+                         teams.set(fields[0], { Name: fields[1] });
+                     };
+                 }
+             });
+             console.log(teams);
+             const elements = new Array();
+             elements.push(document.createElement('p').textContent = 'Parsed ' + (teams.size-1) + ' teams:');
+             const table = document.createElement('table');
+             const tbody = document.createElement('tbody');
+             table.appendChild(tbody);
+
+             const row = document.createElement('tr');
+             const th1 = document.createElement('th');
+             th1.textContent = 'Number';
+             row.appendChild(th1);
+             const th2 = document.createElement('th');
+             th2.textContent = 'Name';
+             row.appendChild(th2);
+             tbody.appendChild(row);
+
+             for (const [number, attr] of teams) {
+                 const r = document.createElement('tr');
+                 const tdNumber = document.createElement('td');
+                 tdNumber.textContent = number;
+                 const tdName = document.createElement('td');
+                 tdName.textContent = attr.Name;
+                 r.appendChild(tdNumber);
+                 r.appendChild(tdName);
+                 tbody.appendChild(r);
+             }
+
+             elements.push(table);
+             container.replaceChildren(...elements);
+             document.getElementById('roster_actions').classList.remove('hidden');
+         };
+         reader.readAsText(file);
+     }
+ });
+
+ async function submitRoster() {
+     const response = await fetch("/api/setup/update-roster", {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json",
+         },
+         body: JSON.stringify(Object.fromEntries(teams)),
+     });
+ }
+
+ document.getElementById('btn-submit-roster').addEventListener('click', submitRoster);
+</script>
+{% endblock %}

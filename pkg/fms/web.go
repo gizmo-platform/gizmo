@@ -8,8 +8,13 @@ import (
 	"net/http"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/flosch/pongo2/v6"
+	"github.com/google/uuid"
+
+	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/util"
 )
 
 func (f *FMS) uiViewLogin(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +102,10 @@ func (f *FMS) uiViewOutOfBoxSetup(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/oob.p2", nil)
 }
 
+func (f *FMS) uiViewRosterForm(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/setup/roster.p2", nil)
+}
+
 func (f *FMS) apiGetCurrentMap(w http.ResponseWriter, r *http.Request) {
 	m, _ := f.tlm.GetCurrentMapping()
 	json.NewEncoder(w).Encode(m)
@@ -162,6 +171,36 @@ func (f *FMS) apiSetTimezone(w http.ResponseWriter, r *http.Request) {
 	// leads to more security problems than it solves.
 	f.es.PublishActionStart("Set Timezone", "tzupdate")
 	f.runSystemCommand(w, "sudo", "tzupdate")
+}
+
+func (f *FMS) apiUpdateRoster(w http.ResponseWriter, r *http.Request) {
+	teams := make(map[int]*config.Team)
+
+	if err := json.NewDecoder(r.Body).Decode(&teams); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	f.es.PublishActionStart("Roster Change", "from web")
+
+	vlan := 500
+	for num, t := range teams {
+		t.VLAN = vlan
+		t.SSID = strings.ReplaceAll(uuid.New().String(), "-", "")
+		t.PSK = strings.ReplaceAll(uuid.New().String(), "-", "")
+		t.CIDR = fmt.Sprintf("10.%d.%d.0/24", int(num/100), num%100)
+		t.GizmoMAC = util.NumberToMAC(num, 0).String()
+		t.DSMAC = util.NumberToMAC(num, 1).String()
+
+		vlan++
+	}
+
+	f.c.ReconcileTeams(teams)
+	if err := f.c.Save(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+	f.es.PublishActionComplete("Roster Change")
 }
 
 func (f *FMS) runSystemCommand(w http.ResponseWriter, exe string, args ...string) error {

@@ -32,7 +32,6 @@ func LoadTeams(fr io.Reader) (map[int]*Team, error) {
 			for col := range header {
 				header[col] = strings.ReplaceAll(header[col], "Team Name", "Name")
 				header[col] = strings.ReplaceAll(header[col], "Team Number", "Number")
-				header[col] = strings.ReplaceAll(header[col], "Hub Name", "Hub")
 			}
 		} else {
 			dict := map[string]string{}
