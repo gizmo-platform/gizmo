@@ -5,9 +5,13 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strings"
 	"syscall"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-hclog"
+	"github.com/martinhoefling/goxkcdpwgen/xkcdpwgen"
+	"github.com/vishvananda/netlink"
 )
 
 const (
@@ -42,6 +46,13 @@ func NewFMSConfig(l hclog.Logger) (*FMSConfig, error) {
 
 	if err := c.Load(); err != nil {
 		return c, err
+	}
+
+	if c.populateRequiredElements() {
+		if err := c.Save(); err != nil {
+			l.Warn("Required elements were populated but could not be saved!", "error", err)
+		}
+		l.Info("Required configuration elements initialized")
 	}
 
 	// If we made it here then the config loaded, so we'll go
@@ -98,4 +109,44 @@ func (c *FMSConfig) SortedTeams() []*Team {
 		return out[i].Number < out[j].Number
 	})
 	return out
+}
+
+// Fills in certain elements that should never be null under any
+// circumstances.
+func (c *FMSConfig) populateRequiredElements() bool {
+	needSave := (c.FMSMac == "") || (c.AutoUser == "") || (c.ViewUser == "") ||
+		(c.AdminPass == "") || (c.AutoPass == "") || (c.ViewPass == "")
+
+	// Check if the FMSMac is unset.  If it is, set it to our own
+	// MAC on the premise that we're probably running on the FMS
+	// in the default configuration.
+	if c.FMSMac == "" {
+		eth0, err := netlink.LinkByName("eth0")
+		if err != nil {
+			c.l.Warn("Could not determine eth0 MAC address", "error", err)
+		}
+		c.FMSMac = eth0.Attrs().HardwareAddr.String()
+	}
+
+	// These are hard-coded elsewhere, and so must always be set
+	// to these values unless you REALLY know what you're doing.
+	c.AutoUser = AutomationUser
+	c.ViewUser = ViewOnlyUser
+
+	// If the passwords are unset, roll new ones.
+	if c.AdminPass == "" {
+		c.AdminPass = strings.ReplaceAll(uuid.New().String(), "-", "")
+	}
+	if c.AutoPass == "" {
+		c.AutoPass = strings.ReplaceAll(uuid.New().String(), "-", "")
+	}
+	if c.ViewPass == "" {
+		xkcd := xkcdpwgen.NewGenerator()
+		xkcd.SetNumWords(3)
+		xkcd.SetCapitalize(true)
+		xkcd.SetDelimiter("")
+		c.ViewPass = xkcd.GeneratePasswordString()
+	}
+
+	return needSave
 }
