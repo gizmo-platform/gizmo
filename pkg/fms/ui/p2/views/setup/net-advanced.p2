@@ -1,0 +1,70 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Advanced Network Setup | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Advanced Network Setup</h1>
+        <p>This page inclues settings fo advanced network functionality that most users do not need.  Only edit these settings if you know why you're editing them and understand the effect they will have.</p>
+        <hr />
+
+        <h2>DNS</h2>
+        <p>If you need to specify DNS manually for the FMS network, enter addresses in this box as a comma seperated list.  The IPs you enter here will be added at equivalent priority to the system resolver.</p>
+        <center>
+            <label for="fixed_dns">Fixed DNS Servers</label>
+            <input type="text" id="cfg-fixed-dns" name="fixed_dns" value="{{ cfg.FixedDNS|join:','}}" />
+        </center>
+        <hr />
+
+        <h2>BGP</h2>
+        <p>The FMS supports peering with an adjacent (presumably larger) network via BGP.  This is extremely advanced functionality that very few users will require.  The primary use case is to allow the FMS to join a much larger event network for external connectivity, and to allow management of the FMS from an existing network instead of the FMS infrastructure network.</p>
+        <p>Once enabled, the FMS will attempt to initiate or receive an iBGP session to the identified peer.  The FMS will announce <code>100.64.0.0/24</code> as its network.  Connectivity happens via the nominated VLAN which will be present on the FMS trunk port, which is an SFP cage for all FMS scoring boxes that support this feature.  You may disable BGP once configured by setting the ASN to 0.</p>
+        <table>
+            <tr>
+                <th>Setting</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td><label for="bgp_asn">ASN</label></td>
+                <td><input type="number" id="cfg-bgp-asn" name="bgp_asn" value="{{ cfg.AdvancedBGPAS }}" /></td>
+            </tr>
+            <tr>
+                <td><label for="bgp_ip">IP</label></td>
+                <td><input type="text" id="cfg-bgp-ip" name="bgp_ip" value="{{ cfg.AdvancedBGPIP }}" /></td>
+            </tr>
+            <tr>
+                <td><label for="bgp_peer">Peer IP</label></td>
+                <td><input type="text" id="cfg-bgp-peer" name="bgp_peer" value="{{ cfg.AdvancedBGPPeerIP }}" /></td>
+            </tr>
+            <tr>
+                <td><label for="bgp_vlan">VLAN</label></td>
+                <td><input type="text" id="cfg-bgp-vlan" name="bgp_vlan" value="{{ cfg.AdvancedBGPVLAN }}" /></td>
+            </tr>
+        </table>
+        <hr />
+        <center><button id="btn-save-config" class="button">Update Configuration</button></center>
+    </div>
+</div>
+
+<script>
+ async function submitConfig() {
+     const cfg = new Map();
+     cfg.set('FixedDNS', document.getElementById('cfg-fixed-dns').value.split(',').filter(Boolean) );
+     cfg.set('AdvancedBGPAS', parseInt(document.getElementById('cfg-bgp-asn').value, 10));
+     cfg.set('AdvancedBGPIP', document.getElementById('cfg-bgp-ip').value);
+     cfg.set('AdvancedBGPPeerIP', document.getElementById('cfg-bgp-peer').value);
+     cfg.set('AdvancedBGPVLAN', parseInt(document.getElementById('cfg-bgp-vlan').value, 10));
+
+     const response = await fetch("/api/setup/update-advanced-net", {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json",
+         },
+         body: JSON.stringify(Object.fromEntries(cfg)),
+     });
+ }
+
+ document.getElementById('btn-save-config').addEventListener('click', submitConfig);
+</script>
+{% endblock %}

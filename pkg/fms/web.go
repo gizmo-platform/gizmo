@@ -106,6 +106,10 @@ func (f *FMS) uiViewRosterForm(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/roster.p2", nil)
 }
 
+func (f *FMS) uiViewNetAdvanced(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/setup/net-advanced.p2", pongo2.Context{"cfg": f.c})
+}
+
 func (f *FMS) apiGetCurrentMap(w http.ResponseWriter, r *http.Request) {
 	m, _ := f.tlm.GetCurrentMapping()
 	json.NewEncoder(w).Encode(m)
@@ -201,6 +205,30 @@ func (f *FMS) apiUpdateRoster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f.es.PublishActionComplete("Roster Change")
+}
+
+func (f *FMS) apiUpdateAdvancedNet(w http.ResponseWriter, r *http.Request) {
+	cTmp := new(config.FMSConfig)
+
+	if err := json.NewDecoder(r.Body).Decode(&cTmp); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	// We do this rather than deserializing into the main config
+	// struct to ensure that its not possible to rewrite other
+	// unrelated parts of the config via this API.
+	f.c.FixedDNS = cTmp.FixedDNS
+	f.c.AdvancedBGPAS = cTmp.AdvancedBGPAS
+	f.c.AdvancedBGPIP = cTmp.AdvancedBGPIP
+	f.c.AdvancedBGPPeerIP = cTmp.AdvancedBGPPeerIP
+	f.c.AdvancedBGPVLAN = cTmp.AdvancedBGPVLAN
+
+	if err := f.c.Save(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+	f.es.PublishActionComplete("Configuration Save")
 }
 
 func (f *FMS) runSystemCommand(w http.ResponseWriter, exe string, args ...string) error {
