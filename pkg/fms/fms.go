@@ -105,6 +105,7 @@ func New(opts ...Option) (*FMS, error) {
 			r.Post("/update-roster", x.apiUpdateRoster)
 			r.Post("/update-wifi", x.apiUpdateNetWifi)
 			r.Post("/update-advanced-net", x.apiUpdateAdvancedNet)
+			r.Post("/update-integrations", x.apiUpdateIntegrations)
 		})
 	})
 
@@ -124,6 +125,7 @@ func New(opts ...Option) (*FMS, error) {
 				r.Get("/roster", x.uiViewRosterForm)
 				r.Get("/net-wifi", x.uiViewNetWifi)
 				r.Get("/net-advanced", x.uiViewNetAdvanced)
+				r.Get("/integrations", x.uiViewIntegrations)
 			})
 		})
 	})

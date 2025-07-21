@@ -114,6 +114,10 @@ func (f *FMS) uiViewNetAdvanced(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/net-advanced.p2", pongo2.Context{"cfg": f.c})
 }
 
+func (f *FMS) uiViewIntegrations(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/setup/integrations.p2", pongo2.Context{"cfg": f.c})
+}
+
 func (f *FMS) apiGetCurrentMap(w http.ResponseWriter, r *http.Request) {
 	m, _ := f.tlm.GetCurrentMapping()
 	json.NewEncoder(w).Encode(m)
@@ -254,6 +258,25 @@ func (f *FMS) apiUpdateAdvancedNet(w http.ResponseWriter, r *http.Request) {
 		f.es.PublishError(err)
 		return
 	}
+	f.es.PublishActionComplete("Configuration Save")
+}
+
+func (f *FMS) apiUpdateIntegrations(w http.ResponseWriter, r *http.Request) {
+	integrations := config.IntegrationSlice{}
+
+	if err := json.NewDecoder(r.Body).Decode(&integrations); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	f.c.Integrations = integrations
+	if err := f.c.Save(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
 	f.es.PublishActionComplete("Configuration Save")
 }
 

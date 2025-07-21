@@ -1,0 +1,46 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Integrations | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Enabled Integrations</h1>
+        <p>This page allows you to adjust which integrations are enabled.  Integrations are able to remotely manage the FMS using various vendor-specific APIs.</p>
+
+        <table>
+            <tr>
+                <th>Integration</th>
+                <th>Enabled</th>
+            </tr>
+            <tr>
+                <td><label for="best_pcsm">BEST Robotics PCSM</label></td>
+                <td><input type="checkbox" id="cfg-pcsm" name="best_pcsm"{% if 0 in cfg.Integrations %} checked{% endif %} /></td>
+            </tr>
+        </table>
+
+        <center><button id="btn-save-config" class="button">Update Configuration</button></center>
+    </div>
+</div>
+
+<script>
+ async function submitConfig() {
+     const IntegrationPCSM = 0;
+
+     const integrations = new Array();
+     if (document.getElementById('cfg-pcsm').checked) {
+         integrations.push(IntegrationPCSM);
+     }
+
+     const response = await fetch("/api/setup/update-integrations", {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json",
+         },
+         body: JSON.stringify(integrations),
+     });
+ }
+
+ document.getElementById('btn-save-config').addEventListener('click', submitConfig);
+</script>
+{% endblock %}
