@@ -1,0 +1,52 @@
+{% extends "../../base.p2" %}
+
+{% block title %}WiFi Network Setup | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>WiFi Network Setup</h1>
+        <p>This page allows you to modify the Infrastructure network that the Gizmo FMS broadcasts.  This is a seperate network from the control SSIDs that teams consume.  It operates in a different frequency range, and has strict firewalls preventing teams from accessing it.  You can use this network for scoreboards, laptops, or other administrative equipment that needs network access.</p>
+
+        <table>
+            <tr>
+                <th>Setting</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td><label for="network_visible">Make Visible</label></td>
+                <td><input type="checkbox" id="cfg-visible" name="network_visible"{% if cfg.InfrastructureVisible %} checked{% endif %} /></td>
+            </tr>
+            <tr>
+                <td><label for="network_ssid">SSID</label></td>
+                <td><input type="text" id="cfg-ssid" name="network_ssid" value="{{ cfg.InfrastructureSSID }}" /></td>
+            </tr>
+            <tr>
+                <td><label for="network_psk">PSK</label></td>
+                <td><input type="text" id="cfg-psk" name="network_psk" value="{{ cfg.InfrastructurePSK }}" /></td>
+            </tr>
+        </table>
+
+        <center><button id="btn-save-config" class="button">Update Configuration</button></center>
+    </div>
+</div>
+
+<script>
+ async function submitConfig() {
+     const cfg = new Map();
+     cfg.set('InfrastructureVisible', document.getElementById('cfg-visible').checked);
+     cfg.set('InfrastructureSSID', document.getElementById('cfg-ssid').value);
+     cfg.set('InfrastructurePSK', document.getElementById('cfg-psk').value);
+
+     const response = await fetch("/api/setup/update-wifi", {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json",
+         },
+         body: JSON.stringify(Object.fromEntries(cfg)),
+     });
+ }
+
+ document.getElementById('btn-save-config').addEventListener('click', submitConfig);
+</script>
+{% endblock %}

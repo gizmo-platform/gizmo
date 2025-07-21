@@ -103,6 +103,7 @@ func New(opts ...Option) (*FMS, error) {
 			r.Post("/fetch-packages", x.apiFetchPackages)
 			r.Post("/set-timezone", x.apiSetTimezone)
 			r.Post("/update-roster", x.apiUpdateRoster)
+			r.Post("/update-wifi", x.apiUpdateNetWifi)
 			r.Post("/update-advanced-net", x.apiUpdateAdvancedNet)
 		})
 	})
@@ -121,6 +122,7 @@ func New(opts ...Option) (*FMS, error) {
 			r.Route("/setup", func(r chi.Router) {
 				r.Get("/oob", x.uiViewOutOfBoxSetup)
 				r.Get("/roster", x.uiViewRosterForm)
+				r.Get("/net-wifi", x.uiViewNetWifi)
 				r.Get("/net-advanced", x.uiViewNetAdvanced)
 			})
 		})

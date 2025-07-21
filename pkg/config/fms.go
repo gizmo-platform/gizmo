@@ -115,7 +115,13 @@ func (c *FMSConfig) SortedTeams() []*Team {
 // circumstances.
 func (c *FMSConfig) populateRequiredElements() bool {
 	needSave := (c.FMSMac == "") || (c.AutoUser == "") || (c.ViewUser == "") ||
-		(c.AdminPass == "") || (c.AutoPass == "") || (c.ViewPass == "")
+		(c.AdminPass == "") || (c.AutoPass == "") || (c.ViewPass == "") ||
+		(c.InfrastructureSSID == "")
+
+	xkcd := xkcdpwgen.NewGenerator()
+	xkcd.SetNumWords(3)
+	xkcd.SetCapitalize(true)
+	xkcd.SetDelimiter("")
 
 	// Check if the FMSMac is unset.  If it is, set it to our own
 	// MAC on the premise that we're probably running on the FMS
@@ -141,11 +147,14 @@ func (c *FMSConfig) populateRequiredElements() bool {
 		c.AutoPass = strings.ReplaceAll(uuid.New().String(), "-", "")
 	}
 	if c.ViewPass == "" {
-		xkcd := xkcdpwgen.NewGenerator()
-		xkcd.SetNumWords(3)
-		xkcd.SetCapitalize(true)
-		xkcd.SetDelimiter("")
 		c.ViewPass = xkcd.GeneratePasswordString()
+	}
+
+	// If the SSID hasn't been set, then set it and the password
+	// to an XKCD string.
+	if c.InfrastructureSSID == "" {
+		c.InfrastructureSSID = "gizmo"
+		c.InfrastructurePSK = xkcd.GeneratePasswordString()
 	}
 
 	return needSave
