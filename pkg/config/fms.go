@@ -116,7 +116,7 @@ func (c *FMSConfig) SortedTeams() []*Team {
 func (c *FMSConfig) populateRequiredElements() bool {
 	needSave := (c.FMSMac == "") || (c.AutoUser == "") || (c.ViewUser == "") ||
 		(c.AdminPass == "") || (c.AutoPass == "") || (c.ViewPass == "") ||
-		(c.InfrastructureSSID == "")
+		(c.InfrastructureSSID == "") || (c.RadioMode == "")
 
 	xkcd := xkcdpwgen.NewGenerator()
 	xkcd.SetNumWords(3)
@@ -155,6 +155,10 @@ func (c *FMSConfig) populateRequiredElements() bool {
 	if c.InfrastructureSSID == "" {
 		c.InfrastructureSSID = "gizmo"
 		c.InfrastructurePSK = xkcd.GeneratePasswordString()
+	}
+
+	if c.RadioMode == "" {
+		c.RadioMode = "FIELD"
 	}
 
 	return needSave

@@ -1,0 +1,157 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Field Setup | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Fields</h1>
+        <p>This page allows you to manage field hardware.</p>
+        <center><button id="btn-show-form" class="button">Add Field</button></center>
+        <div id="table">Loading Data...</div>
+    </div>
+</div>
+
+<div id="field_form" class="modal">
+    <div class="modal-box foreground box">
+        <div id="form">Form Goes Here</div>
+        <center>
+            <button id="btn-add-field" class="button">Save</button>
+            <button id="btn-cancel-form" class="button">Cancel</button>
+        </center>
+    </div>
+</div>
+
+{% verbatim %}
+<script id="table_template" type="x-tmpl-mustache">
+ <table>
+ <tr>
+ <th>Field</th>
+ <th>MAC</th>
+ <th>Channel</th>
+ <th>Delete</th>
+ </tr>
+ {{#fields}}
+ <tr>
+ <td>{{ ID }}</td>
+ <td>{{ MAC }}</td>
+ <td>{{ Channel }}</td>
+ <td><button id="btn-delete-field-{{ ID }}" class="button">X</button></td>
+ </tr>
+ {{/fields}}
+ </table>
+</script>
+
+<script id="form_template" type="x-tmpl-mustache">
+ <form id="field_form_root">
+ <table>
+ <tr>
+ <td><label for="field_number">Field Number</label></td>
+ <td><input type="number" id="field_number" name="field_number" value="{{ Number }}" /></td>
+ </tr>
+ <tr>
+ <td><label for="field_mac">MAC Address</label></td>
+ <td><input type="text" id="field_mac" name="field_mac" value="{{ MAC }}" /></td>
+ </tr>
+ <tr>
+ <td><label for="field_channel">Channel</label></td>
+ <td>
+ <select id="field_channel" name="field_channel">
+ <option value="AUTO">Auto</option>
+ <option value="1">1</option>
+ <option value="6">6</option>
+ <option value="11">11</option>
+ </select>
+ </td>
+ </tr>
+ </table>
+ </form>
+</script>
+{% endverbatim %}
+
+<script>
+ const tableTemplate = document.getElementById('table_template').innerHTML;
+ const table = document.getElementById('table');
+ const formTemplate = document.getElementById('form_template').innerHTML;
+ const form = document.getElementById('form');
+
+ const formModal = document.getElementById('field_form');
+ document.getElementById('btn-show-form').addEventListener('click', (event) => {
+     formModal.style.display = 'block';
+ });
+ document.getElementById('btn-cancel-form').addEventListener('click', (event) => {
+     formModal.style.display = 'none';
+     document.getElementById('field_form_root').reset();
+ });
+
+ async function renderTable() {
+     try {
+         const response = await fetch('/api/config');
+         if (!response.ok) {
+             throw new Error(`Response status: ${response.status}`);
+         }
+
+         const config = await response.json();
+         const fields = new Array();
+
+         for (const shadowId in config.Fields) {
+             fields.push(config.Fields[shadowId]);
+         }
+
+         const rendered = Mustache.render(tableTemplate, { fields: fields });
+         table.innerHTML = rendered;
+
+         for (const field of fields) {
+             document.getElementById('btn-delete-field-'+field.ID).addEventListener('click', (event) => {
+                 deleteField(field.ID);
+             });
+         }
+     } catch (error) {
+         console.error(error.message);
+     }
+ }
+
+ async function submitConfig() {
+     const fId = document.getElementById('field_number').value;
+     const fMAC = document.getElementById('field_mac').value;
+     const fChannel = document.getElementById('field_channel').value;
+
+     const fIP = '100.64.0.' + (9+parseInt(fId, 10));
+
+     const field = {
+         ID: parseInt(fId, 10),
+         MAC: fMAC,
+         IP: fIP,
+         Channel: fChannel,
+     }
+     console.log(field);
+
+     const response = await fetch("/api/setup/field/", {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json",
+         },
+         body: JSON.stringify(field),
+     });
+
+     formModal.style.display = 'none';
+     document.getElementById('field_form_root').reset();
+     renderTable();
+ }
+
+ async function deleteField(id) {
+     const response = await fetch("/api/setup/field/" + id, {
+         method: "DELETE",
+     });
+     renderTable();
+ }
+
+ document.getElementById('btn-add-field').addEventListener('click', submitConfig);
+
+ document.addEventListener('DOMContentLoaded', function() {
+     renderTable();
+     const rendered = Mustache.render(formTemplate, {});
+     form.innerHTML = rendered;
+ });
+</script>
+{% endblock %}

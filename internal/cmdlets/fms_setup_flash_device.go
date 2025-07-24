@@ -136,7 +136,7 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	if err := installer.Install(); err != nil {
+	if err := installer.Install(); err != nil && !strings.HasPrefix(err.Error(), "signal") {
 		appLogger.Error("Fatal error during install", "error", err)
 		return
 	}

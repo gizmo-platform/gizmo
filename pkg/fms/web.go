@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/flosch/pongo2/v6"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
@@ -106,6 +107,10 @@ func (f *FMS) uiViewRosterForm(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/roster.p2", nil)
 }
 
+func (f *FMS) uiViewFieldForm(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/setup/field.p2", pongo2.Context{"cfg": f.c})
+}
+
 func (f *FMS) uiViewNetWifi(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/net-wifi.p2", pongo2.Context{"cfg": f.c})
 }
@@ -116,6 +121,10 @@ func (f *FMS) uiViewNetAdvanced(w http.ResponseWriter, r *http.Request) {
 
 func (f *FMS) uiViewIntegrations(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/integrations.p2", pongo2.Context{"cfg": f.c})
+}
+
+func (f *FMS) apiGetConfig(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(f.c)
 }
 
 func (f *FMS) apiGetCurrentMap(w http.ResponseWriter, r *http.Request) {
@@ -271,6 +280,67 @@ func (f *FMS) apiUpdateIntegrations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f.c.Integrations = integrations
+	if err := f.c.Save(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	f.es.PublishActionComplete("Configuration Save")
+}
+
+func (f *FMS) apiFieldAdd(w http.ResponseWriter, r *http.Request) {
+	field := new(config.Field)
+
+	if err := json.NewDecoder(r.Body).Decode(field); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	if _, exists := f.c.Fields[field.ID-1]; exists {
+		http.Error(w, "Already Exists!", http.StatusConflict)
+		return
+	}
+
+	f.c.Fields[field.ID-1] = field
+	if err := f.c.Save(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	f.es.PublishActionComplete("Configuration Save")
+}
+
+func (f *FMS) apiFieldUpdate(w http.ResponseWriter, r *http.Request) {
+	field := new(config.Field)
+	fNum, _ := strconv.Atoi(chi.URLParam(r, "id"))
+
+	if err := json.NewDecoder(r.Body).Decode(field); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	if _, exists := f.c.Fields[fNum]; !exists {
+		http.Error(w, "Does not exist!", http.StatusConflict)
+		return
+	}
+
+	f.c.Fields[field.ID] = field
+	if err := f.c.Save(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	f.es.PublishActionComplete("Configuration Save")
+}
+
+func (f *FMS) apiFieldDelete(w http.ResponseWriter, r *http.Request) {
+	fNum, _ := strconv.Atoi(chi.URLParam(r, "id"))
+	delete(f.c.Fields, fNum-1)
 	if err := f.c.Save(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		f.es.PublishError(err)

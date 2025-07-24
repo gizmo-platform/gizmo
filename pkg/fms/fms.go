@@ -87,6 +87,7 @@ func New(opts ...Option) (*FMS, error) {
 	})
 
 	r.Route("/api", func(r chi.Router) {
+		r.Get("/config", x.apiGetConfig)
 		r.Get("/eventstream", x.es.Handler)
 		r.Route("/field", func(r chi.Router) {
 			r.Get("/configured-quads", x.configuredQuads)
@@ -106,6 +107,12 @@ func New(opts ...Option) (*FMS, error) {
 			r.Post("/update-wifi", x.apiUpdateNetWifi)
 			r.Post("/update-advanced-net", x.apiUpdateAdvancedNet)
 			r.Post("/update-integrations", x.apiUpdateIntegrations)
+
+			r.Route("/field", func(r chi.Router) {
+				r.Post("/", x.apiFieldAdd)
+				r.Put("/{id}", x.apiFieldUpdate)
+				r.Delete("/{id}", x.apiFieldDelete)
+			})
 		})
 	})
 
@@ -123,6 +130,7 @@ func New(opts ...Option) (*FMS, error) {
 			r.Route("/setup", func(r chi.Router) {
 				r.Get("/oob", x.uiViewOutOfBoxSetup)
 				r.Get("/roster", x.uiViewRosterForm)
+				r.Get("/field", x.uiViewFieldForm)
 				r.Get("/net-wifi", x.uiViewNetWifi)
 				r.Get("/net-advanced", x.uiViewNetAdvanced)
 				r.Get("/integrations", x.uiViewIntegrations)

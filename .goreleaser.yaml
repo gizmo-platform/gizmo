@@ -5,9 +5,10 @@ before:
   hooks:
     - go mod tidy
     - go generate -tags docs {{ .Env.GENERATE_EXTRA_ARGS }} ./...
-    - wget -N https://use.fontawesome.com/releases/v6.6.0/fontawesome-free-6.6.0-web.zip
+    - wget -Nq https://use.fontawesome.com/releases/v6.6.0/fontawesome-free-6.6.0-web.zip
     - mkdir -p pkg/http/ui/static/fa/
     - bsdtar -xvf fontawesome-free-6.6.0-web.zip --strip-components=1 -C pkg/fms/ui/static/fa/
+    - wget -Nq https://unpkg.com/mustache@4.2.0 -O pkg/fms/ui/static/js/mustache.js
 builds:
   - env:
       - CGO_ENABLED=0
