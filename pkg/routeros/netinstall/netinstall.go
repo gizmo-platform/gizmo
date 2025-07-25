@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/vishvananda/netlink"
 
-	"github.com/gizmo-platform/gizmo/pkg/config"
+	"github.com/gizmo-platform/gizmo/pkg/eventstream"
 )
 
 const (
@@ -81,10 +81,13 @@ const (
 // Installer wraps functionality associated with installation.
 type Installer struct {
 	l hclog.Logger
+	es EventStreamer
 
 	pkgs         []string
 	bootstrap    string
 	bootstrapCtx map[string]string
+
+	cmd *exec.Cmd
 }
 
 // An InstallerOpt configures an installer
@@ -96,42 +99,11 @@ type installStep func() error
 //go:embed bootstrap.rsc
 var bootstrapCfg string
 
-// WithLogger configures the logging instance for this installer.
-func WithLogger(l hclog.Logger) InstallerOpt {
-	return func(i *Installer) { i.l = l }
-}
-
-// WithPackages configures what package should be installed
-func WithPackages(p []string) InstallerOpt {
-	return func(i *Installer) {
-		i.pkgs = p
-	}
-}
-
-// WithBootstrapNet configures the bootstrap configuration for the
-// network device.
-func WithBootstrapNet(s string) InstallerOpt {
-	return func(i *Installer) {
-		i.bootstrapCtx["network"] = s
-	}
-}
-
-// WithFMS pulls in the relevant settings from the config that needs
-// to be baked at netinstall time.
-func WithFMS(c *config.FMSConfig) InstallerOpt {
-	return func(i *Installer) {
-		i.bootstrapCtx["AutoUser"] = c.AutoUser
-		i.bootstrapCtx["AutoPass"] = c.AutoPass
-		i.bootstrapCtx["ViewUser"] = c.ViewUser
-		i.bootstrapCtx["ViewPass"] = c.ViewPass
-		i.bootstrapCtx["AdminPass"] = c.AdminPass
-	}
-}
-
 // New returns a new installer configured for use.
 func New(opts ...InstallerOpt) *Installer {
 	i := new(Installer)
 	i.bootstrapCtx = make(map[string]string)
+	i.es = eventstream.NewNullStreamer()
 	for _, o := range opts {
 		o(i)
 	}
@@ -204,26 +176,32 @@ func (i *Installer) doInstall() error {
 		"-o",
 	}
 	args = append(args, i.pkgs...)
-	cmd := exec.Command(netinstallPath, args...)
-	i.l.Debug("netinstall-cli", "command", cmd)
+	i.cmd = exec.Command(netinstallPath, args...)
+	i.l.Debug("/usr/sbin/netinstall-cli", "command", i.cmd)
 
 	rPipe, wPipe := io.Pipe()
-	cmd.Stdout = wPipe
-	cmd.Stderr = wPipe
+	i.cmd.Stdout = wPipe
+	i.cmd.Stderr = wPipe
 
-	cmd.Start()
+	i.cmd.Start()
 
 	scanner := bufio.NewScanner(rPipe)
 	scanner.Split(bufio.ScanLines)
 	go func() {
 		for scanner.Scan() {
 			if strings.HasPrefix(scanner.Text(), "Successfully") {
-				cmd.Process.Signal(syscall.SIGINT)
+				i.cmd.Process.Signal(syscall.SIGINT)
 			}
+			i.es.PublishLogLine(scanner.Text())
 			i.l.Info(scanner.Text())
 		}
 	}()
-	return cmd.Wait()
+	return i.cmd.Wait()
+}
+
+// Cancel is used to signal a running installer process to shut down.
+func (i *Installer) Cancel() {
+	i.cmd.Process.Signal(syscall.SIGINT)
 }
 
 func (i *Installer) setupNetwork() error {

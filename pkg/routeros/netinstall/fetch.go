@@ -24,6 +24,7 @@ const (
 type EventStreamer interface {
 	PublishError(error)
 	PublishFileFetch(string)
+	PublishLogLine(string)
 	PublishActionStart(string, string)
 }
 
@@ -196,7 +197,7 @@ loop:
 				return err
 			}
 
-			if err := exec.Command("sudo", "/usr/bin/setcap", "cap_net_raw,cap_net_bind_service+ep", netinstallPath).Run(); err != nil {
+			if err := exec.Command("sudo", "/usr/bin/setcap", "cap_net_admin,cap_net_raw,cap_net_bind_service+ep", netinstallPath).Run(); err != nil {
 				f.l.Error("Error elevating capability on tool", "error", err)
 				f.es.PublishError(err)
 				return err
