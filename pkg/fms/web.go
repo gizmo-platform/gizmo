@@ -1,127 +1,20 @@
 package fms
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
 	"strconv"
 	"strings"
 
-	"github.com/flosch/pongo2/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/util"
+	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
 )
-
-func (f *FMS) uiViewLogin(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "login.p2", nil)
-}
-
-func (f *FMS) uiViewAdminLanding(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "views/admin/landing.p2", nil)
-}
-
-func (f *FMS) uiViewCurrentMap(w http.ResponseWriter, r *http.Request) {
-	m, err := f.tlm.GetCurrentMapping()
-	if err != nil {
-		f.doTemplate(w, r, "errors/internal.p2", pongo2.Context{"error": err})
-	}
-	ctx := pongo2.Context{
-		"quads":  f.quads,
-		"active": f.invertTLMMap(m),
-		"teams":  f.c.Teams,
-	}
-
-	f.doTemplate(w, r, "views/map/current.p2", ctx)
-}
-
-func (f *FMS) uiViewStageMap(w http.ResponseWriter, r *http.Request) {
-	stage, err := f.tlm.GetStageMapping()
-	if err != nil {
-		f.doTemplate(w, r, "errors/internal.p2", pongo2.Context{"error": err})
-	}
-
-	current, err := f.tlm.GetCurrentMapping()
-	if err != nil {
-		f.doTemplate(w, r, "errors/internal.p2", pongo2.Context{"error": err})
-	}
-
-	ctx := pongo2.Context{
-		"stage":  f.invertTLMMap(stage),
-		"active": f.invertTLMMap(current),
-		"quads":  f.quads,
-		"teams":  f.c.Teams,
-		"roster": f.c.SortedTeams(),
-	}
-
-	f.doTemplate(w, r, "views/map/stage.p2", ctx)
-}
-
-func (f *FMS) uiViewUpdateStageMap(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		f.doTemplate(w, r, "errors/internal.p2", pongo2.Context{"error": err})
-		return
-	}
-
-	m := make(map[int]string)
-	for _, position := range f.quads {
-		t := r.FormValue(position)
-		if t == "0" {
-			continue
-		}
-		tNum, _ := strconv.Atoi(t)
-		m[tNum] = position
-	}
-
-	if err := f.tlm.InsertStageMapping(m); err != nil {
-		f.l.Error("Error remapping teams!", "error", err)
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Error inserting map: %s", err)
-		return
-	}
-	http.Redirect(w, r, "/ui/admin/map/stage", http.StatusSeeOther)
-}
-
-func (f *FMS) uiViewCommitStageMap(w http.ResponseWriter, r *http.Request) {
-	if err := f.tlm.CommitStagedMap(); err != nil {
-		f.l.Error("Error commiting staged mapping!", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Error commiting staged map: %s", err)
-		return
-	}
-	f.tlm.InsertStageMapping(nil)
-	http.Redirect(w, r, "/ui/admin/map/stage", http.StatusSeeOther)
-}
-
-func (f *FMS) uiViewOutOfBoxSetup(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "views/setup/oob.p2", nil)
-}
-
-func (f *FMS) uiViewRosterForm(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "views/setup/roster.p2", nil)
-}
-
-func (f *FMS) uiViewFieldForm(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "views/setup/field.p2", pongo2.Context{"cfg": f.c})
-}
-
-func (f *FMS) uiViewNetWifi(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "views/setup/net-wifi.p2", pongo2.Context{"cfg": f.c})
-}
-
-func (f *FMS) uiViewNetAdvanced(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "views/setup/net-advanced.p2", pongo2.Context{"cfg": f.c})
-}
-
-func (f *FMS) uiViewIntegrations(w http.ResponseWriter, r *http.Request) {
-	f.doTemplate(w, r, "views/setup/integrations.p2", pongo2.Context{"cfg": f.c})
-}
 
 func (f *FMS) apiGetConfig(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(f.c)
@@ -350,34 +243,25 @@ func (f *FMS) apiFieldDelete(w http.ResponseWriter, r *http.Request) {
 	f.es.PublishActionComplete("Configuration Save")
 }
 
-func (f *FMS) runSystemCommand(w http.ResponseWriter, exe string, args ...string) error {
-	flusher, flushAvailable := w.(http.Flusher)
-	cmd := exec.Command(exe, args...)
-	rPipe, wPipe := io.Pipe()
-	cmd.Stdout = wPipe
-	cmd.Stderr = wPipe
-	cmd.Start()
+func (f *FMS) apiDeviceFlashBegin(w http.ResponseWriter, r *http.Request) {
+	optionSetID, _ := strconv.Atoi(r.URL.Query().Get("optionset"))
 
-	scanner := bufio.NewScanner(rPipe)
-	scanner.Split(bufio.ScanLines)
+	opts := append(
+		[]netinstall.InstallerOpt{},
+		netinstall.WithLogger(f.l),
+		netinstall.WithFMS(f.c),
+		netinstall.WithEventStreamer(f.es),
+	)
+	opts = append(opts, netinstall.OptionSet(optionSetID).Options()...)
+	f.netinst = netinstall.New(opts...)
 	go func() {
-		for scanner.Scan() {
-			w.Write(scanner.Bytes())
-			w.Write([]byte("\r\n"))
-			if flushAvailable {
-				flusher.Flush()
-			}
+		if err := f.netinst.Install(); err != nil && !strings.HasPrefix(err.Error(), "signal") {
+			f.l.Warn("Error calling network installer", "error", err)
 		}
 	}()
-	err := cmd.Wait()
-	w.Write([]byte("\r\n"))
-	return err
 }
 
-func (f *FMS) invertTLMMap(m map[int]string) map[string]int {
-	out := make(map[string]int)
-	for k, v := range m {
-		out[v] = k
-	}
-	return out
+func (f *FMS) apiDeviceFlashCancel(w http.ResponseWriter, r *http.Request) {
+	f.netinst.Cancel()
+	f.netinst = nil
 }

@@ -1,0 +1,64 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Flash Device | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Flash Device</h1>
+        <p>This page allows you to install the base system components onto the network devices that make up the FMS network.</p>
+        <p>Locate the reset button on your device.  On hEX devices this button is recessed and must be pressed with a paperclip or similar small blunt object.  You'll need to push and hold the reset while plugging in the power cable, after which the 'user' light on your device will come on, blink 12 times, and then turn off.  Once the light has extinguished, you may release the reset switch.</p>
+        <p>There are multiple different hardware devices, please consult the following list to determine which device you have and what role it fills within your setup.</p>
+
+        <h3>Scoring Boxes</h3>
+        <p>Scoring boxes go at the scoring table and form the core of the network.  The following devices are supported as scoring boxes:</p>
+        <ul>
+            <li>Mikrotik hEX</li>
+            <li>Mikrotik hEX Lite</li>
+            <li>Mikrotik hEX PoE Lite</li>
+            <li>Mikrotik hEX PoE</li>
+            <li>Mikrotik RB5009UG+S+IN</li>
+            <li>Mikrotik RB5009UPr+S+IN</li>
+        </ul>
+        <p>The hEX class devices are identified by white plastic cases with blue labels.  These devices are suitable for up to 3 fields operating simultaneously.  The RB5009 devices are ruggedized metal devices identifiable by the substantial heatsink on the rear and are suitable for running up to 6 fields concurrently.</p>
+
+        <h3>Field Boxes</h3>
+        <p>Field boxes go, as the name implies, at the field.  These devices broadcast the field networks and have 4 ports dedicated to 4 field positions.  The following devices are currently supported:</p>
+        <ul>
+            <li>Mikrotik hAP ac3</li>
+        </ul>
+        <p>The hAP ac3 is identifiable by its wide black plastic case and 2 external antenna ports.  The hAP series with internal antennas is not supported.</p>
+        <hr />
+        <br />
+
+        <center>
+            <p>Select the correct device from the menu, click 'Begin Flashing', then power on the device with a network cable connected directly between the FMS Workstation and the device's 1st network port while holding down the reset button.  Logs will appear below the menu.</p>
+            <label for="optionset">Device Type</label>
+            <select name="optionset" id="optionset">
+                <option value=1>Scoring Box (Small)</option>
+                <option value=2>Scoring Box (Large)</option>
+                <option value=3>Field Box</option>
+            </select>
+            <button id="btn-begin-flash">Begin Flashing</button>
+            <button id="btn-cancel-flash">Cancel</button>
+        </center>
+
+        <br />
+        <div class="logbox"><pre><code id="logbox"></code></pre></div>
+    </div>
+</div>
+
+<script>
+ async function startFlash() {
+     const optionset = document.getElementById('optionset').value;
+     fetch('/api/setup/device/begin-flash?optionset=' + optionset, { method: 'POST' });
+ }
+
+ async function cancelFlash() {
+     fetch('/api/setup/device/cancel-flash', { method: 'POST' });
+ }
+
+ document.getElementById('btn-begin-flash').addEventListener('click', startFlash);
+ document.getElementById('btn-cancel-flash').addEventListener('click', cancelFlash);
+</script>
+{% endblock %}

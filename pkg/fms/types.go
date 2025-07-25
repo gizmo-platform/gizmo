@@ -13,6 +13,7 @@ import (
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/http"
+	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
 )
 
 // TeamLocationMapper looks at all teams trying to fetch a value and
@@ -37,6 +38,8 @@ type EventStreamer interface {
 	PublishActionStart(string, string)
 	PublishActionComplete(string)
 	PublishError(error)
+	PublishFileFetch(string)
+	PublishLogLine(string)
 }
 
 // FileFetcher fetches restricted files that cannot be baked into the
@@ -76,6 +79,8 @@ type FMS struct {
 	gizmoMeta      map[int]config.GizmoMeta
 	dsMeta         map[int]config.DSMeta
 	metaMutex      *sync.RWMutex
+
+	netinst *netinstall.Installer
 
 	hudVersions hudVersions
 }

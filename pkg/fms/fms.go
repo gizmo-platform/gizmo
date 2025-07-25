@@ -113,6 +113,11 @@ func New(opts ...Option) (*FMS, error) {
 				r.Put("/{id}", x.apiFieldUpdate)
 				r.Delete("/{id}", x.apiFieldDelete)
 			})
+
+			r.Route("/device", func(r chi.Router) {
+				r.Post("/begin-flash", x.apiDeviceFlashBegin)
+				r.Post("/cancel-flash", x.apiDeviceFlashCancel)
+			})
 		})
 	})
 
@@ -134,6 +139,7 @@ func New(opts ...Option) (*FMS, error) {
 				r.Get("/net-wifi", x.uiViewNetWifi)
 				r.Get("/net-advanced", x.uiViewNetAdvanced)
 				r.Get("/integrations", x.uiViewIntegrations)
+				r.Get("/flash-device", x.uiViewFlashDevice)
 			})
 		})
 	})

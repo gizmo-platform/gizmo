@@ -53,6 +53,16 @@ code {
   padding: 0 3px;
 }
 
+ul {
+    margin-bottom: 1.2em;
+    list-style: disc;
+}
+
+li {
+    margin-left: 1em;
+    margin-bottom: 0.5em;
+}
+
 #logomark {
     font-weight: 800;
 }
@@ -118,6 +128,13 @@ code {
 .icon-row-small {
     font-size: large;
     justify-content: space-evenly;
+}
+
+.logbox {
+  background: #eee;
+  border-radius: 3px;
+  padding: 1em;
+  border: 1px solid black;
 }
 
 .flex-center {

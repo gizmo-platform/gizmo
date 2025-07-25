@@ -24,6 +24,10 @@ ws.addEventListener("message", (event) => {
             break;
         case MsgTypeLogLine:
             console.log(msg.Message);
+            try {
+                const logbox = document.getElementById('logbox');
+                logbox.innerHTML += msg.Message + '\n';
+            } catch (error) {}
             break;
         case MsgTypeActionStart:
             console.log(msg.Message);
