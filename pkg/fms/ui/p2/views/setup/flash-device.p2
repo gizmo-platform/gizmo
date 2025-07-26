@@ -38,6 +38,7 @@
                 <option value=1>Scoring Box (Small)</option>
                 <option value=2>Scoring Box (Large)</option>
                 <option value=3>Field Box</option>
+                <option value=4>Auxiliary Device</option>
             </select>
             <button id="btn-begin-flash">Begin Flashing</button>
             <button id="btn-cancel-flash">Cancel</button>

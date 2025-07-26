@@ -80,7 +80,7 @@ const (
 
 // Installer wraps functionality associated with installation.
 type Installer struct {
-	l hclog.Logger
+	l  hclog.Logger
 	es EventStreamer
 
 	pkgs         []string

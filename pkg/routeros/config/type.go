@@ -25,6 +25,8 @@ type Configurator struct {
 	stateDir string
 
 	routerAddr string
+
+	ctx map[string]interface{}
 }
 
 type rosInterface struct {

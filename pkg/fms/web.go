@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
-	"github.com/gizmo-platform/gizmo/pkg/util"
 	"github.com/gizmo-platform/gizmo/pkg/routeros/netinstall"
+	"github.com/gizmo-platform/gizmo/pkg/util"
 )
 
 func (f *FMS) apiGetConfig(w http.ResponseWriter, r *http.Request) {

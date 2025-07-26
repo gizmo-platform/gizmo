@@ -1,6 +1,5 @@
 package netinstall
 
-
 import (
 	"github.com/hashicorp/go-hclog"
 
@@ -35,7 +34,7 @@ const (
 // given device.
 func (o OptionSet) Options() []InstallerOpt {
 	opts := []InstallerOpt{}
-	switch (o) {
+	switch o {
 	case HardwareScoringBox:
 		opts = append(opts, WithBootstrapNet(BootstrapNetScoring))
 		opts = append(opts, WithPackages([]string{

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -17,6 +18,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/cenkalti/backoff/v4"
+	"github.com/vishvananda/netlink"
 )
 
 const (
@@ -28,6 +32,7 @@ func New(opts ...Option) *Configurator {
 	c := new(Configurator)
 	c.stateDir = ".netstate"
 	c.routerAddr = "100.64.0.1"
+	c.ctx = make(map[string]interface{})
 
 	for _, o := range opts {
 		o(c)
@@ -347,6 +352,85 @@ func (c *Configurator) CycleRadio(band string) error {
 	return nil
 }
 
+// ActivateBootstrapNet raises VLAN2 with special addressing and
+// allows the FMS processes to talk to the network elements prior to
+// bootstrapping being complete.
+func (c *Configurator) ActivateBootstrapNet() error {
+	fmsAddr := "100.64.1.2"
+	c.l.Info("Bootstrap mode enabled")
+
+	eth0, err := netlink.LinkByName("eth0")
+	if err != nil {
+		c.l.Error("Could not retrieve ethernet link", "error", err)
+		return err
+	}
+
+	bootstrap0 := &netlink.Vlan{
+		LinkAttrs:    netlink.LinkAttrs{Name: "bootstrap0", ParentIndex: eth0.Attrs().Index},
+		VlanId:       2,
+		VlanProtocol: netlink.VLAN_PROTOCOL_8021Q,
+	}
+
+	if err := netlink.LinkAdd(bootstrap0); err != nil && err.Error() != "file exists" {
+		c.l.Error("Could not create bootstrapping interface", "error", err)
+		return err
+	}
+
+	for _, int := range []netlink.Link{eth0, bootstrap0} {
+		if err := netlink.LinkSetUp(int); err != nil {
+			c.l.Error("Error enabling eth0", "error", err)
+			return err
+		}
+	}
+
+	addr, _ := netlink.ParseAddr(fmsAddr + "/24")
+	if err := netlink.AddrAdd(bootstrap0, addr); err != nil {
+		c.l.Error("Could not add IP", "error", err)
+		return err
+	}
+	return nil
+}
+
+// DeactivateBootstrapNet undoes what is setup by ActivateBootstrapNet
+// and returns the system to its normal network operations.
+func (c *Configurator) DeactivateBootstrapNet() error {
+	bootstrap0, err := netlink.LinkByName("bootstrap0")
+	if err != nil {
+		c.l.Error("Could not retrieve ethernet link", "error", err)
+		return err
+	}
+
+	if err := netlink.LinkDel(bootstrap0); err != nil {
+		c.l.Error("Error removing bootstrap link", "error", err)
+		return err
+	}
+	return nil
+}
+
+// ROSPing reaches out to a device and attempts to retrive its
+// identity.  This validates that the device is up to a point that ROS
+// can respond to API calls.
+func (c *Configurator) ROSPing(addr, user, pass string) error {
+	cl := http.Client{
+		Timeout: time.Second * 10,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	req := &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   addr,
+			Path:   "/rest/system/identity",
+			User:   url.UserPassword(user, pass),
+		},
+	}
+	_, err := cl.Do(req)
+	return err
+}
+
 func (c *Configurator) syncFMSConfig() error {
 	f, err := os.Create(filepath.Join(c.stateDir, "fms.json"))
 	if err != nil {
@@ -388,7 +472,93 @@ func (c *Configurator) extractModules() error {
 	})
 }
 
+func (c *Configurator) convergeFields() error {
+	for _, field := range c.fc.Fields {
+		if err := c.waitForROS(field.IP, c.fc.AutoUser, c.fc.AutoPass); err != nil {
+			return err
+		}
+		provisionFunc := func() error {
+			if err := c.Converge(false, fmt.Sprintf("module.field%d", field.ID)); err != nil {
+				c.l.Error("Error configuring field", "field", field.ID, "error", err)
+				return err
+			}
+			return nil
+		}
+
+		bo := backoff.NewExponentialBackOff(backoff.WithMaxElapsedTime(time.Minute * 5))
+		if err := backoff.Retry(provisionFunc, bo); err != nil {
+			c.l.Error("Permanent error while configuring field", "error", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Configurator) waitForROS(addr, user, pass string) error {
+	retryFunc := func() error {
+		if err := c.ROSPing(addr, user, pass); err != nil {
+			c.l.Info("Waiting for device", "address", addr, "error", err)
+			return err
+		}
+		return nil
+	}
+
+	if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff(backoff.WithMaxInterval(time.Second*30))); err != nil {
+		c.l.Error("Permanent error encountered while waiting for RouterOS", "error", err)
+		c.l.Error("You need to reboot network boxes and try again")
+		return err
+	}
+	return nil
+}
+
+func (c *Configurator) waitForFMSIP() error {
+	c.l.Debug("Aquiring eth0")
+	eth0, err := netlink.LinkByName("eth0")
+	if err != nil {
+		c.l.Error("Could not retrieve ethernet link", "error", err)
+		return err
+	}
+
+	fmsIP, _ := netlink.ParseAddr("100.64.0.2/24")
+
+	retryFunc := func() error {
+		c.l.Debug("Requesting addresses from eth0")
+		addrs, err := netlink.AddrList(eth0, netlink.FAMILY_V4)
+		if err != nil {
+			c.l.Error("Error listing addresses", "error", err)
+			return err
+		}
+
+		for _, a := range addrs {
+			c.l.Debug("Checking IP", "have", a.String(), "want", fmsIP.String())
+			if a.Equal(*fmsIP) {
+				return nil
+			}
+		}
+
+		return errors.New("No FMS IP")
+	}
+	c.l.Debug("Link acquired, waiting for address")
+
+	if err := backoff.Retry(retryFunc, backoff.NewExponentialBackOff(backoff.WithMaxInterval(time.Second*30))); err != nil {
+		c.l.Error("Permanent error encountered while waiting for dhcp address", "error", err)
+		c.l.Error("You may be able to recover from this by restarting dhcpcd")
+	}
+	return nil
+}
+
 func (c *Configurator) configureWorkspace(ctx map[string]interface{}) error {
+	if ctx == nil {
+		ctx = make(map[string]interface{})
+	}
+	if _, found := ctx["RouterBootstrap"]; !found {
+		ctx["RouterBootstrap"] = false
+	}
+
+	if _, found := ctx["FieldBootstrap"]; !found {
+		ctx["FieldBootstrap"] = false
+	}
+
 	ctx["FMS"] = c.fc
 	ctx["RouterAddr"] = c.routerAddr
 
