@@ -120,3 +120,7 @@ func (f *FMS) uiViewFlashDevice(w http.ResponseWriter, r *http.Request) {
 func (f *FMS) uiViewBootstrapNet(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/net-bootstrap.p2", nil)
 }
+
+func (f *FMS) uiViewNetReconcile(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/net/reconcile.p2", nil)
+}

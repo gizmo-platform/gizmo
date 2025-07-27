@@ -1,0 +1,20 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Network Reconciliation | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Reconcile Network</h1>
+        <p>In the event of an unexpected power loss, bad field mapping, or other non-nominal event, it may become necessary to reconcile the network configuration.  Reconciliation can be triggered by clicking the button at any time.</p>
+        <button class="button" id="btn-reconcile-net">Reconcile Network</button>
+    </div>
+</div>
+
+<script>
+ async function reconcileNet() {
+     fetch('/api/net/reconcile', { method: 'POST' });
+ }
+ document.getElementById('btn-reconcile-net').addEventListener('click', reconcileNet);
+</script>
+{% endblock %}

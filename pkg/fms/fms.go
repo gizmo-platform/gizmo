@@ -129,6 +129,10 @@ func New(opts ...Option) (*FMS, error) {
 				})
 			})
 		})
+
+		r.Route("/net", func(r chi.Router) {
+			r.Post("/reconcile", x.apiNetReconcile)
+		})
 	})
 
 	r.Route("/ui", func(r chi.Router) {
@@ -151,6 +155,10 @@ func New(opts ...Option) (*FMS, error) {
 				r.Get("/integrations", x.uiViewIntegrations)
 				r.Get("/flash-device", x.uiViewFlashDevice)
 				r.Get("/bootstrap-net", x.uiViewBootstrapNet)
+			})
+
+			r.Route("/net", func(r chi.Router) {
+				r.Get("/reconcile", x.uiViewNetReconcile)
 			})
 		})
 	})

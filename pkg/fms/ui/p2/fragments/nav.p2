@@ -23,6 +23,7 @@
         <div class="nav-dropdown">
           <a class="nav-item" href="/ui/admin/map/current">Current Mapping</a>
           <a class="nav-item" href="/ui/admin/map/stage">Stage Mapping</a>
+          <a class="nav-item" href="/ui/admin/net/reconcile">Reconcile Network</a>
         </div>
       </div>
     </nav>

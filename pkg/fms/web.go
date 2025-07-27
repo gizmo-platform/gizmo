@@ -302,3 +302,31 @@ func (f *FMS) apiBootstrapBeginPhase3(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (f *FMS) apiNetReconcile(w http.ResponseWriter, r *http.Request) {
+	f.es.PublishActionStart("Network", "Reconciliation")
+	if err := f.net.SyncState(nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	if err := f.net.Converge(false, ""); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	if err := f.net.CycleRadio("2ghz"); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+
+	if err := f.net.CycleRadio("5ghz"); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+	f.es.PublishActionComplete("Network Reconciled")
+}
