@@ -21,3 +21,9 @@ func WithFMS(fms *config.FMSConfig) Option {
 func WithRouter(ip string) Option {
 	return func(c *Configurator) { c.routerAddr = ip }
 }
+
+// WithEventStreamer provides a means of streaming events that the
+// config engine takes.
+func WithEventStreamer(es EventStreamer) Option {
+	return func(c *Configurator) { c.es = es }
+}

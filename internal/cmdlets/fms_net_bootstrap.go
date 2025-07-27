@@ -107,15 +107,6 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
-	if err := controller.ActivateBootstrapNet(); err != nil {
-		appLogger.Error("Fatal error with bootstrap network", "error", err)
-		if err := controller.DeactivateBootstrapNet(); err != nil {
-			appLogger.Error("Error occured while unbootstrapping network.  You may need to run `ip link del bootstrap0`.", "error", err)
-			return
-		}
-		return
-	}
-
 	if err := controller.BootstrapPhase1(); err != nil {
 		appLogger.Error("Fatal error during Phase 1 Bootstrap", "error", err)
 		return

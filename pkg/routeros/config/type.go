@@ -16,11 +16,20 @@ var efs embed.FS
 // Option configures the Configurator
 type Option func(*Configurator)
 
+// EventStreamer provides an option to stream configuration events to
+// remote consumers.
+type EventStreamer interface {
+	PublishError(error)
+	PublishLogLine(string)
+	PublishActionComplete(string)
+}
+
 // Configurator is a mechansim to drive terraform under the hood and
 // validate that the configuration is as intended.
 type Configurator struct {
 	l  hclog.Logger
 	fc *config.FMSConfig
+	es EventStreamer
 
 	stateDir string
 

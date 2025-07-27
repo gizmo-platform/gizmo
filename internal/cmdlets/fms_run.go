@@ -50,11 +50,15 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 
+	es := eventstream.New(appLogger)
+	appLogger.Debug("EventStream Init")
+
 	routerAddr := "100.64.0.1"
 	controller := rconfig.New(
 		rconfig.WithFMS(fmsConf),
 		rconfig.WithLogger(appLogger),
 		rconfig.WithRouter(routerAddr),
+		rconfig.WithEventStreamer(es),
 	)
 	appLogger.Debug("Controller Init")
 
@@ -67,9 +71,6 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		appLogger.Warn("Could not recover TLM state", "error", err)
 	}
 	appLogger.Debug("TLM Init")
-
-	es := eventstream.New(appLogger)
-	appLogger.Debug("EventStream Init")
 
 	nsf := netinstall.NewFetcher(
 		netinstall.WithFetcherLogger(appLogger),
@@ -85,6 +86,7 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 		fms.WithStartupWG(wg),
 		fms.WithEventStreamer(es),
 		fms.WithFileFetcher(nsf),
+		fms.WithNetController(controller),
 	)
 	appLogger.Debug("HTTP Init")
 

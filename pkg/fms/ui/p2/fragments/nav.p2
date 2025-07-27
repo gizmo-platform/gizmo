@@ -15,6 +15,7 @@
           <a class="nav-item" href="/ui/admin/setup/net-wifi">WiFi Settings</a>
           <a class="nav-item" href="/ui/admin/setup/net-advanced">Advanced Network</a>
           <a class="nav-item" href="/ui/admin/setup/flash-device">Flash Device</a>
+          <a class="nav-item" href="/ui/admin/setup/bootstrap-net">Net Bootstrap</a>
         </div>
       </div>
       <div class="nav-container">

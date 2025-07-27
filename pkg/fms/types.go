@@ -49,6 +49,20 @@ type FileFetcher interface {
 	FetchTools() error
 }
 
+// NetController abstracts the functionality of the RouterOS
+// controller so that the FMS can bootstrap and reconcile the network
+// as required.
+type NetController interface {
+	Init() error
+	SyncState(map[string]interface{}) error
+	Converge(bool, string) error
+	CycleRadio(string) error
+	BootstrapPhase0() error
+	BootstrapPhase1() error
+	BootstrapPhase2() error
+	BootstrapPhase3() error
+}
+
 type hudVersions struct {
 	HardwareVersions string
 	FirmwareVersions string
@@ -66,6 +80,7 @@ type FMS struct {
 	fetcher FileFetcher
 
 	tlm TeamLocationMapper
+	net NetController
 
 	swg *sync.WaitGroup
 	tpl *pongo2.TemplateSet

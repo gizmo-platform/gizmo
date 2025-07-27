@@ -21,18 +21,29 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/vishvananda/netlink"
+
+	"github.com/gizmo-platform/gizmo/pkg/eventstream"
 )
 
 const (
 	workspaceFile = "main.tf"
+
+	// BootstrapAddr points to where the scoring router would be
+	// during the bootstrap scenario.
+	BootstrapAddr = "100.64.1.1"
+
+	// NormalAddr points to where the scoring router is during
+	// normal operation.
+	NormalAddr = "100.64.0.1"
 )
 
 // New initializes and returns a configurator
 func New(opts ...Option) *Configurator {
 	c := new(Configurator)
 	c.stateDir = ".netstate"
-	c.routerAddr = "100.64.0.1"
+	c.routerAddr = NormalAddr
 	c.ctx = make(map[string]interface{})
+	c.es = eventstream.NewNullStreamer()
 
 	for _, o := range opts {
 		o(c)
@@ -127,6 +138,7 @@ func (c *Configurator) Init() error {
 	cmd.Stdout = wPipe
 	cmd.Stderr = wPipe
 
+	c.es.PublishLogLine("[LOG] => Initializing Workspace")
 	cmd.Start()
 
 	scanner := bufio.NewScanner(rPipe)
@@ -137,7 +149,11 @@ func (c *Configurator) Init() error {
 		}
 		c.l.Debug("Log copier shutting down")
 	}()
-	return cmd.Wait()
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+	c.es.PublishLogLine("[LOG] => Workspace initialization complete")
+	return nil
 }
 
 // Converge commands all network hardware to achieve the state

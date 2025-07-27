@@ -265,3 +265,40 @@ func (f *FMS) apiDeviceFlashCancel(w http.ResponseWriter, r *http.Request) {
 	f.netinst.Cancel()
 	f.netinst = nil
 }
+
+func (f *FMS) apiInitNetController(w http.ResponseWriter, r *http.Request) {
+	if err := f.net.SyncState(nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	if err := f.net.Init(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (f *FMS) apiBootstrapBeginPhase0(w http.ResponseWriter, r *http.Request) {
+	if err := f.net.BootstrapPhase0(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (f *FMS) apiBootstrapBeginPhase1(w http.ResponseWriter, r *http.Request) {
+	if err := f.net.BootstrapPhase1(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (f *FMS) apiBootstrapBeginPhase2(w http.ResponseWriter, r *http.Request) {
+	if err := f.net.BootstrapPhase2(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (f *FMS) apiBootstrapBeginPhase3(w http.ResponseWriter, r *http.Request) {
+	if err := f.net.BootstrapPhase3(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

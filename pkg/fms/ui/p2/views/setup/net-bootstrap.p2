@@ -1,0 +1,42 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Network Bootstrap | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Network Bootstrap</h1>
+        <p>This page will guide you through bootstrapping the network for the very first time.  This process will take about 10 minutes, and will require internet access from the FMS workstation.  You can obtain this network access via either a wifi connection or USB tethered device.</p>
+
+        <div class="flex-container flex-row flex-center">
+            <button id="btn-bootstrap-init" class="button">Initialize</button>
+            <button id="btn-bootstrap-phase0" class="button">Phase 0</button>
+            <button id="btn-bootstrap-phase1" class="button">Phase 1</button>
+            <button id="btn-bootstrap-phase2" class="button">Phase 2</button>
+            <button id="btn-bootstrap-phase3" class="button">Phase 3</button>
+        </div>
+
+        <br />
+        <div class="logbox"><pre><code id="logbox"></code></pre></div>
+    </div>
+</div>
+
+<script>
+ const logbox = document.getElementById('logbox');
+
+ async function requestInit() { fetch('/api/setup/net/init', { method: 'POST' }) }
+ document.getElementById('btn-bootstrap-init').addEventListener('click', requestInit);
+
+ async function requestPhase0() { fetch('/api/setup/net/bootstrap/phase0', { method: 'POST' }) }
+ document.getElementById('btn-bootstrap-phase0').addEventListener('click', requestPhase0);
+
+ async function requestPhase1() { fetch('/api/setup/net/bootstrap/phase1', { method: 'POST' }) }
+ document.getElementById('btn-bootstrap-phase1').addEventListener('click', requestPhase1);
+
+ async function requestPhase2() { fetch('/api/setup/net/bootstrap/phase2', { method: 'POST' }) }
+ document.getElementById('btn-bootstrap-phase2').addEventListener('click', requestPhase2);
+
+ async function requestPhase3() { fetch('/api/setup/net/bootstrap/phase3', { method: 'POST' }) }
+ document.getElementById('btn-bootstrap-phase3').addEventListener('click', requestPhase3);
+</script>
+{% endblock %}

@@ -118,6 +118,16 @@ func New(opts ...Option) (*FMS, error) {
 				r.Post("/begin-flash", x.apiDeviceFlashBegin)
 				r.Post("/cancel-flash", x.apiDeviceFlashCancel)
 			})
+
+			r.Route("/net", func(r chi.Router) {
+				r.Post("/init", x.apiInitNetController)
+				r.Route("/bootstrap", func(r chi.Router) {
+					r.Post("/phase0", x.apiBootstrapBeginPhase0)
+					r.Post("/phase1", x.apiBootstrapBeginPhase1)
+					r.Post("/phase2", x.apiBootstrapBeginPhase2)
+					r.Post("/phase3", x.apiBootstrapBeginPhase3)
+				})
+			})
 		})
 	})
 
@@ -140,6 +150,7 @@ func New(opts ...Option) (*FMS, error) {
 				r.Get("/net-advanced", x.uiViewNetAdvanced)
 				r.Get("/integrations", x.uiViewIntegrations)
 				r.Get("/flash-device", x.uiViewFlashDevice)
+				r.Get("/bootstrap-net", x.uiViewBootstrapNet)
 			})
 		})
 	})

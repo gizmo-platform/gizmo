@@ -116,3 +116,7 @@ func (f *FMS) uiViewIntegrations(w http.ResponseWriter, r *http.Request) {
 func (f *FMS) uiViewFlashDevice(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/setup/flash-device.p2", nil)
 }
+
+func (f *FMS) uiViewBootstrapNet(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/setup/net-bootstrap.p2", nil)
+}

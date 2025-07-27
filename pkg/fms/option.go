@@ -75,3 +75,12 @@ func WithFileFetcher(fetcher FileFetcher) Option {
 		return nil
 	}
 }
+
+// WithNetController injects the backend network controller that will
+// actually modify network state.
+func WithNetController(nc NetController) Option {
+	return func(f *FMS) error {
+		f.net = nc
+		return nil
+	}
+}
