@@ -18,6 +18,12 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/http"
+
+	"github.com/the-maldridge/authware"
+	// We use htpasswd because authenticating using other means
+	// would require elevated system permissions which the system
+	// service does not possess.
+	_ "github.com/the-maldridge/authware/backend/htpasswd"
 )
 
 //go:embed ui/*
@@ -67,9 +73,17 @@ func New(opts ...Option) (*FMS, error) {
 	pongo2.RegisterFilter("split", x.filterSplit)
 	pongo2.RegisterFilter("teamName", x.filterTeamName)
 
+	
+	basic, err := authware.NewAuth()
+	if err != nil {
+		x.l.Error("Error initializing auth", "error", err)
+		return nil, err
+	}
+
 	sfs, _ := fs.Sub(uifs, "ui")
 	r.Handle("/static/*", nhttp.FileServer(nhttp.FS(sfs)))
 	r.Get("/login", x.uiViewLogin)
+	r.Post("/login", basic.LoginFormHandler("username", "password", "/ui/admin"))
 	r.Route("/gizmo/ds", func(r chi.Router) {
 		r.Get("/{id}/config", x.gizmoConfig)
 		r.Post("/{id}/meta", x.gizmoDSMetaReport)
@@ -146,7 +160,9 @@ func New(opts ...Option) (*FMS, error) {
 		r.Route("/display", func(r chi.Router) {
 			r.Get("/field-hud", x.uiViewFieldHUD)
 		})
+
 		r.Route("/admin", func(r chi.Router) {
+			r.Use(basic.LoginHandler("/login"))
 			r.Get("/", x.uiViewAdminLanding)
 
 			r.Route("/map", func(r chi.Router) {

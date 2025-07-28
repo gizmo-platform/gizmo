@@ -5,6 +5,8 @@ package cmdlets
 import (
 	"fmt"
 	"os"
+	"strings"
+	"log/slog"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
@@ -40,4 +42,22 @@ func initLogger(name string) {
 		Level: hclog.LevelFromString(ll),
 	})
 	appLogger.Info("Log level", "level", appLogger.GetLevel())
+
+	var level slog.Level
+	switch strings.ToLower(ll) {
+	case "debug":
+		level = slog.LevelDebug
+	case "info":
+		level = slog.LevelInfo
+	case "warn", "warning":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr,
+		&slog.HandlerOptions{Level: level}))
+	slog.SetDefault(logger)
 }
