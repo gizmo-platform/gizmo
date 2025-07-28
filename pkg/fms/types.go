@@ -53,6 +53,7 @@ type FileFetcher interface {
 // controller so that the FMS can bootstrap and reconcile the network
 // as required.
 type NetController interface {
+	Zap() error
 	Init() error
 	SyncState(map[string]interface{}) error
 	Converge(bool, string) error

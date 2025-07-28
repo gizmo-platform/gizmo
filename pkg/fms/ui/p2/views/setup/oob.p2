@@ -9,6 +9,12 @@
         <p>This page will allow you to complete out of box setup tasks that are required before further configuration is possible.  These actions require network access, before proceeding, connect the FMS workstation to either a wired Ethernet connection or join a WiFi network.</p>
         <hr />
 
+        <p>Under certain circumstance it is necessary to completely zap the configuration data that may be present on the system.  This button will clear all state data, without touching the configuration files.  Use this ONLY if you encountere a bootstrap crash or need to reinitialize the system network controller to a blank state, such as when reconfiguring between major Gizmo updates.</p>
+        <div class="flex-container flex-row flex-center">
+            <button class="button" id="btn-zap-net">Zap Network</button>
+        </div>
+        <hr />
+
         <p>For licensing reasons, certain files are not included in the system image, and you must click the button below to retrieve them.  Use of licensed components from Mikrotik is governed by the <a href="https://mikrotik.com/downloadterms.html">Mikrotik License Agreement</a>.</p>
         <div class="flex-container flex-row flex-center">
             <button class="button" id="btn-fetch-tools">Fetch Mikrotik Tools</button>
@@ -25,9 +31,14 @@
 </div>
 
 <script>
+ const btnZapTools = document.getElementById('btn-zap-net');
  const btnFetchTools = document.getElementById('btn-fetch-tools');
  const btnFetchPackages = document.getElementById('btn-fetch-packages');
  const btnSetTimezone = document.getElementById('btn-set-timezone');
+
+ btnZapTools.addEventListener("click", (event) => {
+     fetch("/api/setup/net/zap", { method: "POST" });
+ });
 
  btnFetchTools.addEventListener("click", (event) => {
      fetch("/api/setup/fetch-tools", { method: "POST" });

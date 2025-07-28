@@ -51,6 +51,12 @@ func New(opts ...Option) *Configurator {
 	return c
 }
 
+// Zap destructively removes all state information that is used by the
+// controller.
+func (c *Configurator) Zap() error {
+	return os.RemoveAll(c.stateDir)
+}
+
 // RadioMode returns the configured radio mode.  This is useful for
 // passing to other systems to determine what mode they should be in
 // based on what mode the FMS radio is in.

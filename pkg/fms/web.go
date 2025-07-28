@@ -330,3 +330,12 @@ func (f *FMS) apiNetReconcile(w http.ResponseWriter, r *http.Request) {
 	}
 	f.es.PublishActionComplete("Network Reconciled")
 }
+
+func (f *FMS) apiZapController(w http.ResponseWriter, r *http.Request) {
+	if err := f.net.Zap(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+	f.es.PublishActionComplete("Configuration Zapped")
+}

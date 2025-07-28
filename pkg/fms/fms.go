@@ -120,6 +120,7 @@ func New(opts ...Option) (*FMS, error) {
 			})
 
 			r.Route("/net", func(r chi.Router) {
+				r.Post("/zap", x.apiZapController)
 				r.Post("/init", x.apiInitNetController)
 				r.Route("/bootstrap", func(r chi.Router) {
 					r.Post("/phase0", x.apiBootstrapBeginPhase0)
