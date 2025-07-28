@@ -26,6 +26,7 @@ const (
 	gizmoLinkSvc   = "/etc/sv/gizmo-link/run"
 	gizmoConfigSvc = "/etc/sv/gizmo-config/run"
 	gizmoLogmonSvc = "/etc/sv/gizmo-logmon/run"
+	lldpConf       = "/etc/lldpd.d/gizmo.conf"
 )
 
 // Install invokes xbps to install the necessary packages
@@ -36,6 +37,7 @@ func (ds *DriverStation) Install() error {
 		"jq",
 		"socklog-void",
 		"tmux",
+		"lldpd",
 	}
 
 	return ds.sc.InstallPkgs(pkgs...)
@@ -140,7 +142,11 @@ func (ds *DriverStation) configureNetwork() error {
 }
 
 func (ds *DriverStation) configureHostname() error {
-	return ds.sc.SetHostname(fmt.Sprintf("gizmoDS-%d", ds.cfg.Team))
+	name := fmt.Sprintf("gizmoDS-%d", ds.cfg.Team)
+	if err := ds.sc.Template(lldpConf, "tpl/lldp.conf.tpl", 0644, name); err != nil {
+		return err
+	}
+	return ds.sc.SetHostname(name)
 }
 
 func (ds *DriverStation) configureHostAPd() error {
@@ -198,6 +204,7 @@ func (ds *DriverStation) enableServices() error {
 	ds.sc.Enable("hostapd")
 	ds.sc.Enable("socklog-unix")
 	ds.sc.Enable("nanoklogd")
+	ds.sc.Enable("lldpd")
 	for _, i := range []int{1, 4, 5, 6} {
 		ds.sc.Disable(fmt.Sprintf("agetty-tty%d", i))
 	}

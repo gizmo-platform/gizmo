@@ -74,6 +74,7 @@ install() {
     inst /etc/sv/console/run
     inst /etc/sv/dnsmasq/run
     inst /etc/sv/hostapd/run
+    inst /etc/sv/lldpd/run
     inst /etc/sv/nanoklogd/run
     inst /etc/sv/socklog-unix/check
     inst /etc/sv/socklog-unix/log/run
@@ -82,6 +83,8 @@ install() {
     inst /usr/bin/agetty
     inst /usr/bin/dnsmasq
     inst /usr/bin/hostapd
+    inst /usr/bin/lldpd
+    inst /usr/bin/lldpcli
     inst /usr/bin/nanoklogd
     inst /usr/bin/runsv
     inst /usr/bin/runsvdir
