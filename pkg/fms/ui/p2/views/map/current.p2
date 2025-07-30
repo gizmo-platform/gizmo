@@ -1,29 +1,50 @@
 {% extends "../../base.p2" %}
 
-{% block title %}Current Field Mapping | Gizmo FMS{% endblock %}
+{% block title %}Active Field Mapping | Gizmo FMS{% endblock %}
 
 {% block content %}
-  <div class="flex-container flex-row flex-center">
+<div class="flex-container flex-row flex-center">
     <div class="flex-item flex-max foreground box">
-      <table>
-        <tr>
-          <th>Field</th>
-          <th>Position</th>
-          <th>Current</th>
-        </tr>
-        {% for q in quads %}
-          <tr>
-            <td>{{ q|split:":"|first|cut:"field" }}</td>
-            <td>{{ q|split:":"|last|capfirst }}</td>
-            <td>
-              {% if active[q] %}
-                {{ active[q] }} ({{ teams[active[q]]|teamName }})
-              {% else %}
-                No Team
-              {% endif %}
-            </td>
-          {% endfor %}
-      </table>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Position</th>
+                <th>Expected</th>
+                <th>Actual</th>
+            </tr>
+            {% for q in quads %}
+            <tr>
+                <td>{{ q|split:":"|first|cut:"field" }}</td>
+                <td>{{ q|split:":"|last|capfirst }}</td>
+                <td>
+                    {% if active[q] %}
+                    {{ active[q] }} ({{ teams[active[q]]|teamName }})
+                    {% else %}
+                    No Team
+                    {% endif %}
+                </td>
+                <td id="{{ q }}">No Team</td>
+                {% endfor %}
+        </table>
     </div>
-  </div>
+</div>
+
+<script>
+ const quads = {{ quadJSON|safe }};
+ async function updateActual() {
+     const resp = await fetch('/api/field/present');
+     const data = await resp.json();
+     for (quad of quads) {
+         const qCell = document.getElementById(quad)
+         if (quad in data) {
+             qCell.innerHTML = data[quad];
+         } else {
+             qCell.innerHTML = 'No Team';
+         }
+     }
+     setTimeout(updateActual, 2000)
+ }
+
+ updateActual();
+</script>
 {% endblock %}

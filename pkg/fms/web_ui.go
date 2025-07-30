@@ -1,6 +1,7 @@
 package fms
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -21,10 +22,12 @@ func (f *FMS) uiViewCurrentMap(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		f.doTemplate(w, r, "errors/internal.p2", pongo2.Context{"error": err})
 	}
+	out, _ := json.Marshal(f.quads)
 	ctx := pongo2.Context{
-		"quads":  f.quads,
-		"active": f.invertTLMMap(m),
-		"teams":  f.c.Teams,
+		"quads":    f.quads,
+		"quadJSON": string(out),
+		"active":   f.invertTLMMap(m),
+		"teams":    f.c.Teams,
 	}
 
 	f.doTemplate(w, r, "views/map/current.p2", ctx)

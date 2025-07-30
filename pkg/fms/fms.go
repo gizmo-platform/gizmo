@@ -95,6 +95,7 @@ func New(opts ...Option) (*FMS, error) {
 		r.Route("/field", func(r chi.Router) {
 			r.Get("/configured-quads", x.configuredQuads)
 			r.Get("/present/{field}/{quad}", x.apiGetTeamPresent)
+			r.Get("/present", x.apiGetTeamPresentAll)
 		})
 		r.Route("/map", func(r chi.Router) {
 			r.Get("/current", x.apiGetCurrentMap)

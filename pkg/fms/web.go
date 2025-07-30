@@ -29,6 +29,12 @@ func (f *FMS) apiGetTeamPresent(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(num)
 }
 
+func (f *FMS) apiGetTeamPresentAll(w http.ResponseWriter, r *http.Request) {
+	f.dsPresentMutex.RLock()
+	defer f.dsPresentMutex.RUnlock()
+	json.NewEncoder(w).Encode(f.dsPresent)
+}
+
 func (f *FMS) apiGetCurrentMap(w http.ResponseWriter, r *http.Request) {
 	m, _ := f.tlm.GetCurrentMapping()
 	json.NewEncoder(w).Encode(m)
