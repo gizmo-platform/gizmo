@@ -75,6 +75,24 @@ func (f *FMS) apiCommitStageMap(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (f *FMS) apiUpdateMapImmediate(w http.ResponseWriter, r *http.Request) {
+	mapping := make(map[int]string)
+	buf, _ := io.ReadAll(r.Body)
+	if err := json.Unmarshal(buf, &mapping); err != nil {
+		f.l.Warn("Error decoding on-demand mapping", "error", err, "body", string(buf))
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "Requests must be a map of team numbers for field locations")
+		return
+	}
+
+	if err := f.tlm.InsertOnDemandMap(mapping); err != nil {
+		f.l.Error("Error remapping teams!", "error", err)
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Error inserting map: %s", err)
+		return
+	}
+}
+
 func (f *FMS) apiFetchTools(w http.ResponseWriter, r *http.Request) {
 	if err := f.fetcher.FetchTools(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

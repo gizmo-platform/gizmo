@@ -44,12 +44,14 @@ func (f *FMS) uiViewStageMap(w http.ResponseWriter, r *http.Request) {
 		f.doTemplate(w, r, "errors/internal.p2", pongo2.Context{"error": err})
 	}
 
+	out, _ := json.Marshal(f.quads)
 	ctx := pongo2.Context{
-		"stage":  f.invertTLMMap(stage),
-		"active": f.invertTLMMap(current),
-		"quads":  f.quads,
-		"teams":  f.c.Teams,
-		"roster": f.c.SortedTeams(),
+		"stage":    f.invertTLMMap(stage),
+		"active":   f.invertTLMMap(current),
+		"quads":    f.quads,
+		"teams":    f.c.Teams,
+		"roster":   f.c.SortedTeams(),
+		"quadJSON": string(out),
 	}
 
 	f.doTemplate(w, r, "views/map/stage.p2", ctx)

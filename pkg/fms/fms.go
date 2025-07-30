@@ -102,6 +102,7 @@ func New(opts ...Option) (*FMS, error) {
 			r.Get("/stage", x.apiGetStageMap)
 			r.Post("/stage", x.apiUpdateStageMap)
 			r.Post("/commit-stage", x.apiCommitStageMap)
+			r.Post("/update-immediate", x.apiUpdateMapImmediate)
 		})
 
 		r.Route("/setup", func(r chi.Router) {

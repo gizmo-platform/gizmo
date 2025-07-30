@@ -3,44 +3,87 @@
 {% block title %}Stage Field Mapping | Gizmo FMS{% endblock %}
 
 {% block content %}
-  <div class="flex-container flex-row flex-center">
+<div class="flex-container flex-row flex-center">
     <div class="flex-item flex-max foreground box">
-      <form id="stageform" method="post">
-        <table>
-          <tr>
-            <th>Field</th>
-            <th>Position</th>
-            <th>Current</th>
-            <th>Staged</th>
-          </tr>
-          {% for q in quads %}
-            <tr>
-              <td>{{ q|split:":"|first|cut:"field" }}</td>
-              <td>{{ q|split:":"|last|capfirst }}</td>
-              <td>
-                {% if active[q] %}
-                  {{ active[q] }} ({{ teams[active[q]]|teamName }})
-                {% else %}
-                  No Team
-                {% endif %}
-              </td>
-              <td>
-                <select name="{{ q }}">
-                  <option value="0" {% if not stage[q] %}selected{% endif %}>Empty</option>
-                  {% for team in roster %}
-                    <option value="{{ team.Number }}" {% if team.Number == stage[q] %}selected{% endif %}>{{ team.Number }} ({{ team.Name }})</option>
-                  {% endfor %}
-                </select>
-              </td>
-            </tr>
-          {% endfor %}
-        </table>
-      </form>
-      <form id="commitform" method="post" action="/ui/admin/map/commit-stage"></form>
-      <div class="flex-container flex-row flex-center">
-        <input form="stageform" type="submit" value="Save Stage Map" class="flex-item button" />
-        <input form="commitform" type="submit" value="Commit Staging Map" class="flex-item button" />
-      </div>
+        <form id="stageform" method="post">
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Position</th>
+                    <th>Current</th>
+                    <th>Staged</th>
+                    <th>Actual</th>
+                </tr>
+                {% for q in quads %}
+                <tr>
+                    <td>{{ q|split:":"|first|cut:"field" }}</td>
+                    <td>{{ q|split:":"|last|capfirst }}</td>
+                    <td>
+                        {% if active[q] %}
+                        {{ active[q] }} ({{ teams[active[q]]|teamName }})
+                        {% else %}
+                        No Team
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select name="{{ q }}">
+                            <option value="0" {% if not stage[q] %}selected{% endif %}>Empty</option>
+                            {% for team in roster %}
+                            <option value="{{ team.Number }}" {% if team.Number == stage[q] %}selected{% endif %}>{{ team.Number }} ({{ team.Name }})</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td id="{{ q }}"></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </form>
+        <form id="commitform" method="post" action="/ui/admin/map/commit-stage"></form>
+        <div class="flex-container flex-row flex-center">
+            <input form="stageform" type="submit" value="Save Stage Map" class="flex-item button" />
+            <input form="commitform" type="submit" value="Commit Staging Map" class="flex-item button" />
+            <button id="btn-map-actual" class="flex-item button">Map Teams Present</button>
+        </div>
     </div>
-  </div>
+</div>
+
+<script>
+ const quads = {{ quadJSON|safe }};
+ async function updateActual() {
+     const resp = await fetch('/api/field/present');
+     const data = await resp.json();
+     for (quad of quads) {
+         const qCell = document.getElementById(quad)
+         if (quad in data) {
+             qCell.innerHTML = data[quad];
+         } else {
+             qCell.innerHTML = 'No Team';
+         }
+     }
+     setTimeout(updateActual, 2000)
+ }
+
+ async function mapActual() {
+     const resp = await fetch('/api/field/present');
+     const data = await resp.json();
+     const map = new Map();
+
+     for (quad in data) {
+         map.set(data[quad], quad);
+     }
+     const newMapping = Object.fromEntries(map);
+     console.log(newMapping);
+     const response = await fetch('/api/map/update-immediate', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(newMapping),
+     });
+     if (resp.ok) {
+         window.location.reload(true);
+     }
+ }
+ document.getElementById('btn-map-actual').addEventListener('click', mapActual);
+
+ updateActual();
+</script>
 {% endblock %}
