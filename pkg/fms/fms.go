@@ -39,6 +39,8 @@ func New(opts ...Option) (*FMS, error) {
 	x.dsMeta = make(map[int]config.DSMeta)
 	x.connectedMutex = new(sync.RWMutex)
 	x.metaMutex = new(sync.RWMutex)
+	x.dsPresent = make(map[string]int)
+	x.dsPresentMutex = new(sync.RWMutex)
 	x.stop = make(chan struct{})
 	x.hudVersions = hudVersions{
 		HardwareVersions: "GIZMO_V00_R6E,GIZMO_V1_0_R00",
@@ -53,6 +55,7 @@ func New(opts ...Option) (*FMS, error) {
 			return nil, err
 		}
 	}
+	x.l.Debug("Quads Configured", "quads", x.quads)
 
 	var err error
 	x.s, err = http.NewServer(http.WithLogger(x.l), http.WithStartupWG(x.swg))
@@ -91,6 +94,7 @@ func New(opts ...Option) (*FMS, error) {
 		r.Get("/eventstream", x.es.Handler)
 		r.Route("/field", func(r chi.Router) {
 			r.Get("/configured-quads", x.configuredQuads)
+			r.Get("/present/{field}/{quad}", x.apiGetTeamPresent)
 		})
 		r.Route("/map", func(r chi.Router) {
 			r.Get("/current", x.apiGetCurrentMap)

@@ -20,6 +20,15 @@ func (f *FMS) apiGetConfig(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(f.c)
 }
 
+func (f *FMS) apiGetTeamPresent(w http.ResponseWriter, r *http.Request) {
+	field := chi.URLParam(r, "field")
+	quad := chi.URLParam(r, "quad")
+	f.dsPresentMutex.RLock()
+	num := f.dsPresent["field"+field+":"+quad]
+	f.dsPresentMutex.RUnlock()
+	json.NewEncoder(w).Encode(num)
+}
+
 func (f *FMS) apiGetCurrentMap(w http.ResponseWriter, r *http.Request) {
 	m, _ := f.tlm.GetCurrentMapping()
 	json.NewEncoder(w).Encode(m)

@@ -44,6 +44,12 @@ func New(opts ...Option) *Configurator {
 	c.routerAddr = NormalAddr
 	c.ctx = make(map[string]interface{})
 	c.es = eventstream.NewNullStreamer()
+	c.cl = &http.Client{
+		Timeout: time.Second * 10,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 
 	for _, o := range opts {
 		o(c)
@@ -194,13 +200,6 @@ func (c *Configurator) Converge(refresh bool, target string) error {
 // ReprovisionCAP removes all CAP interfaces and then triggers a
 // provisioning cycle.
 func (c *Configurator) ReprovisionCAP() error {
-	cl := &http.Client{
-		Timeout: time.Second * 10,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
 	req := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
@@ -210,7 +209,7 @@ func (c *Configurator) ReprovisionCAP() error {
 			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
 		},
 	}
-	resp, err := cl.Do(req)
+	resp, err := c.cl.Do(req)
 	if err != nil {
 		return err
 	}
@@ -237,7 +236,7 @@ func (c *Configurator) ReprovisionCAP() error {
 			},
 		}
 		c.l.Debug("Proposed delete URL", "url", req.URL.String())
-		resp, err := cl.Do(req)
+		resp, err := c.cl.Do(req)
 		if err != nil {
 			c.l.Error("Error removing cap interface", "cap", capInterface.ID, "error", err)
 			return err
@@ -258,7 +257,7 @@ func (c *Configurator) ReprovisionCAP() error {
 		},
 	}
 
-	resp, err = cl.Do(req)
+	resp, err = c.cl.Do(req)
 	if err != nil {
 		return err
 	}
@@ -278,7 +277,7 @@ func (c *Configurator) ReprovisionCAP() error {
 		req.URL.Path = "/rest/caps-man/remote-cap/provision"
 		req, _ := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
 		req.Header.Set("Content-Type", "application/json")
-		resp, err := cl.Do(req)
+		resp, err := c.cl.Do(req)
 		if err != nil {
 			c.l.Error("Error triggering provisioning", "error", err)
 			return err
@@ -297,13 +296,6 @@ func (c *Configurator) CycleRadio(band string) error {
 		return nil
 	}
 
-	cl := &http.Client{
-		Timeout: time.Second * 10,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
 	req := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
@@ -316,7 +308,7 @@ func (c *Configurator) CycleRadio(band string) error {
 	ifList := []*rosInterface{}
 	for _, field := range c.fc.Fields {
 		req.URL.Host = field.IP
-		resp, err := cl.Do(req)
+		resp, err := c.cl.Do(req)
 		if err != nil {
 			return err
 		}
@@ -331,7 +323,7 @@ func (c *Configurator) CycleRadio(band string) error {
 
 	req.URL.Host = c.routerAddr
 	req.URL.Path = "/rest/caps-man/radio"
-	resp, err := cl.Do(req)
+	resp, err := c.cl.Do(req)
 	if err != nil {
 		return err
 	}
@@ -355,9 +347,9 @@ func (c *Configurator) CycleRadio(band string) error {
 					c.l.Debug("JSON Message", "msg", string(data))
 
 					req.URL.Path = "/rest/caps-man/radio/provision"
-					req, err := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
+					req, _ := http.NewRequest("POST", req.URL.String(), bytes.NewBuffer(data))
 					req.Header.Set("Content-Type", "application/json")
-					resp, err = cl.Do(req)
+					resp, err = c.cl.Do(req)
 					if err != nil {
 						c.l.Error("Error cycling radio", "radio", capInterface.MAC, "band", band, "error", err)
 						return err
@@ -433,13 +425,6 @@ func (c *Configurator) DeactivateBootstrapNet() error {
 // identity.  This validates that the device is up to a point that ROS
 // can respond to API calls.
 func (c *Configurator) ROSPing(addr, user, pass string) error {
-	cl := http.Client{
-		Timeout: time.Second * 10,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
 	req := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
@@ -449,8 +434,54 @@ func (c *Configurator) ROSPing(addr, user, pass string) error {
 			User:   url.UserPassword(user, pass),
 		},
 	}
-	_, err := cl.Do(req)
+	_, err := c.cl.Do(req)
 	return err
+}
+
+// GetIDOnPort checks for an LLDP identity on the given port and then
+// resolves the number assuming that it is of the form 'gizmoDS-NNNN'.
+func (c *Configurator) GetIDOnPort(field int, quad string) (int, error) {
+	fIP := ""
+	for _, f := range c.fc.Fields {
+		if f.ID == field {
+			fIP = f.IP
+		}
+	}
+	if fIP == "" {
+		c.l.Error("Bad field for IDonPort", "field", field, "quad", quad)
+		return -1, errors.New("bad field spec")
+	}
+	req := &http.Request{
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   fIP,
+			Path:   "/rest/ip/neighbor",
+			User:   url.UserPassword(c.fc.AutoUser, c.fc.AutoPass),
+		},
+	}
+	q := req.URL.Query()
+	q.Add(".proplist", "interface,identity")
+	req.URL.RawQuery = q.Encode()
+	resp, err := c.cl.Do(req)
+	if err != nil {
+		return -1, err
+	}
+	res := []rosNeighbor{}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return -1, err
+	}
+
+	for _, neighbor := range res {
+		if strings.Contains(neighbor.Interface, c.quadToEther(quad)) {
+			num, err := strconv.Atoi(strings.TrimPrefix(neighbor.Identity, "gizmoDS-"))
+			if err != nil {
+				return -1, err
+			}
+			return num, nil
+		}
+	}
+	return -1, errors.New("not found")
 }
 
 func (c *Configurator) syncFMSConfig() error {

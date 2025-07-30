@@ -4,6 +4,7 @@ package config
 
 import (
 	"embed"
+	"net/http"
 
 	"github.com/hashicorp/go-hclog"
 
@@ -30,6 +31,7 @@ type Configurator struct {
 	l  hclog.Logger
 	fc *config.FMSConfig
 	es EventStreamer
+	cl *http.Client
 
 	stateDir string
 
@@ -52,4 +54,10 @@ type rosCapInterface struct {
 
 type rosRemoteCap struct {
 	ID string `json:".id"`
+}
+
+type rosNeighbor struct {
+	ID        string `json:".id"`
+	Identity  string `json:"identity"`
+	Interface string `json:"interface"`
 }

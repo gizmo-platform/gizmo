@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
@@ -53,6 +55,21 @@ func (tlm *TLM) GetFieldForTeam(team int) (string, error) {
 		return "none:none", errors.New("no mapping for team")
 	}
 	return mapping, nil
+}
+
+// GetActualDS figures out what team is actually connected to
+// a given field port.  This is based on checking for some LLDP
+// signaling so that even if no VLAN is mapped for IP communication,
+// the driver's stations are all named in a predictable pattern.
+func (tlm *TLM) GetActualDS(fID string) (int, error) {
+	parts := strings.Split(fID, ":")
+	num, _ := strconv.Atoi(strings.TrimPrefix(parts[0], "field"))
+
+	team, err := tlm.controller.GetIDOnPort(num, parts[1])
+	if err != nil {
+		return -1, err
+	}
+	return team, nil
 }
 
 // InsertOnDemandMap inserts an on-demand mapping that overrides any

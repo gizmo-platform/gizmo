@@ -21,6 +21,8 @@ import (
 // number.
 type TeamLocationMapper interface {
 	GetFieldForTeam(int) (string, error)
+	GetActualDS(string) (int, error)
+
 	GetCurrentMapping() (map[int]string, error)
 	InsertOnDemandMap(map[int]string) error
 
@@ -95,6 +97,8 @@ type FMS struct {
 	gizmoMeta      map[int]config.GizmoMeta
 	dsMeta         map[int]config.DSMeta
 	metaMutex      *sync.RWMutex
+	dsPresent      map[string]int
+	dsPresentMutex *sync.RWMutex
 
 	netinst *netinstall.Installer
 

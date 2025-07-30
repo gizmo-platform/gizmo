@@ -41,6 +41,18 @@ func (f *FMS) doConnectedUpkeep() {
 			}
 			f.metaMutex.Unlock()
 			f.connectedMutex.Unlock()
+
+			f.dsPresentMutex.Lock()
+			for _, quad := range f.quads {
+				delete(f.dsPresent, quad)
+				t, err := f.tlm.GetActualDS(quad)
+				if err != nil {
+					f.l.Trace("Error pulling from field", "error", err)
+					continue
+				}
+				f.dsPresent[quad] = t
+			}
+			f.dsPresentMutex.Unlock()
 		}
 	}
 }
