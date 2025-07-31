@@ -9,6 +9,11 @@ import (
 	"github.com/flosch/pongo2/v6"
 )
 
+func (f *FMS) uiViewFieldHUD(w http.ResponseWriter, r *http.Request) {
+	quadJSON, _ := json.Marshal(f.quads)
+	f.doTemplate(w, r, "views/display/field-hud.p2", pongo2.Context{"quads": quadJSON})
+}
+
 func (f *FMS) uiViewLogin(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "login.p2", nil)
 }

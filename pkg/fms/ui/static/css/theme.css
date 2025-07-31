@@ -105,6 +105,16 @@ li {
     padding: 1em;
 }
 
+.blink {
+    animation: blinker 0.5s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
+
 .center {
     text-align: center;
 }
@@ -194,6 +204,7 @@ li {
     font-size: xxx-large;
     font-weight: 800;
     margin-bottom: 0.25em;
+    text-align: center;
 }
 
 .field-red {

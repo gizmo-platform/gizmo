@@ -3,6 +3,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -23,10 +25,46 @@ type DSMeta struct {
 	Bootmode string
 }
 
+// VersionOK compares the version against a string containing all
+// permitted versions.
+func (d DSMeta) VersionOK(vList string) bool {
+	if d.Version == "" {
+		return false
+	}
+	return strings.Contains(vList, d.Version)
+}
+
+// BootmodeOK compares if the boot mode is in the list of accepted
+// bootmodes.
+func (d DSMeta) BootmodeOK(bList string) bool {
+	if d.Bootmode == "" {
+		return false
+	}
+	return strings.Contains(bList, d.Bootmode)
+}
+
 // GizmoMeta stores information reported by the Gizmo metadata feed.
 type GizmoMeta struct {
 	HardwareVersion string
 	FirmwareVersion string
+}
+
+// HWVersionOK checks if the hardware version is in the list of known
+// hardware versions.
+func (g GizmoMeta) HWVersionOK(hList string) bool {
+	if g.HardwareVersion == "" {
+		return false
+	}
+	return strings.Contains(hList, g.HardwareVersion)
+}
+
+// FWVersionOK checks if the firmware version is in the list of known
+// firmware versions.
+func (g GizmoMeta) FWVersionOK(fList string) bool {
+	if g.FirmwareVersion == "" {
+		return false
+	}
+	return strings.Contains(fList, g.FirmwareVersion)
 }
 
 // Field contains the information related to each field.

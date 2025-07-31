@@ -372,3 +372,58 @@ func (f *FMS) apiZapController(w http.ResponseWriter, r *http.Request) {
 	}
 	f.es.PublishActionComplete("Configuration Zapped")
 }
+
+func (f *FMS) apiFieldHUD(w http.ResponseWriter, r *http.Request) {
+	type hudQuad struct {
+		Color           string
+		Actual          int
+		Team            int
+		GizmoConnected  bool
+		GizmoFirmwareOK bool
+		GizmoHardwareOK bool
+		GizmoMeta       config.GizmoMeta
+		DSConnected     bool
+		DSBootOK        bool
+		DSVersionOK     bool
+		DSMeta          config.DSMeta
+	}
+
+	f.dsPresentMutex.RLock()
+	defer f.dsPresentMutex.RUnlock()
+	m, _ := f.tlm.GetCurrentMapping()
+	tm := f.invertTLMMap(m)
+
+	out := make([][]hudQuad, len(f.c.Fields))
+	for _, field := range f.quads {
+		parts := strings.Split(field, ":")
+		n, err := strconv.Atoi(strings.TrimPrefix(parts[0], "field"))
+		if err != nil {
+			f.l.Error("Error decoding field number", "error", err)
+			continue
+		}
+		n = n - 1
+		team := tm[field]
+
+		fTmp := hudQuad{
+			Color:  parts[1],
+			Team:   team,
+			Actual: f.dsPresent[field],
+		}
+		f.connectedMutex.RLock()
+		_, fTmp.GizmoConnected = f.connectedGizmo[team]
+		_, fTmp.DSConnected = f.connectedDS[team]
+		f.connectedMutex.RUnlock()
+
+		f.metaMutex.RLock()
+		fTmp.GizmoMeta = f.gizmoMeta[team]
+		fTmp.GizmoHardwareOK = fTmp.GizmoMeta.HWVersionOK(f.hudVersions.HardwareVersions)
+		fTmp.GizmoFirmwareOK = fTmp.GizmoMeta.FWVersionOK(f.hudVersions.FirmwareVersions)
+		fTmp.DSMeta = f.dsMeta[team]
+		fTmp.DSVersionOK = fTmp.DSMeta.VersionOK(f.hudVersions.DSVersions)
+		fTmp.DSBootOK = fTmp.DSMeta.BootmodeOK(f.hudVersions.Bootmodes)
+		f.metaMutex.RUnlock()
+
+		out[n] = append(out[n], fTmp)
+	}
+	json.NewEncoder(w).Encode(out)
+}

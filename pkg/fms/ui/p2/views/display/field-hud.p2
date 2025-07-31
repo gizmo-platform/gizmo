@@ -1,0 +1,90 @@
+{% extends "../../display.p2" %}
+
+{% block title %}Heads Up Display{% endblock %}
+
+{% block bodystyle %}black-background{% endblock %}
+
+{% block content %}
+  <div class="hud-container" id="hud-container">
+  </div>
+
+  {% verbatim %}
+  <script id="tpl-field" type="x-tmpl-mustache">
+   {{#fields}}
+   <div class="flex-container flex-row">
+   {{#.}}
+   {{> quad }}
+   {{/.}}
+   </div>
+   {{/fields}}
+  </script>
+
+  <script id="tpl-quad" type="x-tmpl-mustache">
+      <div class="flex-item flex-max field-{{ Color }} {{ QuadStatus }}">
+        <p class="quad-label">{{#Team }}{{Team}}{{/Team}}{{^Team}}No Team{{/Team}}{{#Actual}} ({{Actual}}){{/Actual}}</p>
+        <div class="flex-container flex-row icon-row">
+          <div class="flex-item flex-container flex-column">
+            <span class="hud-icon {{ GizmoStatus }}">
+              <i class="flex-item fa-solid fa-robot"></i>
+            </span>
+            <div class="flex-item flex-container flex-row icon-row-small">
+              <span class="flex-item {{ GizmoHWStatus }}">
+                <i class="fa-solid fa-circle-check" title="Hardware: {{ GizmoMeta.HardwareVersion }}"></i>
+              </span>
+              <span class="flex-item {{ GizmoFWStatus }}">
+                <i class="fa-solid fa-circle-check" title="Firmware: {{ GizmoMeta.FirmwareVersion }}"></i>
+              </span>
+            </div>
+          </div>
+          <div class="flex-item flex-container flex-column">
+            <span class="hud-icon {{ DSStatus }}">
+              <i class="flex-item fa-solid fa-gamepad"></i>
+            </span>
+            <div class="flex-item flex-container flex-row icon-row-small">
+              <span class="flex-item {{ DSBootStatus }}">
+                <i class="fa-solid fa-circle-check" title="Bootmode: {{ DSMeta.Bootmode }}"></i>
+              </span>
+              <span class="flex-item {{ DSVersionStatus }}">
+                <i class="fa-solid fa-circle-check" title="Version: {{ DSMeta.Version }}"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+  </script>
+{% endverbatim %}
+
+<script>
+ const hudTemplate = document.getElementById('tpl-field').innerHTML;
+ const hud = document.getElementById('hud-container');
+ const quadTemplate = document.getElementById('tpl-quad').innerHTML;
+
+ async function paintHUD() {
+     try {
+         const resp = await fetch('/api/display/field-hud');
+         const fields = await resp.json();
+         for (field of fields) {
+             for (quad of field) {
+                 quad['QuadStatus'] = (quad['Team'] == quad['Actual']) ? '' : 'blink';
+                 quad['DSStatus'] = quad['DSConnected'] ? 'status-ok' : 'status-error';
+                 quad['GizmoStatus'] = quad['GizmoConnected'] ? 'status-ok' : 'status-error';
+                 quad['DSBootStatus'] = quad['DSBootOK'] ? 'status-ok' : 'status-error';
+                 quad['DSVersionStatus'] = quad['DSVersionOK'] ? 'status-ok' : 'status-error';
+                 quad['GizmoFWStatus'] = quad['GizmoFirmwareOK'] ? 'status-ok' : 'status-error';
+                 quad['GizmoHWStatus'] = quad['GizmoHardwareOK'] ? 'status-ok' : 'status-error';
+             }
+         }
+         const rendered = Mustache.render(hudTemplate, {'fields': fields}, {'quad': quadTemplate});
+         hud.innerHTML = rendered;
+
+     } catch (error) {
+         console.error(error.message);
+     }
+
+     setTimeout(paintHUD, 1000);
+ }
+
+ setTimeout(paintHUD, 2000);
+
+</script>
+{% endblock %}

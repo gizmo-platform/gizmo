@@ -140,9 +140,16 @@ func New(opts ...Option) (*FMS, error) {
 		r.Route("/net", func(r chi.Router) {
 			r.Post("/reconcile", x.apiNetReconcile)
 		})
+
+		r.Route("/display", func(r chi.Router) {
+			r.Get("/field-hud", x.apiFieldHUD)
+		})
 	})
 
 	r.Route("/ui", func(r chi.Router) {
+		r.Route("/display", func(r chi.Router) {
+			r.Get("/field-hud", x.uiViewFieldHUD)
+		})
 		r.Route("/admin", func(r chi.Router) {
 			r.Get("/", x.uiViewAdminLanding)
 

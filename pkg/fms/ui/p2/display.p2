@@ -17,4 +17,5 @@
   </body>
   <script defer src="/static/fa/js/solid.js"></script>
   <script defer src="/static/fa/js/fontawesome.js"></script>
+  <script defer src="/static/js/mustache.js"></script>
 </html>
