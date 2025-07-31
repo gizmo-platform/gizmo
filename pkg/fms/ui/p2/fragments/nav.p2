@@ -26,6 +26,13 @@
           <a class="nav-item" href="/ui/admin/net/reconcile">Reconcile Network</a>
         </div>
       </div>
+      <div class="nav-container">
+        <div class="nav-header">Observe</div>
+        <div class="nav-dropdown">
+          <a class="nav-item" href="/ui/display/field-hud">Heads Up Display</a>
+          <a class="nav-item" href="http://100.64.0.2:3000" target="_blank">Grafana</a>
+        </div>
+      </div>
     </nav>
     {% endif %}
   </div>

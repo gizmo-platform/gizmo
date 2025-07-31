@@ -5,59 +5,67 @@
 {% block bodystyle %}black-background{% endblock %}
 
 {% block content %}
-  <div class="hud-container" id="hud-container">
+  <!-- All icons on this page are from the FontAwesome Free collection.  CC BY 4.0 -->
+<div class="hud-container" id="hud-container">
+</div>
+
+{% verbatim %}
+<script id="tpl-field" type="x-tmpl-mustache">
+  {{#fields}}
+  <div class="flex-container flex-row">
+    {{#.}}
+    {{> quad }}
+    {{/.}}
   </div>
+  {{/fields}}
+</script>
 
-  {% verbatim %}
-  <script id="tpl-field" type="x-tmpl-mustache">
-   {{#fields}}
-   <div class="flex-container flex-row">
-   {{#.}}
-   {{> quad }}
-   {{/.}}
-   </div>
-   {{/fields}}
-  </script>
-
-  <script id="tpl-quad" type="x-tmpl-mustache">
-      <div class="flex-item flex-max field-{{ Color }} {{ QuadStatus }}">
-        <p class="quad-label">{{#Team }}{{Team}}{{/Team}}{{^Team}}No Team{{/Team}}{{#Actual}} ({{Actual}}){{/Actual}}</p>
-        <div class="flex-container flex-row icon-row">
-          <div class="flex-item flex-container flex-column">
-            <span class="hud-icon {{ GizmoStatus }}">
-              <i class="flex-item fa-solid fa-robot"></i>
-            </span>
-            <div class="flex-item flex-container flex-row icon-row-small">
-              <span class="flex-item {{ GizmoHWStatus }}">
-                <i class="fa-solid fa-circle-check" title="Hardware: {{ GizmoMeta.HardwareVersion }}"></i>
-              </span>
-              <span class="flex-item {{ GizmoFWStatus }}">
-                <i class="fa-solid fa-circle-check" title="Firmware: {{ GizmoMeta.FirmwareVersion }}"></i>
-              </span>
-            </div>
-          </div>
-          <div class="flex-item flex-container flex-column">
-            <span class="hud-icon {{ DSStatus }}">
-              <i class="flex-item fa-solid fa-gamepad"></i>
-            </span>
-            <div class="flex-item flex-container flex-row icon-row-small">
-              <span class="flex-item {{ DSBootStatus }}">
-                <i class="fa-solid fa-circle-check" title="Bootmode: {{ DSMeta.Bootmode }}"></i>
-              </span>
-              <span class="flex-item {{ DSVersionStatus }}">
-                <i class="fa-solid fa-circle-check" title="Version: {{ DSMeta.Version }}"></i>
-              </span>
-            </div>
-          </div>
+<script id="tpl-quad" type="x-tmpl-mustache">
+  <div class="flex-item flex-max field-{{ Color }} {{ QuadStatus }}">
+    <p class="quad-label">{{#Team }}{{Team}}{{/Team}}{{^Team}}No Team{{/Team}}{{#Actual}} ({{Actual}}){{/Actual}}</p>
+    <div class="flex-container flex-row icon-row">
+      <div class="flex-item flex-container flex-column">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="hud-icon-large" fill="{{ GizmoStatus }}">
+          <path d="M32,224H64V416H32A31.96166,31.96166,0,0,1,0,384V256A31.96166,31.96166,0,0,1,32,224Zm512-48V448a64.06328,64.06328,0,0,1-64,64H160a64.06328,64.06328,0,0,1-64-64V176a79.974,79.974,0,0,1,80-80H288V32a32,32,0,0,1,64,0V96H464A79.974,79.974,0,0,1,544,176ZM264,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,264,256Zm-8,128H192v32h64Zm96,0H288v32h64ZM456,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,456,256Zm-8,128H384v32h64ZM640,256V384a31.96166,31.96166,0,0,1-32,32H576V224h32A31.96166,31.96166,0,0,1,640,256Z"/>
+        </svg>
+        <div class="flex-item flex-container flex-row icon-row-small">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="hud-icon-small" fill="{{ GizmoHWStatus }}">
+            <path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/>
+            <title>Hardware: {{ GizmoMeta.HardwareVersion }}</title>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="hud-icon-small" fill="{{ GizmoFWStatus }}">
+            <path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/>
+            <title>Firmware: {{ GizmoMeta.FirmwareVersion }}</title>
+          </svg>
         </div>
       </div>
-  </script>
+      <div class="flex-item flex-container flex-column">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="hud-icon-large" fill="{{ DSStatus }}">
+          <path d="M480.07 96H160a160 160 0 1 0 114.24 272h91.52A160 160 0 1 0 480.07 96zM248 268a12 12 0 0 1-12 12h-52v52a12 12 0 0 1-12 12h-24a12 12 0 0 1-12-12v-52H84a12 12 0 0 1-12-12v-24a12 12 0 0 1 12-12h52v-52a12 12 0 0 1 12-12h24a12 12 0 0 1 12 12v52h52a12 12 0 0 1 12 12zm216 76a40 40 0 1 1 40-40 40 40 0 0 1-40 40zm64-96a40 40 0 1 1 40-40 40 40 0 0 1-40 40z"/>
+        </svg>
+        <div class="flex-item flex-container flex-row icon-row-small">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="hud-icon-small" fill="{{ DSBootStatus }}">
+            <path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/>
+            <title>Boot Mode: {{ DSMeta.Bootmode }}</title>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="hud-icon-small" fill="{{ DSVersionStatus }}">
+            <path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/>
+            <title>Version: {{ DSMeta.Version }}</title>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
 {% endverbatim %}
 
 <script>
  const hudTemplate = document.getElementById('tpl-field').innerHTML;
  const hud = document.getElementById('hud-container');
  const quadTemplate = document.getElementById('tpl-quad').innerHTML;
+
+ const statusOK = 'lightgreen';
+ const statusError = 'red';
 
  async function paintHUD() {
      try {
@@ -66,12 +74,12 @@
          for (field of fields) {
              for (quad of field) {
                  quad['QuadStatus'] = (quad['Team'] == quad['Actual']) ? '' : 'blink';
-                 quad['DSStatus'] = quad['DSConnected'] ? 'status-ok' : 'status-error';
-                 quad['GizmoStatus'] = quad['GizmoConnected'] ? 'status-ok' : 'status-error';
-                 quad['DSBootStatus'] = quad['DSBootOK'] ? 'status-ok' : 'status-error';
-                 quad['DSVersionStatus'] = quad['DSVersionOK'] ? 'status-ok' : 'status-error';
-                 quad['GizmoFWStatus'] = quad['GizmoFirmwareOK'] ? 'status-ok' : 'status-error';
-                 quad['GizmoHWStatus'] = quad['GizmoHardwareOK'] ? 'status-ok' : 'status-error';
+                 quad['DSStatus'] = quad['DSConnected'] ? statusOK : statusError;
+                 quad['GizmoStatus'] = quad['GizmoConnected'] ? statusOK : statusError;
+                 quad['DSBootStatus'] = quad['DSBootOK'] ? statusOK : statusError;
+                 quad['DSVersionStatus'] = quad['DSVersionOK'] ? statusOK : statusError;
+                 quad['GizmoFWStatus'] = quad['GizmoFirmwareOK'] ? statusOK : statusError;
+                 quad['GizmoHWStatus'] = quad['GizmoHardwareOK'] ? statusOK : statusError;
              }
          }
          const rendered = Mustache.render(hudTemplate, {'fields': fields}, {'quad': quadTemplate});

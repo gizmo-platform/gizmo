@@ -227,6 +227,17 @@ li {
     background: lightgrey;
 }
 
+.hud-icon-large {
+    height: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.hud-icon-small {
+    height: 1em;
+    margin-left: 0.25em;
+    margin-right: 0.25em;
+}
+
 .white-text {
     color: #eeeeee;
 }
