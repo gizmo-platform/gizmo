@@ -64,7 +64,6 @@ func New(opts ...Option) (*FMS, error) {
 		return nil, err
 	}
 
-	pongo2.RegisterFilter("valueok", x.filterValueOK)
 	pongo2.RegisterFilter("split", x.filterSplit)
 	pongo2.RegisterFilter("teamName", x.filterTeamName)
 
@@ -84,9 +83,6 @@ func New(opts ...Option) (*FMS, error) {
 		r.Post("/map/immediate", x.remapTeams)
 		r.Post("/map/pcsm", x.remapTeamsPCSM)
 		r.Get("/map/current", x.currentTeamMap)
-		r.Route("/hud", func(hr chi.Router) {
-			hr.Get("/", x.fieldHUD)
-		})
 	})
 
 	r.Route("/api", func(r chi.Router) {
@@ -217,28 +213,18 @@ func (f *FMS) doTemplate(w nhttp.ResponseWriter, r *nhttp.Request, tmpl string, 
 	}
 }
 
-func (f *FMS) filterValueOK(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
-	list := strings.Split(param.String(), ",")
-	for _, val := range list {
-		if strings.TrimSpace(in.String()) == strings.TrimSpace(val) {
-			return pongo2.AsValue(true), nil
-		}
-	}
-	return pongo2.AsValue(false), nil
-}
-
 func (f *FMS) filterSplit(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
 	list := strings.Split(in.String(), param.String())
 	return pongo2.AsValue(list), nil
 }
 
 func (f *FMS) filterTeamName(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
-	t, ok := in.Interface().(*config.Team)
-	if !ok {
-		f.l.Error("Something that wasn't a team got passed to the teamName filter", "in", in.Interface())
-		return pongo2.AsValue(""), &pongo2.Error{Sender: "filter:teamName"}
-	}
-	return pongo2.AsValue(t.Name), nil
+       t, ok := in.Interface().(*config.Team)
+       if !ok {
+               f.l.Error("Something that wasn't a team got passed to the teamName filter", "in", in.Interface())
+               return pongo2.AsValue(""), &pongo2.Error{Sender: "filter:teamName"}
+       }
+       return pongo2.AsValue(t.Name), nil
 }
 
 func (f *FMS) populateHUDVersions() {
