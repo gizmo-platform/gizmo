@@ -17,8 +17,10 @@ import (
 //go:embed mdbook/book/*
 var efs embed.FS
 
-// Handler returns the contents of the embedded docs filesystem.
-func Handler() http.Handler {
-	efs, _ := fs.Sub(efs, "mdbook/book")
-	return http.FileServer(http.FS(efs))
+// MakeHandler returns the contents of the embedded docs filesystem.
+func MakeHandler(path string) http.Handler {
+	return func() http.Handler {
+		efs, _ := fs.Sub(efs, "mdbook/book")
+		return http.StripPrefix(path, http.FileServer(http.FS(efs)))
+	}()
 }

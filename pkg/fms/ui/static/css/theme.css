@@ -58,6 +58,11 @@ ul {
     list-style: disc;
 }
 
+ol {
+    list-style: number;
+    margin-left: 1em;
+}
+
 li {
     margin-left: 1em;
     margin-bottom: 0.5em;

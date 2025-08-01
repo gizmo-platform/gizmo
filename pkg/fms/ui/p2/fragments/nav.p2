@@ -33,6 +33,16 @@
           <a class="nav-item" href="http://100.64.0.2:3000" target="_blank">Grafana</a>
         </div>
       </div>
+      <div class="nav-container">
+        <div class="nav-header">Help</div>
+        <div class="nav-dropdown">
+          <a class="nav-item" href="https://gizmoplatform.org" target="_blank">Gizmo Website</a>
+          <a class="nav-item" href="https://gizmo.zulipchat.com" target="_blank">Zulip Chat</a>
+          <a class="nav-item" href="https://github.com/gizmo-platform" target="_blank">GitHub</a>
+          <a class="nav-item" href="/docs/" target="_blank">Documentation (Local)</a>
+          <a class="nav-item" href="https://gizmoplatform.dev" target="_blank">Documentation (Internet)</a>
+        </div>
+      </div>
     </nav>
     {% endif %}
   </div>

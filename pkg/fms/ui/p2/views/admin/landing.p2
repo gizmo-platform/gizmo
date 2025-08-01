@@ -5,7 +5,27 @@
 {% block content %}
   <div class="flex-container flex-row flex-center">
     <div class="flex-item flex-max foreground box">
-      <p>Admin Landing</p>
+      <center><h2>Gizmo Field Management System</h2></center>
+      <p>Welcome to the Gizmo Field Management System (FMS).  The FMS
+        provides automated network services and provides substantial
+        monitoring capabilities for what is happening with all connected
+        Gizmos.</p>
+
+      <p>To get started, run through the items in the setup menu in
+        roughly this order:</p>
+
+      <ol>
+        <li>Complete Out of Box Setup (requires internet).</li>
+        <li>Load a Roster</li>
+        <li>Flash network devices, making note of field device MAC addresses.</li>
+        <li>Add one or more fields.</li>
+        <li>Bootstrap the network.</li>
+      </ol>
+
+      <p>You may also wish to enable one or more integrations, or
+        adjust WiFi settings.  Once configured, map a team to a field
+        by setting up the stage mapping under the Operate menu, then
+        commit the stage mapping.</p>
     </div>
   </div>
 {% endblock %}

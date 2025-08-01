@@ -18,6 +18,7 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/http"
+	"github.com/gizmo-platform/gizmo/pkg/docs"
 
 	"github.com/the-maldridge/authware"
 	// We use htpasswd because authenticating using other means
@@ -193,7 +194,7 @@ func New(opts ...Option) (*FMS, error) {
 
 	r.Get("/metrics-sd", x.promSD)
 	r.Handle("/", nhttp.RedirectHandler("/ui/", nhttp.StatusMovedPermanently))
-
+	r.Handle("/docs/*", docs.MakeHandler("/docs"))
 	x.s.Mount("/", r)
 
 	return x, nil
