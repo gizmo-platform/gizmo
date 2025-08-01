@@ -100,6 +100,17 @@ li {
     height: auto;
 }
 
+.box-margin {
+    margin: 2em;
+}
+
+.box-chooser {
+    text-decoration: none;
+    color: black;
+    font-size: x-large;
+    font-weight: 600;
+}
+
 .button {
     margin: 0.25em;
     padding: 1em;

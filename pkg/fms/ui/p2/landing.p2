@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gizmo FMS</title>
+    <link href="/static/css/reset.css" rel="stylesheet">
+    <link href="/static/css/theme.css" rel="stylesheet">
+  </head>
+  <body class="background">
+    <div class="flex-container flex-center full-height">
+      <a class="foreground flex-item box box-margin box-chooser" href="/ui/display/field-hud">Heads Up Display</a>
+      <a class="foreground flex-item box box-margin box-chooser" href="/ui/admin">Administration</a>
+    </div>
+  </body>
+</html>

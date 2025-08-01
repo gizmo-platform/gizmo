@@ -84,6 +84,7 @@ func New(opts ...Option) (*FMS, error) {
 	r.Handle("/static/*", nhttp.FileServer(nhttp.FS(sfs)))
 	r.Get("/login", x.uiViewLogin)
 	r.Post("/login", basic.LoginFormHandler("username", "password", "/ui/admin"))
+	r.Get("/logout", basic.LogoutHandler("/"))
 	r.Route("/gizmo/ds", func(r chi.Router) {
 		r.Get("/{id}/config", x.gizmoConfig)
 		r.Post("/{id}/meta", x.gizmoDSMetaReport)
@@ -157,6 +158,7 @@ func New(opts ...Option) (*FMS, error) {
 	})
 
 	r.Route("/ui", func(r chi.Router) {
+		r.Get("/", x.uiViewLanding)
 		r.Route("/display", func(r chi.Router) {
 			r.Get("/field-hud", x.uiViewFieldHUD)
 		})
@@ -190,6 +192,7 @@ func New(opts ...Option) (*FMS, error) {
 	})
 
 	r.Get("/metrics-sd", x.promSD)
+	r.Handle("/", nhttp.RedirectHandler("/ui/", nhttp.StatusMovedPermanently))
 
 	x.s.Mount("/", r)
 
@@ -219,6 +222,7 @@ func (f *FMS) doTemplate(w nhttp.ResponseWriter, r *nhttp.Request, tmpl string, 
 	if ctx == nil {
 		ctx = pongo2.Context{"shownav": true}
 	}
+	ctx["user"], _ = r.Context().Value(authware.UserKey{}).(authware.User)
 	t, err := f.tpl.FromCache(tmpl)
 	if err != nil {
 		f.templateErrorHandler(w, err)
