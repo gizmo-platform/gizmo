@@ -105,11 +105,13 @@ func New(opts ...Option) (*FMS, error) {
 		r.Get("/config", x.apiGetConfig)
 		r.Get("/eventstream", x.es.Handler)
 		r.Route("/field", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Get("/configured-quads", x.configuredQuads)
 			r.Get("/present/{field}/{quad}", x.apiGetTeamPresent)
 			r.Get("/present", x.apiGetTeamPresentAll)
 		})
 		r.Route("/map", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Get("/current", x.apiGetCurrentMap)
 			r.Get("/stage", x.apiGetStageMap)
 			r.Post("/stage", x.apiUpdateStageMap)
@@ -118,6 +120,7 @@ func New(opts ...Option) (*FMS, error) {
 		})
 
 		r.Route("/setup", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Post("/fetch-tools", x.apiFetchTools)
 			r.Post("/fetch-packages", x.apiFetchPackages)
 			r.Post("/set-timezone", x.apiSetTimezone)
@@ -150,6 +153,7 @@ func New(opts ...Option) (*FMS, error) {
 		})
 
 		r.Route("/net", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Post("/reconcile", x.apiNetReconcile)
 		})
 
