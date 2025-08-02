@@ -18,6 +18,13 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/http"
+	"github.com/gizmo-platform/gizmo/pkg/docs"
+
+	"github.com/the-maldridge/authware"
+	// We use htpasswd because authenticating using other means
+	// would require elevated system permissions which the system
+	// service does not possess.
+	_ "github.com/the-maldridge/authware/backend/htpasswd"
 )
 
 //go:embed ui/*
@@ -67,9 +74,18 @@ func New(opts ...Option) (*FMS, error) {
 	pongo2.RegisterFilter("split", x.filterSplit)
 	pongo2.RegisterFilter("teamName", x.filterTeamName)
 
+	
+	basic, err := authware.NewAuth()
+	if err != nil {
+		x.l.Error("Error initializing auth", "error", err)
+		return nil, err
+	}
+
 	sfs, _ := fs.Sub(uifs, "ui")
 	r.Handle("/static/*", nhttp.FileServer(nhttp.FS(sfs)))
 	r.Get("/login", x.uiViewLogin)
+	r.Post("/login", basic.LoginFormHandler("username", "password", "/ui/admin"))
+	r.Get("/logout", basic.LogoutHandler("/"))
 	r.Route("/gizmo/ds", func(r chi.Router) {
 		r.Get("/{id}/config", x.gizmoConfig)
 		r.Post("/{id}/meta", x.gizmoDSMetaReport)
@@ -89,11 +105,13 @@ func New(opts ...Option) (*FMS, error) {
 		r.Get("/config", x.apiGetConfig)
 		r.Get("/eventstream", x.es.Handler)
 		r.Route("/field", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Get("/configured-quads", x.configuredQuads)
 			r.Get("/present/{field}/{quad}", x.apiGetTeamPresent)
 			r.Get("/present", x.apiGetTeamPresentAll)
 		})
 		r.Route("/map", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Get("/current", x.apiGetCurrentMap)
 			r.Get("/stage", x.apiGetStageMap)
 			r.Post("/stage", x.apiUpdateStageMap)
@@ -102,6 +120,7 @@ func New(opts ...Option) (*FMS, error) {
 		})
 
 		r.Route("/setup", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Post("/fetch-tools", x.apiFetchTools)
 			r.Post("/fetch-packages", x.apiFetchPackages)
 			r.Post("/set-timezone", x.apiSetTimezone)
@@ -134,6 +153,7 @@ func New(opts ...Option) (*FMS, error) {
 		})
 
 		r.Route("/net", func(r chi.Router) {
+			r.Use(basic.MultiAuthHandler())
 			r.Post("/reconcile", x.apiNetReconcile)
 		})
 
@@ -143,10 +163,13 @@ func New(opts ...Option) (*FMS, error) {
 	})
 
 	r.Route("/ui", func(r chi.Router) {
+		r.Get("/", x.uiViewLanding)
 		r.Route("/display", func(r chi.Router) {
 			r.Get("/field-hud", x.uiViewFieldHUD)
 		})
+
 		r.Route("/admin", func(r chi.Router) {
+			r.Use(basic.LoginHandler("/login"))
 			r.Get("/", x.uiViewAdminLanding)
 
 			r.Route("/map", func(r chi.Router) {
@@ -174,7 +197,8 @@ func New(opts ...Option) (*FMS, error) {
 	})
 
 	r.Get("/metrics-sd", x.promSD)
-
+	r.Handle("/", nhttp.RedirectHandler("/ui/", nhttp.StatusMovedPermanently))
+	r.Handle("/docs/*", docs.MakeHandler("/docs"))
 	x.s.Mount("/", r)
 
 	return x, nil
@@ -203,6 +227,7 @@ func (f *FMS) doTemplate(w nhttp.ResponseWriter, r *nhttp.Request, tmpl string, 
 	if ctx == nil {
 		ctx = pongo2.Context{"shownav": true}
 	}
+	ctx["user"], _ = r.Context().Value(authware.UserKey{}).(authware.User)
 	t, err := f.tpl.FromCache(tmpl)
 	if err != nil {
 		f.templateErrorHandler(w, err)

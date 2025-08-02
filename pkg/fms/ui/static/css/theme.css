@@ -58,6 +58,11 @@ ul {
     list-style: disc;
 }
 
+ol {
+    list-style: number;
+    margin-left: 1em;
+}
+
 li {
     margin-left: 1em;
     margin-bottom: 0.5em;
@@ -98,6 +103,17 @@ li {
     border-radius: 4px;
     width: auto;
     height: auto;
+}
+
+.box-margin {
+    margin: 2em;
+}
+
+.box-chooser {
+    text-decoration: none;
+    color: black;
+    font-size: x-large;
+    font-weight: 600;
 }
 
 .button {

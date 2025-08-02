@@ -27,7 +27,7 @@ func init() {
 
 func docsCmdRun(c *cobra.Command, args []string) {
 	mux := http.NewServeMux()
-	mux.Handle("/", docs.Handler())
+	mux.Handle("/", docs.MakeHandler("/"))
 	srv := new(http.Server)
 	srv.Addr = ":8080"
 	srv.Handler = mux
