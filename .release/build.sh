@@ -26,19 +26,19 @@ mount_image() {
 }
 
 install_common() {
-    cp dist/gizmo_linux_arm64_v8.0/gizmo /mnt/target/usr/local/bin/gizmo
-    chmod +x /mnt/target/usr/local/bin/gizmo
+    cp dist/gizmo_linux_arm64_v8.0/gizmo /mnt/target/usr/bin/gizmo
+    chmod +x /mnt/target/usr/bin/gizmo
     cd /mnt/target || exit 1
     chroot /mnt/target /usr/bin/xbps-install -Suy xbps
     chroot /mnt/target /usr/bin/xbps-install -y xmirror
     chroot /mnt/target /usr/bin/xmirror -s https://repo-fastly.voidlinux.org/current
     chroot /mnt/target /usr/bin/xbps-install -uy
     chroot /mnt/target /usr/bin/chsh -s /bin/bash
-    chroot /mnt/target /usr/local/bin/gizmo version
+    chroot /mnt/target /usr/bin/gizmo version
 }
 
 install_fms() {
-    chroot /mnt/target /usr/local/bin/gizmo fms system-install
+    chroot /mnt/target /usr/bin/gizmo fms system-install
     chroot /mnt/target /usr/bin/useradd -m -s /bin/bash -c "FMS Admin" -G wheel,storage,dialout,docker admin
     chroot /mnt/target /usr/bin/useradd -r -m -s /bin/nologin -c "Gizmo System User" -d /var/lib/gizmo _gizmo
     chroot /mnt/target /usr/bin/ln -sf /var/lib/gizmo/bin/netinstall-cli /usr/bin/netinstall-cli
@@ -49,13 +49,13 @@ install_fms() {
 }
 
 install_ds() {
-    chroot /mnt/target /usr/local/bin/gizmo ds install
+    chroot /mnt/target /usr/bin/gizmo ds install
     echo root:gizmo | chpasswd -c SHA512 -R /mnt/target
 }
 
 ramdisk() {
     chroot /mnt/target /usr/bin/xbps-install -y dracut parted binutils upx busybox-huge pigz
-    chroot /mnt/target /usr/bin/upx /usr/local/bin/gizmo
+    chroot /mnt/target /usr/bin/upx /usr/bin/gizmo
 
     mkdir -p /mnt/target/usr/lib/dracut/modules.d/01gizmo/
     mkdir -p /mnt/target/etc/sv/console/
@@ -96,7 +96,7 @@ install() {
     inst /usr/bin/tryto
     inst /usr/bin/uncat
     inst /usr/bin/vlogger
-    inst /usr/local/bin/gizmo
+    inst /usr/bin/gizmo
     inst /var/log/socklog/everything/config
 
     inst_hook pre-mount 01 "$moddir/gizmo.sh"
@@ -124,11 +124,11 @@ export GIZMO_BOOTMODE=RAMDISK
 /usr/bin/udevadm trigger --action=add --type=devices
 /usr/bin/udevadm settle
 /usr/bin/mkdir /boot
-/usr/local/bin/gizmo ds gss-autoconf || /usr/bin/mount -o ro /dev/mmcblk0p1 /boot
-/usr/local/bin/gizmo ds configure /boot/gsscfg.json
+/usr/bin/gizmo ds gss-autoconf || /usr/bin/mount -o ro /dev/mmcblk0p1 /boot
+/usr/bin/gizmo ds configure /boot/gsscfg.json
 /usr/bin/sysctl -p /etc/sysctl.conf
 /usr/bin/ip link set lo up
-/usr/local/bin/gizmo version
+/usr/bin/gizmo version
 exec /usr/bin/runsvdir /etc/runit/runsvdir/default
 EOF
 

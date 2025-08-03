@@ -8,4 +8,4 @@ cd /var/lib/gizmo || exit 1
 export USER=_gizmo
 export HOME=/var/lib/gizmo
 exec 2>&1
-exec chpst -u _gizmo:wheel:dialout /usr/local/bin/gizmo fms run
+exec chpst -u _gizmo:wheel:dialout /usr/bin/gizmo fms run
