@@ -20,6 +20,10 @@ func (f *FMS) apiGetConfig(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(f.c)
 }
 
+func (f *FMS) apiGetConfiguredQuads(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(f.quads)
+}
+
 func (f *FMS) apiGetTeamPresent(w http.ResponseWriter, r *http.Request) {
 	field := chi.URLParam(r, "field")
 	quad := chi.URLParam(r, "quad")

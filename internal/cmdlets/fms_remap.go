@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
@@ -40,8 +42,18 @@ func fmsRemapCmdRun(c *cobra.Command, args []string) {
 		fAddr = "localhost:8080"
 	}
 
+	cl := http.Client{Timeout: time.Second * 5}
+	req := &http.Request{
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   fAddr,
+			Path:   "/api/field/configured-quads",
+			User:   url.UserPassword(os.Getenv("GIZMO_FMS_USER"), os.Getenv("GIZMO_FMS_PASS")),
+		},
+	}
+
 	promptQuads := func() map[string]string {
-		r, err := http.Get("http://" + fAddr + "/admin/cfg/quads")
+		r, err := cl.Do(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error getting quads: %s\n", err)
 			os.Exit(2)
@@ -52,10 +64,10 @@ func fmsRemapCmdRun(c *cobra.Command, args []string) {
 			fmt.Fprintf(os.Stderr, "Error getting quads: %s\n", err)
 			os.Exit(2)
 		}
-		sort.Strings(quads)
 		r.Body.Close()
 
-		r, err = http.Get("http://" + fAddr + "/admin/map/current")
+		req.URL.Path = "/api/map/current"
+		r, err = cl.Do(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error getting map: %s\n", err)
 			os.Exit(2)
@@ -140,5 +152,11 @@ func fmsRemapCmdRun(c *cobra.Command, args []string) {
 
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(mapping)
-	http.Post("http://"+fAddr+"/admin/map/immediate", "application/json", buf)
+	req.URL.Path = "/api/map/update-immediate"
+	req.Body = io.NopCloser(buf)
+	req.Method = http.MethodPost
+	cl.Timeout = time.Second * 30
+	if _, err := cl.Do(req); err != nil {
+		fmt.Fprintf(os.Stderr, "Error inserting mapping: %s\n", err)
+	}
 }

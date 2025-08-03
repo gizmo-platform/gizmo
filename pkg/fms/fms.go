@@ -93,11 +93,7 @@ func New(opts ...Option) (*FMS, error) {
 		r.Post("/{id}/meta", x.gizmoMetaReport)
 	})
 	r.Route("/admin", func(r chi.Router) {
-		r.Get("/", x.uiViewAdminLanding)
-		r.Get("/cfg/quads", x.configuredQuads)
-		r.Post("/map/immediate", x.remapTeams)
 		r.Post("/map/pcsm", x.remapTeamsPCSM)
-		r.Get("/map/current", x.currentTeamMap)
 	})
 
 	r.Route("/api", func(r chi.Router) {
@@ -105,7 +101,7 @@ func New(opts ...Option) (*FMS, error) {
 		r.Get("/eventstream", x.es.Handler)
 		r.Route("/field", func(r chi.Router) {
 			r.Use(basic.MultiAuthHandler())
-			r.Get("/configured-quads", x.configuredQuads)
+			r.Get("/configured-quads", x.apiGetConfiguredQuads)
 			r.Get("/present/{field}/{quad}", x.apiGetTeamPresent)
 			r.Get("/present", x.apiGetTeamPresentAll)
 		})
