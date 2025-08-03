@@ -139,7 +139,7 @@ func (f *FMS) gizmoMetaReport(w http.ResponseWriter, r *http.Request) {
 func (f *FMS) gizmoUDPServelet() error {
 	l := f.l.Named("udp")
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
-		IP:   net.IPv4(100, 64, 0, 2),
+		IP:   net.IPv4(0, 0, 0, 0),
 		Port: 1729,
 	})
 	if err != nil {
