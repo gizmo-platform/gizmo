@@ -43,11 +43,16 @@ func fmsBootstrapNetCmdRun(c *cobra.Command, args []string) {
 		appLogger.Error("Could not load fms.json, have you run the wizard yet?", "error", err)
 		return
 	}
-	controller := rconfig.New(
+
+	opts := []rconfig.Option{
 		rconfig.WithFMS(fmsConf),
 		rconfig.WithLogger(appLogger),
 		rconfig.WithRouter(rconfig.BootstrapAddr),
-	)
+	}
+	if os.Getenv("GIZMO_FMS_STATEDIR") != "" {
+		opts = append(opts, rconfig.WithStateDirectory(os.Getenv("GIZMO_FMS_STATEDIR")))
+	}
+	controller := rconfig.New(opts...)
 
 	confirm := func() bool {
 		qProceed := &survey.Confirm{

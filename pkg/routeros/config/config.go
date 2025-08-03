@@ -40,7 +40,7 @@ const (
 // New initializes and returns a configurator
 func New(opts ...Option) *Configurator {
 	c := new(Configurator)
-	c.stateDir = ".netstate"
+	c.stateDir = "/var/lib/gizmo/.netstate"
 	c.routerAddr = NormalAddr
 	c.ctx = make(map[string]interface{})
 	c.es = eventstream.NewNullStreamer()

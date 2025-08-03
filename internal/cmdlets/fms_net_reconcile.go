@@ -3,6 +3,8 @@
 package cmdlets
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/gizmo-platform/gizmo/pkg/config"
@@ -39,11 +41,15 @@ func fmsReconcileNetCmdRun(c *cobra.Command, args []string) {
 		return
 	}
 	routerAddr := "100.64.0.1"
-	controller := rconfig.New(
+	opts := []rconfig.Option{
 		rconfig.WithFMS(fmsConf),
 		rconfig.WithLogger(appLogger),
 		rconfig.WithRouter(routerAddr),
-	)
+	}
+	if os.Getenv("GIZMO_FMS_STATEDIR") != "" {
+		opts = append(opts, rconfig.WithStateDirectory(os.Getenv("GIZMO_FMS_STATEDIR")))
+	}
+	controller := rconfig.New(opts...)
 
 	// Not in bootstrap mode, and make sure of that.
 	ctx := make(map[string]interface{})

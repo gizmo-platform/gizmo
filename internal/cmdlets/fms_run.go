@@ -54,12 +54,16 @@ func fmsRunCmdRun(c *cobra.Command, args []string) {
 	appLogger.Debug("EventStream Init")
 
 	routerAddr := "100.64.0.1"
-	controller := rconfig.New(
+	opts := []rconfig.Option{
 		rconfig.WithFMS(fmsConf),
 		rconfig.WithLogger(appLogger),
 		rconfig.WithRouter(routerAddr),
 		rconfig.WithEventStreamer(es),
-	)
+	}
+	if os.Getenv("GIZMO_FMS_STATEDIR") != "" {
+		opts = append(opts, rconfig.WithStateDirectory(os.Getenv("GIZMO_FMS_STATEDIR")))
+	}
+	controller := rconfig.New(opts...)
 	appLogger.Debug("Controller Init")
 
 	tlm := net.New(

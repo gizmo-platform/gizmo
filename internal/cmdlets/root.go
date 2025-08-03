@@ -4,9 +4,9 @@ package cmdlets
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
-	"log/slog"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"

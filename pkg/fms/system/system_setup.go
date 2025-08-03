@@ -12,8 +12,8 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
+	"github.com/gizmo-platform/gizmo/pkg/sysconf"
 )
 
 const (
@@ -50,7 +50,7 @@ const (
 	adminIceWMStartup = "/home/admin/.icewm/startup"
 
 	adminGizmoSysconfDesktop = "/home/admin/.local/share/applications/gizmo-sysconf.desktop"
-	adminGizmoWebUIDesktop = "/home/admin/.local/share/applications/gizmo-webui.desktop"
+	adminGizmoWebUIDesktop   = "/home/admin/.local/share/applications/gizmo-webui.desktop"
 
 	welcomeTool = "/usr/bin/gizmo-sysconf"
 )

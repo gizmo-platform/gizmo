@@ -6,6 +6,12 @@ import (
 	"github.com/gizmo-platform/gizmo/pkg/config"
 )
 
+// WithStateDirectory allows moving the terraform state directory to
+// an absolutely referenced path.
+func WithStateDirectory(dir string) Option {
+	return func(c *Configurator) { c.stateDir = dir }
+}
+
 // WithLogger sets the parent logging instance for the configurator
 func WithLogger(l hclog.Logger) Option {
 	return func(c *Configurator) { c.l = l.Named("configurator") }

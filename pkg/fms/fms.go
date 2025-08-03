@@ -17,8 +17,8 @@ import (
 
 	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
-	"github.com/gizmo-platform/gizmo/pkg/http"
 	"github.com/gizmo-platform/gizmo/pkg/docs"
+	"github.com/gizmo-platform/gizmo/pkg/http"
 
 	"github.com/the-maldridge/authware"
 	// We use htpasswd because authenticating using other means
@@ -74,7 +74,6 @@ func New(opts ...Option) (*FMS, error) {
 	pongo2.RegisterFilter("split", x.filterSplit)
 	pongo2.RegisterFilter("teamName", x.filterTeamName)
 
-	
 	basic, err := authware.NewAuth()
 	if err != nil {
 		x.l.Error("Error initializing auth", "error", err)
@@ -244,12 +243,12 @@ func (f *FMS) filterSplit(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error
 }
 
 func (f *FMS) filterTeamName(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
-       t, ok := in.Interface().(*config.Team)
-       if !ok {
-               f.l.Error("Something that wasn't a team got passed to the teamName filter", "in", in.Interface())
-               return pongo2.AsValue(""), &pongo2.Error{Sender: "filter:teamName"}
-       }
-       return pongo2.AsValue(t.Name), nil
+	t, ok := in.Interface().(*config.Team)
+	if !ok {
+		f.l.Error("Something that wasn't a team got passed to the teamName filter", "in", in.Interface())
+		return pongo2.AsValue(""), &pongo2.Error{Sender: "filter:teamName"}
+	}
+	return pongo2.AsValue(t.Name), nil
 }
 
 func (f *FMS) populateHUDVersions() {
