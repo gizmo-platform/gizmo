@@ -114,6 +114,8 @@ github.com/tg123/go-htpasswd v1.2.4 h1:HgH8KKCjdmo7jjXWN9k1nefPBd7Be3tFCTjc2jPra
 github.com/tg123/go-htpasswd v1.2.4/go.mod h1:EKThQok9xHkun6NBMynNv6Jmu24A33XdZzzl4Q7H1+0=
 github.com/the-maldridge/authware v0.1.4 h1:ABVxzS2/O57kXuHrYO3XKInOJO6rvgdQQanYC/EGQBU=
 github.com/the-maldridge/authware v0.1.4/go.mod h1:lqmVd8Jbr+8mF9yCShdM04D7QvpZR971iI6HedlZn0Q=
+github.com/the-maldridge/authware v0.1.5 h1:FiF2cpyYo2pdCDFTjdTnCxHn5LAZS5zvnosINAz10jM=
+github.com/the-maldridge/authware v0.1.5/go.mod h1:lqmVd8Jbr+8mF9yCShdM04D7QvpZR971iI6HedlZn0Q=
 github.com/ulikunitz/xz v0.5.11 h1:kpFauv27b6ynzBNT/Xy+1k+fK4WswhN/6PN5WhFAGw8=
 github.com/ulikunitz/xz v0.5.11/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/vishvananda/netlink v1.3.0 h1:X7l42GfcV4S6E4vHTsw48qbrV+9PVojNfIhZcwQdrZk=
