@@ -67,7 +67,7 @@ func fieldHardwareFlashDeviceCmdRun(c *cobra.Command, args []string) {
 	qDevice := &survey.Select{
 		Message: "Select the type of device you are flashing",
 		Options: []string{
-			"Field Box (External Antenna)",
+			"Field Box",
 			"Scoring Table Box",
 			"Scoring Table Box (Large)",
 			"Auxiliary Device",
