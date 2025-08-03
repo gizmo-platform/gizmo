@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/gizmo-platform/gizmo/pkg/sysconf"
+	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 )
 
 const (
@@ -47,6 +48,11 @@ const (
 
 	adminIceWMTheme   = "/home/admin/.icewm/theme"
 	adminIceWMStartup = "/home/admin/.icewm/startup"
+
+	adminGizmoSysconfDesktop = "/home/admin/.local/share/applications/gizmo-sysconf.desktop"
+	adminGizmoWebUIDesktop = "/home/admin/.local/share/applications/gizmo-webui.desktop"
+
+	welcomeTool = "/usr/bin/gizmo-sysconf"
 )
 
 //go:embed tpl/*
@@ -161,6 +167,7 @@ func (st *SetupTool) Configure() error {
 		"icewm-session": st.configureIceWM,
 		"prometheus":    st.configurePrometheus,
 		"grafana":       st.configureGrafana,
+		"welcome-tool":  st.welcomeTool,
 		"services":      st.enableServices,
 	}
 
@@ -238,6 +245,12 @@ func (st *SetupTool) configureIceWM() error {
 	if err := st.sc.Template(adminIceWMStartup, "tpl/icewm_startup.tpl", 0755, nil); err != nil {
 		return err
 	}
+	if err := st.sc.Template(adminGizmoSysconfDesktop, "tpl/gizmo-sysconf.desktop.tpl", 0644, nil); err != nil {
+		return err
+	}
+	if err := st.sc.Template(adminGizmoWebUIDesktop, "tpl/gizmo-webui.desktop.tpl", 0644, nil); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -303,6 +316,12 @@ func (st *SetupTool) configureGrafana() error {
 	}
 
 	return nil
+}
+
+func (st *SetupTool) welcomeTool() error {
+	ctx := make(map[string]interface{})
+	ctx["Version"] = buildinfo.Version
+	return st.sc.Template(welcomeTool, "tpl/welcome.sh.tpl", 0755, ctx)
 }
 
 func (st *SetupTool) rpi5configureXorg() error {
