@@ -42,6 +42,7 @@ install_fms() {
     chroot /mnt/target /usr/bin/useradd -m -s /bin/bash -c "FMS Admin" -G wheel,storage,dialout,docker admin
     chroot /mnt/target /usr/bin/useradd -r -m -s /bin/nologin -c "Gizmo System User" -d /var/lib/gizmo _gizmo
     chroot /mnt/target /usr/bin/ln -sf /var/lib/gizmo/bin/netinstall-cli /usr/bin/netinstall-cli
+    chroot /mnt/target /usr/bin/htpasswd -cb /var/lib/gizmo/.htpasswd admin gizmo
     chroot /mnt/target /usr/bin/passwd -l root
     echo ENABLE_ROOT_GROWPART=yes > /mnt/target/etc/default/growpart
     echo admin:gizmo | chroot /mnt/target chpasswd -c SHA512

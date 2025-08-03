@@ -122,6 +122,7 @@ func (st *SetupTool) Install() error {
 		"tmux",
 
 		// Direct Gizmo Dependencies
+		"apache-htpasswd",
 		"qemu-user-i386",
 		"terraform",
 
