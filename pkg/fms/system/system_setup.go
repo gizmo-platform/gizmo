@@ -129,6 +129,7 @@ func (st *SetupTool) Install() error {
 
 		// Direct Gizmo Dependencies
 		"apache-htpasswd",
+		"dialog",
 		"qemu-user-i386",
 		"terraform",
 
