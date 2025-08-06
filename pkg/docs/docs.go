@@ -14,7 +14,7 @@ import (
 
 //go:generate mdbook build mdbook
 
-//go:embed mdbook/book/*
+//go:embed mdbook/book/html/*
 var efs embed.FS
 
 // MakeHandler returns the contents of the embedded docs filesystem.

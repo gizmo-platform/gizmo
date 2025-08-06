@@ -42,7 +42,7 @@ jobs:
         with:
           repository: "${{ github.repository_owner }}/gizmo-platform.github.io"
           name: github-pages
-          path: pkg/docs/mdbook/book/
+          path: pkg/docs/mdbook/book/html/
           github-token: ${{ github.token }}
           run-id: ${{ steps.run_id.outputs.run_id }}
 
