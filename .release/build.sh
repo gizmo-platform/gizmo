@@ -30,7 +30,7 @@ install_common() {
     chmod +x /mnt/target/usr/bin/gizmo
     cd /mnt/target || exit 1
     chroot /mnt/target /usr/bin/xbps-install -Suy xbps
-    chroot /mnt/target /usr/bin/xbps-install -y xmirror
+    chroot /mnt/target /usr/bin/xbps-install -y xmirror void-repo-nonfree
     chroot /mnt/target /usr/bin/xmirror -s https://repo-fastly.voidlinux.org/current
     chroot /mnt/target /usr/bin/xbps-install -uy
     chroot /mnt/target /usr/bin/chsh -s /bin/bash
@@ -38,9 +38,15 @@ install_common() {
 }
 
 install_fms() {
+    chroot /mnt/target /usr/bin/xbps-install -y gizmo-fms
+
+    # Overwrite the packaged version with this version
+    cd - || exit 1
+    cp dist/gizmo_linux_arm64_v8.0/gizmo /mnt/target/usr/bin/gizmo
+    cd /mnt/target || exit 1
+    chmod +x /mnt/target/usr/bin/gizmo
     chroot /mnt/target /usr/bin/gizmo fms system-install
     chroot /mnt/target /usr/bin/useradd -m -s /bin/bash -c "FMS Admin" -G wheel,storage,dialout,docker admin
-    chroot /mnt/target /usr/bin/useradd -r -m -s /bin/nologin -c "Gizmo System User" -d /var/lib/gizmo _gizmo
     chroot /mnt/target /usr/bin/ln -sf /var/lib/gizmo/bin/netinstall-cli /usr/bin/netinstall-cli
     chroot /mnt/target /usr/bin/htpasswd -cb /var/lib/gizmo/.htpasswd admin gizmo
     chroot /mnt/target /usr/bin/passwd -l root
