@@ -35,4 +35,9 @@ func dsInstallCmdRun(c *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "Error during boot setup: %s\n", err)
 		return
 	}
+
+	if err := drv.SetupUDev(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error during udev setup: %s\n", err)
+		return
+	}
 }

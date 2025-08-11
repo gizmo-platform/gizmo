@@ -50,6 +50,8 @@ install_fms() {
 
 install_ds() {
     chroot /mnt/target /usr/bin/gizmo ds install
+    chroot /mnt/target /usr/bin/mkdir -p /usr/share/gizmo/gss/
+    chroot /mnt/target /usr/bin/xbps-uhelper fetch 'https://github.com/gizmo-platform/firmware/releases/download/v0.1.8/gss-1_0_R00-v0.1.8.uf2>/usr/share/gizmo/gss/firmware.uf2'
     echo root:gizmo | chpasswd -c SHA512 -R /mnt/target
 }
 
@@ -97,8 +99,11 @@ install() {
     inst /usr/bin/uncat
     inst /usr/bin/vlogger
     inst /usr/bin/gizmo
+    inst /usr/share/gizmo/gss/firmware.uf2
+    inst /usr/local/bin/gss-loader
     inst /var/log/socklog/everything/config
 
+    inst_rules /etc/udev/rules.d/50-gizmo.rules
     inst_hook pre-mount 01 "$moddir/gizmo.sh"
     inst_hook cmdline 99 "$moddir/parse-gizmo-root.sh"
 }

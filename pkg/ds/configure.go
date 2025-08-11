@@ -27,6 +27,8 @@ const (
 	gizmoConfigSvc = "/etc/sv/gizmo-config/run"
 	gizmoLogmonSvc = "/etc/sv/gizmo-logmon/run"
 	lldpConf       = "/etc/lldpd.d/gizmo.conf"
+	udevRules      = "/etc/udev/rules.d/50-gizmo.rules"
+	firmwareLoader = "/usr/local/bin/gss-loader"
 )
 
 // Install invokes xbps to install the necessary packages
@@ -47,6 +49,16 @@ func (ds *DriverStation) Install() error {
 // jobs.
 func (ds *DriverStation) SetupBoot() error {
 	return ds.sc.Template(coresvc, "tpl/coresvc.sh.tpl", 0644, nil)
+}
+
+// SetupUDev would normally happen at boot, but needs to happen at CI
+// time, so it is its own exported function that gets called during
+// install.
+func (ds *DriverStation) SetupUDev() error {
+	if err := ds.sc.Template(udevRules, "tpl/50-gizmo.rules.tpl", 0644, nil); err != nil {
+		return err
+	}
+	return ds.sc.Template(firmwareLoader, "tpl/gss-loader.sh.tpl", 0755, nil)
 }
 
 // Configure installs configuration files into the correct locations

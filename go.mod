@@ -16,7 +16,7 @@ require (
 	github.com/mdp/qrterminal/v3 v3.2.0
 	github.com/prometheus/client_golang v1.20.2
 	github.com/spf13/cobra v1.8.1
-	github.com/the-maldridge/authware v0.1.5
+	github.com/the-maldridge/authware v0.1.6-0.20250811011214-ba553bf067fc
 	github.com/vishvananda/netlink v1.3.0
 	go.bug.st/serial v1.6.2
 )
