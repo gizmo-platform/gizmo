@@ -20,7 +20,7 @@ var efs embed.FS
 // MakeHandler returns the contents of the embedded docs filesystem.
 func MakeHandler(path string) http.Handler {
 	return func() http.Handler {
-		efs, _ := fs.Sub(efs, "mdbook/book")
+		efs, _ := fs.Sub(efs, "mdbook/book/html")
 		return http.StripPrefix(path, http.FileServer(http.FS(efs)))
 	}()
 }
