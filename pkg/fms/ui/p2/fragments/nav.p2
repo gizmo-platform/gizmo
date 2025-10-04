@@ -3,7 +3,7 @@
     <span id="logomark">Gizmo FMS</span>
   </div>
   <div class="flex-item flex-max">
-    {% if user or true %}
+    {% if user %}
     <nav>
       <div class="nav-container">
         <div class="nav-header">Setup</div>
