@@ -13,6 +13,16 @@ func (f *FMS) uiViewLanding(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "landing.p2", nil)
 }
 
+func (f *FMS) uiViewAdminBind(w http.ResponseWriter, r *http.Request) {
+	bytes, err := json.Marshal(f.c.Teams)
+	if err != nil {
+		f.doTemplate(w, r, "errors/internal.p2", pongo2.Context{"error": err})
+		return
+	}
+
+	f.doTemplate(w, r, "bind.p2", pongo2.Context{"teams_json": string(bytes)})
+}
+
 func (f *FMS) uiViewFieldHUD(w http.ResponseWriter, r *http.Request) {
 	quadJSON, _ := json.Marshal(f.quads)
 	f.doTemplate(w, r, "views/display/field-hud.p2", pongo2.Context{"quads": quadJSON})

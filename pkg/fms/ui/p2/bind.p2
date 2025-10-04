@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Bind Gizmo | Gizmo FMS{% endblock %}</title>
+        <link href="/static/css/reset.css" rel="stylesheet">
+        <link href="/static/css/theme.css" rel="stylesheet">
+        {% block head %}
+        {% endblock %}
+    </head>
+    <body class="background">
+        <div class="modal" id="serial-unsupported-modal">
+            <div class="modal-box foreground box">
+                <h1>Unsupported Configuration</h1>
+                <p>The web-based field binding only works in browsers that support the WebSerial featureset.  Your current browser does not support this feature.  Please re-open this page in a browser that supports WebSerial such as:</p>
+                <ul>
+                    <li>Google Chrome</li>
+                    <li>Chromium</li>
+                    <li>Microsoft Edge</li>
+                </ul>
+                <p>If you are loading this page in a browser listed above, it must be loaded from a file or from the FMS workstation directly.  Right click and save this page, then open the saved file.</p>
+                <p>This page works off-line!  You can save this page and copy it to another computer with a supported browser, even one that isn't on the same network as the FMS and it will still work.</p>
+            </div>
+        </div>
+        <div class="flex-container flex-center full-height">
+            <div class="foreground flex-item box">
+                <div id="workflow-container">
+                    <div id="status-wait-for-connection">
+                        <h1>Waiting for Connection</h1>
+                        <p>Connect to the System Processor (left-hand USB port).</p>
+                        <hr />
+                    </div>
+                    <div id="status-connected-no-bootsel">
+                        <h1>Enter Binding Mode</h1>
+                        <p>Press and hold the system processor BOOTSEL button for 2 seconds to enter pairing mode.</p>
+                        <hr />
+                    </div>
+                    <div id="status-upload-config">
+                        <h1>Uploading Config</h1>
+                        <p>Uploading config to Gizmo.  Team identified as <span id="team-number"></span>.</p>
+
+                        <hr />
+                    </div>
+                    <div id="status-bind-complete">
+                        <h1>Bind Complete</h1>
+                        <p>Your gizmo has been bound to the FMS.  Do not re-bind your gizmo to the driver's station unless given explicit instruction to do so.  Good luck on the field!</p>
+
+                        <hr />
+                    </div>
+                </div>
+                <div class="logbox logbox-constrained" id="logs-scrollbox">
+                    <pre><code id="logs-container"></code></pre>
+                    <div id="logbox-anchor"></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div id="actions-container" class="flex-container flex-center">
+                <button id="btn-request-port" class="flex-item">Request Port</button>
+            </div>
+        </div>
+    </body>
+
+    <script>
+     var teams = {{ teams_json | safe }};
+
+     const stepWaitConn = document.getElementById('status-wait-for-connection');
+     const stepWaitBootsel = document.getElementById('status-connected-no-bootsel');
+     const stepUploadConfig = document.getElementById('status-upload-config');
+     const stepBindComplete = document.getElementById('status-bind-complete');
+
+     const logsContainer = document.getElementById('logs-container');
+     const teamNumber = document.getElementById('team-number');
+
+     async function doBind(port) {
+         await port.open({ baudRate: 9600 });
+
+         const textDecoder = new TextDecoderStream();
+         const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+         const reader = textDecoder.readable.getReader();
+
+         const textEncoder = new TextEncoderStream();
+         const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+         const writer = textEncoder.writable.getWriter();
+
+         let buffer = '';
+
+         while (port.readable) {
+             try {
+                 while (true) {
+                     const { value, done } = await reader.read();
+                     if (done) {
+                         // Allow the serial port to be closed later.
+                         reader.releaseLock();
+                         break;
+                     }
+
+                     buffer += value;
+                     let newlineIndex;
+                     while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                         const line = buffer.substring(0, newlineIndex);
+                         if (line.startsWith('GIZMO_REQUEST_CONFIG')) {
+                             parts = line.split(' ');
+                             tNum = parseInt(parts.at(-1), 10);
+                             teamNumber.innerText = tNum;
+                             const cfg = {
+                                 Team: tNum,
+                                 NetSSID: teams[tNum].SSID,
+                                 NetPSK: teams[tNum].PSK,
+                             };
+                             console.log(JSON.stringify(cfg));
+                             stepUploadConfig.style.display = 'block';
+                             await writer.write(JSON.stringify(cfg));
+                             stepBindComplete.style.display = 'block';
+                             setTimeout(reset, 10000);
+                         }
+                         logsContainer.innerHTML += line;
+                         buffer = buffer.substring(newlineIndex + 1);
+                         const box = document.getElementById('logs-scrollbox');
+                         box.scrollTop = box.scrollHeight;
+                     }
+                 }
+             } catch (error) {
+                 console.error(error);
+                 setTimeout(reset, 2500);
+             }
+         }
+     }
+
+     async function requestPort() {
+         const filters = [{ usbVendorId: 0x2e8a, usbProductId: 0xf00a }]
+         const port = await navigator.serial.requestPort({ filters });
+     }
+
+     async function localizeCSS() {
+         document.head.querySelectorAll('link').forEach(link => { link.remove() });
+
+         const style = document.createElement('style');
+         style.type = 'text/css';
+         document.head.appendChild(style);
+
+         fetch('/static/css/reset.css')
+           .then(response => response.text())
+           .then(cssContent => {
+               // Append the CSS content to the style element
+               style.innerHTML = cssContent;
+           })
+
+         fetch('/static/css/theme.css')
+           .then(response => response.text())
+           .then(cssContent => {
+               // Append the CSS content to the style element
+               style.innerHTML += cssContent;
+           })
+     }
+
+     function reset() {
+         stepWaitConn.style.display = 'block';
+         stepWaitBootsel.style.display = 'none';
+         stepUploadConfig.style.display = 'none';
+         stepBindComplete.style.display = 'none';
+         logsContainer.innerHTML = '';
+     }
+
+     document.getElementById('btn-request-port').addEventListener('click', requestPort);
+
+     reset();
+     localizeCSS();
+
+     if ("serial" in navigator) {
+         document.getElementById('serial-unsupported-modal').style.display = 'none';
+         stepWaitConn.style.display = 'block';
+         navigator.serial.addEventListener("connect", (event) => {
+             const port = event.target;
+             stepWaitBootsel.style.display = 'block';
+             doBind(port);
+         });
+         navigator.serial.addEventListener("disconnect", (event) => {
+             reset();
+         });
+     } else {
+         document.getElementById('serial-unsupported-modal').style.display = 'block';
+     }
+    </script>
+</html>

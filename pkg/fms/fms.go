@@ -166,6 +166,7 @@ func New(opts ...Option) (*FMS, error) {
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(basic.LoginHandler("/login"))
 			r.Get("/", x.uiViewAdminLanding)
+			r.Get("/bind", x.uiViewAdminBind)
 
 			r.Route("/map", func(r chi.Router) {
 				r.Get("/current", x.uiViewCurrentMap)
