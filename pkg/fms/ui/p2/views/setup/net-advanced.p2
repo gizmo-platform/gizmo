@@ -6,7 +6,7 @@
 <div class="flex-container flex-row flex-center">
     <div class="flex-item flex-max foreground box">
         <h1>Advanced Network Setup</h1>
-        <p>This page inclues settings fo advanced network functionality that most users do not need.  Only edit these settings if you know why you're editing them and understand the effect they will have.</p>
+        <p>This page inclues settings for advanced network functionality that most users do not need.  Only edit these settings if you know why you're editing them and understand the effect they will have.</p>
         <hr />
 
         <h2>DNS</h2>
