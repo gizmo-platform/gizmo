@@ -165,7 +165,11 @@ func (f *FMS) gizmoUDPServelet() error {
 			continue
 		}
 
-		team := int(a.IP[1])*100 + int(a.IP[2])
+		// It is unclear why the UDPAddr contains a bunch of
+		// host related bytes before the peer address, but it
+		// does.  This offsets far enough in to get the peer
+		// address, which has the team number in it.
+		team := int(a.IP[13])*100 + int(a.IP[14])
 
 		switch rune(buf[0]) {
 		case 'M':
