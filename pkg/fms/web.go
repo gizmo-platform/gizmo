@@ -219,6 +219,29 @@ func (f *FMS) apiUpdateIntegrations(w http.ResponseWriter, r *http.Request) {
 	f.es.PublishActionComplete("Configuration Save")
 }
 
+func (f *FMS) apiUpdateCompatVer(w http.ResponseWriter, r *http.Request) {
+	cTmp := new(config.FMSConfig)
+
+	if err := json.NewDecoder(r.Body).Decode(&cTmp); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	// We do this rather than deserializing into the main config
+	// struct to ensure that its not possible to rewrite other
+	// unrelated parts of the config via this API.
+	f.c.CompatHardwareVersions = cTmp.CompatHardwareVersions
+	f.c.CompatFirmwareVersions = cTmp.CompatFirmwareVersions
+	f.c.CompatDSBootmodes = cTmp.CompatDSBootmodes
+	f.c.CompatDSVersions = cTmp.CompatDSVersions
+
+	if err := f.c.Save(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		f.es.PublishError(err)
+		return
+	}
+	f.es.PublishActionComplete("Configuration Save")
+}
+
 func (f *FMS) apiFieldAdd(w http.ResponseWriter, r *http.Request) {
 	field := new(config.Field)
 
@@ -420,11 +443,11 @@ func (f *FMS) apiFieldHUD(w http.ResponseWriter, r *http.Request) {
 
 		f.metaMutex.RLock()
 		fTmp.GizmoMeta = f.gizmoMeta[team]
-		fTmp.GizmoHardwareOK = fTmp.GizmoMeta.HWVersionOK(f.hudVersions.HardwareVersions)
-		fTmp.GizmoFirmwareOK = fTmp.GizmoMeta.FWVersionOK(f.hudVersions.FirmwareVersions)
+		fTmp.GizmoHardwareOK = fTmp.GizmoMeta.HWVersionOK(f.c.CompatHardwareVersions)
+		fTmp.GizmoFirmwareOK = fTmp.GizmoMeta.FWVersionOK(f.c.CompatFirmwareVersions)
 		fTmp.DSMeta = f.dsMeta[team]
-		fTmp.DSVersionOK = fTmp.DSMeta.VersionOK(f.hudVersions.DSVersions)
-		fTmp.DSBootOK = fTmp.DSMeta.BootmodeOK(f.hudVersions.Bootmodes)
+		fTmp.DSVersionOK = fTmp.DSMeta.VersionOK(f.c.CompatDSVersions)
+		fTmp.DSBootOK = fTmp.DSMeta.BootmodeOK(f.c.CompatDSBootmodes)
 		f.metaMutex.RUnlock()
 
 		out[n] = append(out[n], fTmp)

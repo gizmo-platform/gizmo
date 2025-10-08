@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/martinhoefling/goxkcdpwgen/xkcdpwgen"
 	"github.com/vishvananda/netlink"
+
+	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 )
 
 const (
@@ -116,7 +118,9 @@ func (c *FMSConfig) SortedTeams() []*Team {
 func (c *FMSConfig) populateRequiredElements() bool {
 	needSave := (c.FMSMac == "") || (c.AutoUser == "") || (c.ViewUser == "") ||
 		(c.AdminPass == "") || (c.AutoPass == "") || (c.ViewPass == "") ||
-		(c.InfrastructureSSID == "") || (c.RadioMode == "")
+		(c.InfrastructureSSID == "") || (c.RadioMode == "") ||
+		(c.CompatHardwareVersions == "") || (c.CompatFirmwareVersions == "") ||
+		(c.CompatDSBootmodes == "") || (c.CompatDSVersions == "")
 
 	xkcd := xkcdpwgen.NewGenerator()
 	xkcd.SetNumWords(3)
@@ -159,6 +163,21 @@ func (c *FMSConfig) populateRequiredElements() bool {
 
 	if c.RadioMode == "" {
 		c.RadioMode = "FIELD"
+	}
+
+	// Set defaults for all the compatibility fields that drive
+	// status indicators in the UI.
+	if c.CompatHardwareVersions == "" {
+		c.CompatHardwareVersions = "GIZMO_V00_R6E,GIZMO_V1_0_R00"
+	}
+	if c.CompatFirmwareVersions == "" {
+		c.CompatFirmwareVersions = "0.1.8"
+	}
+	if c.CompatDSBootmodes == "" {
+		c.CompatDSBootmodes = "RAMDISK"
+	}
+	if c.CompatDSVersions == "" {
+		c.CompatDSVersions = buildinfo.Version // Always accept own version
 	}
 
 	return needSave

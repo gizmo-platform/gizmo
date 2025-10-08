@@ -142,6 +142,13 @@ type FMSConfig struct {
 	AdvancedBGPIP     string
 	AdvancedBGPPeerIP string
 	AdvancedBGPVLAN   int
+
+	// CompatData is used so the HUD can flag team hardware that
+	// is out of compliance.
+	CompatHardwareVersions string
+	CompatFirmwareVersions string
+	CompatDSBootmodes      string
+	CompatDSVersions       string
 }
 
 // Integration is an enum type for things that can talk to the Gizmo

@@ -148,3 +148,7 @@ func (f *FMS) uiViewBootstrapNet(w http.ResponseWriter, r *http.Request) {
 func (f *FMS) uiViewNetReconcile(w http.ResponseWriter, r *http.Request) {
 	f.doTemplate(w, r, "views/net/reconcile.p2", nil)
 }
+
+func (f *FMS) uiViewCompatCheck(w http.ResponseWriter, r *http.Request) {
+	f.doTemplate(w, r, "views/setup/compat-check.p2", pongo2.Context{"cfg": f.c})
+}

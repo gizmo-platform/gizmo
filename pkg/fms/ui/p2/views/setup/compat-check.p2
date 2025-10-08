@@ -1,0 +1,58 @@
+{% extends "../../base.p2" %}
+
+{% block title %}Compatibility Setup | Gizmo FMS{% endblock %}
+
+{% block content %}
+<div class="flex-container flex-row flex-center">
+    <div class="flex-item flex-max foreground box">
+        <h1>Compatibility Setup</h1>
+        <p>Various components of the Gizmo FMS check versioning information on connected Gizmos to assert that firmware, hardware, and configuration are within allowable parameters.  This page allows you to tune what those parameters are so that the heads up display (HUD) will turn fully green when all teams are present and correct.</p>
+        <p>Each option takes a comma-separated list of values.  The HUD validates that the Gizmo's values are contained within the available options you list here.</p>
+
+        <table>
+            <tr>
+                <th>Setting</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td><label for="compat_hwversion">Hardware Versions</label></td>
+                <td><input type="text" id="cfg-hwversion" name="compat_hwversion" value="{{ cfg.CompatHardwareVersions }}" /></td>
+            </tr>
+            <tr>
+                <td><label for="compat_fwversion">Firmware Versions</label></td>
+                <td><input type="text" id="cfg-fwversion" name="compat_fwversion" value="{{ cfg.CompatFirmwareVersions }}" /></td>
+            </tr>
+            <tr>
+                <td><label for="compat_dsbootmodes">DS Bootmodes</label></td>
+                <td><input type="text" id="cfg-dsbootmode" name="compat_dsbootmodes" value="{{ cfg.CompatDSBootmodes }}" /></td>
+            </tr>
+            <tr>
+                <td><label for="compat_dsversion">DS Versions</label></td>
+                <td><input type="text" id="cfg-dsversion" name="compat_dsversions" value="{{ cfg.CompatDSVersions }}" /></td>
+            </tr>
+        </table>
+
+        <center><button id="btn-save-config" class="button">Update Configuration</button></center>
+    </div>
+</div>
+
+<script>
+ async function submitConfig() {
+     const cfg = new Map();
+     cfg.set('CompatHardwareVersions', document.getElementById('cfg-hwversion').value);
+     cfg.set('CompatFirmwareVersions', document.getElementById('cfg-fwversion').value);
+     cfg.set('CompatDSBootmodes', document.getElementById('cfg-dsbootmode').value);
+     cfg.set('CompatDSVersions', document.getElementById('cfg-dsversion').value);
+
+     const response = await fetch("/api/setup/update-compatver", {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json",
+         },
+         body: JSON.stringify(Object.fromEntries(cfg)),
+     });
+ }
+
+ document.getElementById('btn-save-config').addEventListener('click', submitConfig);
+</script>
+{% endblock %}

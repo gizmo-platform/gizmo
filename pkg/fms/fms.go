@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	nhttp "net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/gizmo-platform/gizmo/pkg/buildinfo"
 	"github.com/gizmo-platform/gizmo/pkg/config"
 	"github.com/gizmo-platform/gizmo/pkg/docs"
 	"github.com/gizmo-platform/gizmo/pkg/http"
@@ -49,13 +47,6 @@ func New(opts ...Option) (*FMS, error) {
 	x.dsPresent = make(map[string]int)
 	x.dsPresentMutex = new(sync.RWMutex)
 	x.stop = make(chan struct{})
-	x.hudVersions = hudVersions{
-		HardwareVersions: "GIZMO_V00_R6E,GIZMO_V1_0_R00",
-		FirmwareVersions: "0.1.6",
-		Bootmodes:        "RAMDISK",
-		DSVersions:       buildinfo.Version, // Always accept own version.
-	}
-	x.populateHUDVersions()
 
 	for _, o := range opts {
 		if err := o(x); err != nil {
@@ -123,6 +114,7 @@ func New(opts ...Option) (*FMS, error) {
 			r.Post("/update-wifi", x.apiUpdateNetWifi)
 			r.Post("/update-advanced-net", x.apiUpdateAdvancedNet)
 			r.Post("/update-integrations", x.apiUpdateIntegrations)
+			r.Post("/update-compatver", x.apiUpdateCompatVer)
 
 			r.Route("/field", func(r chi.Router) {
 				r.Post("/", x.apiFieldAdd)
@@ -184,6 +176,7 @@ func New(opts ...Option) (*FMS, error) {
 				r.Get("/integrations", x.uiViewIntegrations)
 				r.Get("/flash-device", x.uiViewFlashDevice)
 				r.Get("/bootstrap-net", x.uiViewBootstrapNet)
+				r.Get("/compat-check", x.uiViewCompatCheck)
 			})
 
 			r.Route("/net", func(r chi.Router) {
@@ -246,26 +239,4 @@ func (f *FMS) filterTeamName(in, param *pongo2.Value) (*pongo2.Value, *pongo2.Er
 		return pongo2.AsValue(""), &pongo2.Error{Sender: "filter:teamName"}
 	}
 	return pongo2.AsValue(t.Name), nil
-}
-
-func (f *FMS) populateHUDVersions() {
-	fw := os.Getenv("GIZMO_HUD_FWVERSIONS")
-	if fw != "" {
-		f.hudVersions.FirmwareVersions = fw
-	}
-
-	hw := os.Getenv("GIZMO_HUD_HWVERSIONS")
-	if hw != "" {
-		f.hudVersions.HardwareVersions = hw
-	}
-
-	bm := os.Getenv("GIZMO_HUD_BOOTMODES")
-	if bm != "" {
-		f.hudVersions.Bootmodes = bm
-	}
-
-	ds := os.Getenv("GIZMO_HUD_DSVERSIONS")
-	if ds != "" {
-		f.hudVersions.DSVersions = ds
-	}
 }

@@ -66,13 +66,6 @@ type NetController interface {
 	BootstrapPhase3() error
 }
 
-type hudVersions struct {
-	HardwareVersions string
-	FirmwareVersions string
-	Bootmodes        string
-	DSVersions       string
-}
-
 // FMS encapsulates the FMS runnable.
 type FMS struct {
 	s  *http.Server
@@ -101,6 +94,4 @@ type FMS struct {
 	dsPresentMutex *sync.RWMutex
 
 	netinst *netinstall.Installer
-
-	hudVersions hudVersions
 }
