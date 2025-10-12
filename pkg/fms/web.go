@@ -121,7 +121,15 @@ func (f *FMS) apiSetTimezone(w http.ResponseWriter, r *http.Request) {
 	// helper binary here, but that would be clunky and usually
 	// leads to more security problems than it solves.
 	f.es.PublishActionStart("Set Timezone", "tzupdate")
-	f.runSystemCommand(w, "sudo", "tzupdate")
+	if err := f.runSystemCommand(w, "sudo", "tzupdate"); err != nil {
+		f.es.PublishError(err)
+		return
+	}
+	if err := f.runSystemCommand(w, "sudo", "sv", "restart", "ntpd"); err != nil {
+		f.es.PublishError(err)
+		return
+	}
+	f.es.PublishActionComplete("Timezone Set")
 }
 
 func (f *FMS) apiUpdateRoster(w http.ResponseWriter, r *http.Request) {

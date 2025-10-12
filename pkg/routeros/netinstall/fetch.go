@@ -26,6 +26,7 @@ type EventStreamer interface {
 	PublishFileFetch(string)
 	PublishLogLine(string)
 	PublishActionStart(string, string)
+	PublishActionComplete(string)
 }
 
 // Fetcher binds the methods that fetch packages, and allows the FMS
@@ -138,6 +139,7 @@ func (f *Fetcher) FetchPackages() error {
 		}
 		f.es.PublishFileFetch(pkg)
 	}
+	f.es.PublishActionComplete("Package Download")
 
 	return nil
 }
@@ -204,6 +206,7 @@ loop:
 			}
 			f.l.Info("Fetched Mikrotik Tool", "tool", "netinstall-cli")
 			f.es.PublishFileFetch(netinstallPkg)
+			f.es.PublishActionComplete("Package Download")
 			return nil
 		}
 	}
