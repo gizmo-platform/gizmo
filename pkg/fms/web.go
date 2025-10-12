@@ -311,6 +311,16 @@ func (f *FMS) apiFieldDelete(w http.ResponseWriter, r *http.Request) {
 	f.es.PublishActionComplete("Configuration Save")
 }
 
+func (f *FMS) apiDeviceFlashStatus(w http.ResponseWriter, r *http.Request) {
+	type flashStatus struct {
+		InProgress bool
+	}
+	fs := flashStatus{InProgress: f.netinst != nil}
+	if err := json.NewEncoder(w).Encode(fs); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func (f *FMS) apiDeviceFlashBegin(w http.ResponseWriter, r *http.Request) {
 	optionSetID, _ := strconv.Atoi(r.URL.Query().Get("optionset"))
 
@@ -325,7 +335,10 @@ func (f *FMS) apiDeviceFlashBegin(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		if err := f.netinst.Install(); err != nil && !strings.HasPrefix(err.Error(), "signal") {
 			f.l.Warn("Error calling network installer", "error", err)
+			f.es.PublishError(err)
+			return
 		}
+		f.es.PublishActionComplete("Flash Complete")
 	}()
 }
 

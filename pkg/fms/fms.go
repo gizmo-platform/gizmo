@@ -123,6 +123,7 @@ func New(opts ...Option) (*FMS, error) {
 			})
 
 			r.Route("/device", func(r chi.Router) {
+				r.Get("/flash-status", x.apiDeviceFlashStatus)
 				r.Post("/begin-flash", x.apiDeviceFlashBegin)
 				r.Post("/cancel-flash", x.apiDeviceFlashCancel)
 			})

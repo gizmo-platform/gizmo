@@ -50,16 +50,27 @@
 </div>
 
 <script>
+ async function checkFlash() {
+     fetch('/api/setup/device/flash-status').then(response => response.json()).then(data => {
+         document.getElementById('optionset').disabled = data.InProgress;
+         document.getElementById('btn-begin-flash').disabled = data.InProgress;
+         document.getElementById('btn-cancel-flash').disabled = !data.InProgress;
+     });
+ }
+
  async function startFlash() {
      const optionset = document.getElementById('optionset').value;
      fetch('/api/setup/device/begin-flash?optionset=' + optionset, { method: 'POST' });
+     checkFlash();
  }
 
  async function cancelFlash() {
      fetch('/api/setup/device/cancel-flash', { method: 'POST' });
+     checkFlash();
  }
 
  document.getElementById('btn-begin-flash').addEventListener('click', startFlash);
  document.getElementById('btn-cancel-flash').addEventListener('click', cancelFlash);
+ checkFlash();
 </script>
 {% endblock %}
