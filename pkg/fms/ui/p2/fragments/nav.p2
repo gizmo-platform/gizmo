@@ -25,6 +25,7 @@
           <a class="nav-item" href="/ui/admin/map/current">Current Mapping</a>
           <a class="nav-item" href="/ui/admin/map/stage">Stage Mapping</a>
           <a class="nav-item" href="/ui/admin/net/reconcile">Reconcile Network</a>
+          <a class="nav-item" href="/ui/admin/bind">Bind Gizmos</a>
         </div>
       </div>
       <div class="nav-container">
