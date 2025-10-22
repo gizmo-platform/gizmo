@@ -50,7 +50,7 @@
              });
              console.log(teams);
              const elements = new Array();
-             elements.push(document.createElement('p').textContent = 'Parsed ' + (teams.size-1) + ' teams:');
+             elements.push(document.createElement('p').textContent = 'Parsed ' + (teams.size) + ' teams:');
              const table = document.createElement('table');
              const tbody = document.createElement('tbody');
              table.appendChild(tbody);
